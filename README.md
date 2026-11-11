@@ -71,10 +71,11 @@ Android 10 or later.
 
 ## Verify your download
 
-Every release APK is signed with the same key. Its SHA-256 certificate fingerprint:
+Every release APK is signed with the same key. Its SHA-256 certificate fingerprint is:
 
-> **Not published yet.** It goes here with the first release (v0.1.0). Until then there is no release APK
-> to check.
+```
+10:6B:57:A2:C4:D6:DC:3F:EC:F9:C3:78:E8:2D:9C:16:05:CB:C1:9A:B9:0C:D2:52:A4:29:3A:E6:C6:37:7F:BA
+```
 
 Check an APK before installing it with `apksigner verify --print-certs pantry-vX.Y.Z.apk` (the "SHA-256
 digest" line, without colons), or the installed app with [AppVerifier](https://github.com/soupslurpr/AppVerifier).
@@ -134,9 +135,8 @@ to are in [`CLAUDE.md`](CLAUDE.md); the reasons behind the big decisions are in 
    the GitHub Release and starts the signed build once CI has passed on that commit; approve the waiting
    `release` run in the Actions tab. The build attaches the APK, its checksum, the provenance and the Exodus
    report to the release.
-4. After the first release, put the signing certificate's SHA-256 fingerprint in
-   [Verify your download](#verify-your-download):
-   `apksigner verify --print-certs pantry-v0.1.0.apk`.
+4. Check the release APK's signing certificate against the fingerprint in
+   [Verify your download](#verify-your-download): `apksigner verify --print-certs pantry-vX.Y.Z.apk`.
 
 `applicationId` (`io.cosgriff.pantry`) and the signing key must never change.
 
