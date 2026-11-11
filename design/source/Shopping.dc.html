@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shopping list</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 52px var(--space-5) var(--space-3); display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 13px; color: var(--ink-muted); font-weight: 500">12 items</span>
+        <h1 style="margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px">Shopping</h1>
+      </div>
+      <a href="ShoppingTrip.dc.html" style="height: 36px; padding: 0 14px; border-radius: var(--radius-full); border: 1px solid var(--border-strong); display: flex; align-items: center; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 600">Start trip</a>
+    </div>
+    <label style="display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); color: var(--ink-muted)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden">Add an item</span>
+      <input placeholder="Add an item" style="flex: 1; border: none; outline: none; background: transparent; font: inherit; font-size: 15px; color: var(--ink)">
+    </label>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: var(--space-1) var(--space-5) 0; display: flex; flex-direction: column; gap: 18px">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; flex-direction: column; gap: var(--space-2)">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted)">{{g.title}}</h2>
+        <ul style="list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden">
+          <sc-for list="{{g.items}}" as="it" hint-placeholder-count="2">
+            <li style="border-top: {{it.divider}}">
+              <label style="display: flex; align-items: center; gap: var(--space-3); padding: 10px 14px; min-height: var(--tap-min)">
+                <input type="checkbox" style="width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0">
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                  <span style="font-size: 15px; font-weight: 600">{{it.name}}</span>
+                  <span style="font-size: 13px; color: var(--ink-muted)">{{it.why}}</span>
+                </span>
+                <span style="font-size: 14px; font-weight: 600; white-space: nowrap">{{it.qty}}</span>
+              </label>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </sc-for>
+  </main>
+
+  <nav aria-label="Main" style="height: var(--nav-height); background: var(--surface); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: var(--space-2)">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <a href="{{t.href}}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1); text-decoration: none; color: {{t.color}}; font-size: 12px; font-weight: {{t.weight}}">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
+        {{t.label}}
+      </a>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const mark = (items) => items.map((it, i) => ({ ...it, divider: i === 0 ? 'none' : '1px solid var(--divider)' }));
+    const groups = [
+      { title: 'Running low · 3', items: mark([
+        { name: 'Organic large eggs, 24 ct', why: '6 left · alert at 6', qty: '1 pack' },
+        { name: 'Paper towels', why: '1 roll left · alert at 2', qty: '1 pack' },
+        { name: 'Olive oil, 2 L', why: 'Opened · 0.2 bottle left', qty: '1 bottle' }
+      ]) },
+      { title: 'For this week’s meals · 2', items: mark([
+        { name: 'Cottage cheese', why: 'Spinach egg bites · Mon', qty: '1 tub' },
+        { name: 'Scallions', why: 'Chicken rice bowls · Wed', qty: '1 bunch' }
+      ]) },
+      { title: 'Used up · 2', items: mark([
+        { name: 'Greek yogurt, plain', why: 'Finished Nov 8', qty: '2 tubs' },
+        { name: 'Coffee beans, 2.5 lb', why: 'Finished Nov 6', qty: '1 bag' }
+      ]) }
+    ];
+    const tab = (label, href, icon, on) => ({ label, href, icon, color: on ? 'var(--accent)' : 'var(--ink-muted)', weight: on ? 600 : 500 });
+    return {
+      groups,
+      tabs: [
+        tab('Pantry', 'Main.dc.html', 'M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4 10h16M4 16h16', false),
+        tab('Meal prep', 'MealPrep.dc.html', 'M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 9h18M8 2v4M16 2v4', false),
+        tab('Shopping', 'Shopping.dc.html', 'M6 6h15l-1.5 9h-12zM6 6 5 3H2M9 20h.01M18 20h.01', true)
+      ],
+      theme: this.props.theme ?? 'light'
+    };
+  }
+}
+</script>
+</body>
+</html>

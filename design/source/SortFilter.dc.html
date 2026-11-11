@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sort and filter</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px var(--space-5) 0; display: flex; flex-direction: column; gap: var(--space-4)">
+    <h1 style="margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px">Pantry</h1>
+    <div style="height: 46px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg)"></div>
+    <div style="height: 300px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl)"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.4)"></div>
+
+  <section role="dialog" aria-label="Sort and filter" style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 10px var(--space-5) 28px; display: flex; flex-direction: column; gap: var(--space-4)">
+    <div aria-hidden="true" style="width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); align-self: center"></div>
+    <h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Sort and filter</h2>
+
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+      <legend style="padding: 0; margin-bottom: var(--space-1); font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted)">Sort by</legend>
+      <sc-for list="{{sorts}}" as="s" hint-placeholder-count="4">
+        <label style="height: var(--button-height); display: flex; align-items: center; justify-content: space-between; font-size: 15px; border-top: {{s.divider}}">
+          {{s.label}}
+          <input type="radio" name="sort" checked="{{s.on}}" style="width: 22px; height: 22px; accent-color: var(--accent)">
+        </label>
+      </sc-for>
+    </fieldset>
+
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2)">
+      <legend style="padding: 0; margin-bottom: var(--space-2); font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted)">Show only</legend>
+      <div style="display: flex; gap: var(--space-2); flex-wrap: wrap">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+          <button aria-pressed="{{f.pressed}}" style="height: 36px; padding: 0 14px; border-radius: var(--radius-full); border: {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font-size: 14px; font-weight: {{f.weight}}">{{f.label}}</button>
+        </sc-for>
+      </div>
+    </fieldset>
+
+    <div style="display: flex; gap: 10px; margin-top: var(--space-2)">
+      <button style="flex: 1; height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 600">Reset</button>
+      <a href="Main.dc.html" style="flex: 1.6; height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Show 6 items</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sorts = ['Expires soonest', 'Name A–Z', 'Recently added', 'Lowest stock first']
+      .map((label, i) => ({ label, on: i === 0, divider: i === 0 ? 'none' : '1px solid var(--divider)' }));
+    const filters = [['Opened', true], ['Low stock', false], ['No expiry date', false], ['Added this week', false]]
+      .map(([label, on]) => on
+        ? { label, pressed: 'true', border: '2px solid var(--accent)', bg: 'var(--surface-muted)', fg: 'var(--ink)', weight: 600 }
+        : { label, pressed: 'false', border: '1px solid var(--border)', bg: 'var(--surface)', fg: 'var(--ink)', weight: 500 });
+    return { sorts, filters, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

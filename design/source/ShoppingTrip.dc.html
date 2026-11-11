@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shopping trip</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 48px var(--space-2) var(--space-2); display: flex; align-items: center; gap: var(--space-1)">
+    <a href="Shopping.dc.html" aria-label="Back to shopping list" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); color: var(--ink); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18 9 12l6-6"></path></svg>
+    </a>
+    <h1 style="margin: 0; flex: 1; font-size: 18px; line-height: 24px; font-weight: 600">Shopping trip</h1>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: var(--space-1) var(--space-5) 0; display: flex; flex-direction: column; gap: var(--space-4)">
+    <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <span style="font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700">9 of 12</span>
+        <span style="font-size: 14px; color: var(--ink-muted)">in the cart</span>
+      </div>
+      <div role="progressbar" aria-valuenow="9" aria-valuemin="0" aria-valuemax="12" aria-label="Items in the cart" style="height: 8px; border-radius: 4px; background: var(--surface-muted); overflow: hidden">
+        <div style="width: 75%; height: 100%; background: var(--accent); border-radius: 4px"></div>
+      </div>
+    </div>
+
+    <ul style="list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="8">
+        <li style="border-top: {{it.divider}}">
+          <label style="display: flex; align-items: center; gap: var(--space-3); padding: 10px 14px; min-height: var(--tap-min)">
+            <input type="checkbox" checked="{{it.done}}" style="width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0">
+            <span style="flex: 1; font-size: 15px; font-weight: {{it.weight}}; color: {{it.color}}; text-decoration: {{it.strike}}">{{it.name}}</span>
+            <span style="font-size: 14px; color: {{it.color}}; white-space: nowrap">{{it.qty}}</span>
+          </label>
+        </li>
+      </sc-for>
+    </ul>
+  </main>
+
+  <footer style="padding: var(--space-3) var(--space-5) 28px; display: flex; flex-direction: column; gap: var(--space-2); background: var(--ground)">
+    <a href="ScanPermission.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; font-size: 15px; font-weight: 600">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"></path></svg>
+      Done — scan to restock
+    </a>
+    <span style="text-align: center; font-size: 13px; color: var(--ink-muted)">The 3 items you didn't get stay on the list.</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const items = [
+      ['Scallions', '1 bunch', false],
+      ['Cottage cheese', '1 tub', false],
+      ['Paper towels', '1 pack', false],
+      ['Organic large eggs, 24 ct', '1 pack', true],
+      ['Olive oil, 2 L', '1 bottle', true],
+      ['Greek yogurt, plain', '2 tubs', true],
+      ['Coffee beans, 2.5 lb', '1 bag', true],
+      ['Jasmine rice, 25 lb', '1 bag', true]
+    ].map(([name, qty, done], i) => ({
+      name, qty, done,
+      weight: done ? 400 : 600,
+      color: done ? 'var(--ink-muted)' : 'var(--ink)',
+      strike: done ? 'line-through' : 'none',
+      divider: i === 0 ? 'none' : '1px solid var(--divider)'
+    }));
+    return { items, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

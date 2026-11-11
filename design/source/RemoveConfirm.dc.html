@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Remove item</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 56px var(--space-5) 0; display: flex; flex-direction: column; gap: 14px">
+    <span style="font-size: 18px; font-weight: 600; padding-left: 44px">Item details</span>
+    <div style="height: 88px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl)"></div>
+    <div style="height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md)"></div>
+    <div style="height: 150px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl)"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.4)"></div>
+
+  <section role="alertdialog" aria-labelledby="removeTitle" style="position: absolute; left: var(--space-6); right: var(--space-6); top: 210px; background: var(--surface); border-radius: var(--radius-sheet); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4)">
+    <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <h2 id="removeTitle" style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600">Remove Organic large eggs?</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted)">18 each in the Fridge. Removing can't be undone.</p>
+    </div>
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+      <legend style="padding: 0; margin-bottom: var(--space-1); font-size: 13px; font-weight: 600; color: var(--ink-muted)">What happened to it?</legend>
+      <sc-for list="{{reasons}}" as="r" hint-placeholder-count="3">
+        <label style="min-height: var(--button-height); display: flex; align-items: center; gap: var(--space-3); font-size: 15px; border-top: {{r.divider}}">
+          <input type="radio" name="reason" checked="{{r.on}}" style="width: 22px; height: 22px; accent-color: var(--accent)">
+          <span style="display: flex; flex-direction: column">
+            {{r.label}}
+            <span style="font-size: 13px; color: var(--ink-muted)">{{r.hint}}</span>
+          </span>
+        </label>
+      </sc-for>
+    </fieldset>
+    <div style="display: flex; gap: 10px; justify-content: flex-end">
+      <a href="ItemEdit.dc.html" style="height: var(--tap-min); padding: 0 var(--space-4); border-radius: var(--radius-lg); display: flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 600">Cancel</a>
+      <a href="Main.dc.html" style="height: var(--tap-min); padding: 0 var(--space-5); border-radius: var(--radius-lg); background: var(--danger); color: var(--surface); display: flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 600">Remove</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const reasons = [
+      ['Used it up', 'Adds it to the shopping list if you buy it often', true],
+      ['Threw it out', 'Counts toward food wasted this month', false],
+      ['Added by mistake', 'Just removes it', false]
+    ].map(([label, hint, on], i) => ({ label, hint, on, divider: i === 0 ? 'none' : '1px solid var(--divider)' }));
+    return { reasons, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Use soon</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 48px var(--space-2) var(--space-2); display: flex; align-items: center; gap: var(--space-1)">
+    <a href="Main.dc.html" aria-label="Back to pantry" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); color: var(--ink); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18 9 12l6-6"></path></svg>
+    </a>
+    <h1 style="margin: 0; flex: 1; font-size: 18px; line-height: 24px; font-weight: 600">Use soon</h1>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: var(--space-1) var(--space-5) 0; display: flex; flex-direction: column; gap: 18px">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; flex-direction: column; gap: var(--space-2)">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: {{g.color}}">{{g.title}}</h2>
+        <ul style="list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden">
+          <sc-for list="{{g.items}}" as="it" hint-placeholder-count="2">
+            <li style="border-top: {{it.divider}}; display: flex; align-items: center; gap: var(--space-3); padding: 10px 8px 10px 14px">
+              <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: {{it.bg}}; color: {{it.fg}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-display); font-weight: 700; font-size: 14px">{{it.loc}}</div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{it.name}}</span>
+                <span style="font-size: 13px; color: var(--ink-muted)">{{it.detail}}</span>
+              </div>
+              <button style="height: var(--tap-min); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-full); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap">{{it.action}}</button>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </sc-for>
+  </main>
+
+  <footer style="padding: var(--space-3) var(--space-5) 28px; background: var(--ground)">
+    <a href="MealPrep.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Plan meals with these</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const loc = {
+      D: { bg: 'var(--dry-container)', fg: 'var(--dry)' },
+      R: { bg: 'var(--fridge-container)', fg: 'var(--fridge)' },
+      F: { bg: 'var(--freezer-container)', fg: 'var(--freezer)' }
+    };
+    const mark = (items) => items.map((it, i) => ({ ...it, ...loc[it.loc], divider: i === 0 ? 'none' : '1px solid var(--divider)' }));
+    const groups = [
+      { title: 'Expired · 1', color: 'var(--danger)', items: mark([
+        { loc: 'R', name: 'Baby spinach, 1 lb', detail: 'Expired yesterday · 1 bag', action: 'Throw out' }
+      ]) },
+      { title: 'This week · 4', color: 'var(--warning)', items: mark([
+        { loc: 'R', name: 'Organic large eggs, 24 ct', detail: 'In 2 days · 18 ea', action: 'Used up' },
+        { loc: 'R', name: 'Rotisserie chicken', detail: 'In 3 days · 1 ea', action: 'Freeze' },
+        { loc: 'R', name: 'Greek yogurt, plain', detail: 'In 5 days · 2 tubs', action: 'Used up' },
+        { loc: 'D', name: 'Sourdough loaf', detail: 'In 6 days · 1 ea', action: 'Freeze' }
+      ]) },
+      { title: 'Next week · 2', color: 'var(--ink-muted)', items: mark([
+        { loc: 'R', name: 'Shredded mozzarella', detail: 'In 9 days · 1 bag', action: 'Used up' },
+        { loc: 'R', name: 'Hummus, 2 lb', detail: 'In 11 days · 1 tub', action: 'Used up' }
+      ]) }
+    ];
+    return { groups, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

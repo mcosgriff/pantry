@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Share with Open Food Facts</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--scanner-ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 300px; background: #26302A"></div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.35)"></div>
+
+  <section role="dialog" aria-labelledby="shareTitle" style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 10px var(--space-5) 28px; display: flex; flex-direction: column; gap: var(--space-4)">
+    <div aria-hidden="true" style="width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); align-self: center"></div>
+
+    <div style="display: flex; gap: 14px; align-items: center">
+      <div aria-hidden="true" style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-muted); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+        <h2 id="shareTitle" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Share with Open Food Facts?</h2>
+        <span style="font-size: 13px; color: var(--ink-muted)">Sparkling water, lime, 35 pk</span>
+      </div>
+    </div>
+
+    <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted)">Open Food Facts is a free, open database of food products. Adding this one helps the next person who scans it, in any app.</p>
+
+    <section style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted)">What gets shared</h3>
+      <ul style="list-style: none; margin: 0; padding: 0; background: var(--surface-muted); border-radius: var(--radius-xl); overflow: hidden">
+        <sc-for list="{{sent}}" as="s" hint-placeholder-count="4">
+          <li style="border-top: {{s.divider}}; display: flex; align-items: center; gap: var(--space-3); padding: 10px 14px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: {{s.iconColor}}; flex-shrink: 0"><path d="{{s.icon}}"></path></svg>
+            <span style="flex: 1; font-size: 14px; color: {{s.color}}">{{s.label}}</span>
+          </li>
+        </sc-for>
+      </ul>
+      <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted)">Shared data is public and free for anyone to reuse. [Licence details to confirm]</span>
+    </section>
+
+    <label style="display: flex; align-items: center; justify-content: space-between; min-height: var(--tap-min); font-size: 15px">
+      Don't ask again, always share
+      <input type="checkbox" style="width: 22px; height: 22px; accent-color: var(--accent)">
+    </label>
+
+    <div style="display: flex; gap: 10px">
+      <a href="ScanReview.dc.html" style="flex: 1; height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Not now</a>
+      <a href="OffDetails.dc.html" style="flex: 1.6; height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Continue</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const yes = { icon: 'm5 12 5 5 9-10', iconColor: 'var(--accent)', color: 'var(--ink)' };
+    const no = { icon: 'M6 6l12 12M18 6 6 18', iconColor: 'var(--ink-muted)', color: 'var(--ink-muted)' };
+    const sent = [
+      { label: 'The barcode and the name you typed', ...yes },
+      { label: 'Brand and size, if you add them', ...yes },
+      { label: 'Photos of the package, if you take them', ...yes },
+      { label: 'Never your pantry, quantities or dates', ...no }
+    ].map((s, i) => ({ ...s, divider: i === 0 ? 'none' : '1px solid var(--border)' }));
+    return { sent, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

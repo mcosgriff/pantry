@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scan: product not found</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--scanner-ground); font-family: var(--font-sans); color: #FFFFFF; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 300px; background: #26302A"></div>
+
+  <header style="position: relative; padding: 52px var(--space-4) 0; display: flex; align-items: center; justify-content: space-between">
+    <a href="Main.dc.html" aria-label="Close scanner" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); background: rgba(0,0,0,0.45); color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <div style="height: 36px; padding: 0 14px; border-radius: var(--radius-full); background: rgba(0,0,0,0.45); display: flex; align-items: center; gap: var(--space-2); font-size: 14px; font-weight: 600">
+      <span aria-hidden="true" style="width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--scanner-live)"></span>
+      Batch scan · 6 added
+    </div>
+    <span style="width: var(--tap-min)"></span>
+  </header>
+
+  <section aria-label="Unknown product" style="position: relative; margin-top: auto; height: 640px; box-sizing: border-box; background: var(--surface); color: var(--ink); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 10px var(--space-5) 28px; display: flex; flex-direction: column; gap: var(--space-4)">
+    <div aria-hidden="true" style="width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); align-self: center"></div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <span style="align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--on-warning-container); background: var(--warning-container); padding: 3px var(--space-2); border-radius: var(--space-2)">No match for this barcode</span>
+      <h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Name it once</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted)">Pantry remembers this barcode, so the next scan fills it in.</p>
+      <span style="font-size: 13px; color: var(--ink-muted); font-family: var(--font-mono)">UPC 0 41220 57691 3</span>
+    </div>
+
+    <label style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 13px; font-weight: 600; color: var(--ink-muted)">Name</span>
+      <input value="Sparkling water, lime, 35 pk" style="height: var(--field-height); box-sizing: border-box; padding: 0 var(--space-3); border: 2px solid var(--accent); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font-size: 15px; outline: none">
+    </label>
+
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2)">
+      <legend style="padding: 0; font-size: 13px; font-weight: 600; color: var(--ink-muted); margin-bottom: var(--space-2)">Store in</legend>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2)">
+        <button aria-pressed="true" style="height: var(--tap-min); border-radius: var(--radius-md); border: 2px solid var(--dry); background: var(--dry-container); color: var(--dry); font-size: 14px; font-weight: 600">Dry</button>
+        <button aria-pressed="false" style="height: var(--tap-min); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500">Fridge</button>
+        <button aria-pressed="false" style="height: var(--tap-min); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500">Freezer</button>
+      </div>
+    </fieldset>
+
+    <div style="display: flex; gap: var(--space-3)">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 600; color: var(--ink-muted)">Quantity</span>
+        <div style="height: var(--field-height); display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 var(--space-1)">
+          <button aria-label="Decrease quantity" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">−</button>
+          <span style="font-size: 16px; font-weight: 600">35 ea</span>
+          <button aria-label="Increase quantity" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">+</button>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 600; color: var(--ink-muted)">Expires</span>
+        <button style="height: var(--field-height); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); display: flex; align-items: center; padding: 0 var(--space-3); font-size: 15px; font-weight: 500; color: var(--ink-muted)">No date</button>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: auto">
+      <a href="Scan.dc.html" style="flex: 1; height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Skip</a>
+      <button style="flex: 1.6; height: var(--button-height); border-radius: var(--radius-lg); border: none; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600">Add &amp; keep scanning</button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return { theme: this.props.theme ?? 'light' }; }
+}
+</script>
+</body>
+</html>
