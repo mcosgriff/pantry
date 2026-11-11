@@ -8,6 +8,7 @@ import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantrySettings
+import java.time.LocalTime
 import java.time.Period
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,11 +18,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** What Pantry settings shows. [locationInUse] names a location that couldn't be deleted because it holds items. */
+/**
+ * What Pantry settings shows. [locationInUse] names a location that couldn't be deleted because it holds items.
+ * [notificationsAllowed] is whether Android lets the app post notifications; the screen reads it.
+ */
 data class SettingsState(
     val settings: PantrySettings = PantrySettings(),
     val locations: List<Location> = Location.defaults,
     val locationInUse: Location.Custom? = null,
+    val notificationsAllowed: Boolean = true,
 )
 
 @HiltViewModel
@@ -52,6 +57,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onWarningDays(days: Int) = viewModelScope.launch { settings.setWarningDays(days) }
+    fun onNotifyExpiringSoon(on: Boolean) = viewModelScope.launch { settings.setNotifyExpiringSoon(on) }
+    fun onNotifyExpired(on: Boolean) = viewModelScope.launch { settings.setNotifyExpired(on) }
+    fun onDigestAt(time: LocalTime) = viewModelScope.launch { settings.setDailyDigestAt(time) }
     fun onBatchScan(on: Boolean) = viewModelScope.launch { settings.setBatchScanByDefault(on) }
     fun onProductLookup(on: Boolean) = viewModelScope.launch { settings.setProductLookup(on) }
     fun onDefaultLocation(location: DefaultLocation) = viewModelScope.launch { settings.setDefaultLocation(location) }
