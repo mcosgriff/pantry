@@ -27,7 +27,10 @@ there is no baseline: fix a warning, or suppress that one case in `app/lint.xml`
 ## Commands
 
 - `./gradlew :domain:test` — fast pure-Kotlin tests. Run often.
-- `./gradlew build` — everything: unit tests and lint.
+- `./gradlew build` — everything: unit tests, screenshot and accessibility tests, and lint.
+- `./gradlew :app:recordRoborazziDebug` — re-record the reference screenshots (`app/src/test/screenshots/`)
+  after a change meant to alter a screen; look at every image it changes.
+- `./gradlew koverHtmlReportCoverage` — coverage of `:domain` and `:app`; CI sends the XML to Codecov.
 - `./gradlew :app:installDebug` — install on a connected phone (debug app id `io.cosgriff.pantry.debug`).
 - Release: merge the PR `release-please` keeps open (version and changelog come from Conventional Commits);
   it tags `vX.Y.Z` and starts `release.yml`, which builds the signed APK after approval in the `release`
@@ -89,6 +92,11 @@ Values live in the design system and in `ui/theme/`; don't type a color, radius 
 - A screen is a `…Content` composable (plain state and callbacks) wrapped by a `…Screen` that reads the
   ViewModel, so it can be previewed and screenshot-tested. A `…Content` that needs today takes it as a
   parameter, never `LocalDate.now()`.
+- **Every screen gets a screenshot test** in `ScreensScreenshotTest` (`compose.shoot(...)`, or `shootScreen`
+  for a sheet or dialog), light and dark. It also runs the Accessibility Test Framework, where a warning
+  fails; suppress a deliberate finding for that one kind of element, with a comment saying why.
+- Fixed-pattern rules from this file are checked by `SourceRulesTest` and `HardcodedTextTest`; a new rule
+  that is a pattern in the source goes there.
 - **All wording lives in `res/values/strings.xml`**, named `<screen>_<what>`. Composables use
   `stringResource` / `pluralStringResource`. Quantities go in carrying their unit.
 - Never format a figure or date with `Locale.US` or `String.format` for display.
