@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +41,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -79,6 +82,7 @@ import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.QuickPick
 import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.expiryStatus
 import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.withNumber
@@ -120,7 +124,7 @@ data class ItemDetailsActions(
     val onLowStock: (BigDecimal?) -> Unit = {},
     val onNotes: (String) -> Unit = {},
     val onSave: () -> Unit = {},
-    val onRemove: () -> Unit = {},
+    val onRemove: (RemoveReason) -> Unit = {},
 )
 
 /**
@@ -159,11 +163,14 @@ fun ItemDetailsScreen(
     )
 }
 
-/** `design/source/ItemEdit.dc.html` (#7). Also adds an item by hand. */
+/**
+ * `design/source/ItemEdit.dc.html` (#7). Also adds an item by hand. [removing] opens it with the remove dialog
+ * showing, for the screenshot test.
+ */
 @Composable
-fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, modifier: Modifier = Modifier) {
+fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, modifier: Modifier = Modifier, removing: Boolean = false) {
     val draft = state.draft
-    var confirmRemove by rememberSaveable { mutableStateOf(false) }
+    var confirmRemove by rememberSaveable { mutableStateOf(removing) }
     Scaffold(
         modifier = modifier
             .fillMaxSize()
@@ -199,7 +206,7 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
         }
     }
     if (confirmRemove && draft != null) {
-        RemoveDialog(draft, onConfirm = { confirmRemove = false; actions.onRemove() }, onDismiss = { confirmRemove = false })
+        RemoveDialog(draft, onConfirm = { confirmRemove = false; actions.onRemove(it) }, onDismiss = { confirmRemove = false })
     }
 }
 
@@ -498,25 +505,44 @@ private fun Footer(draft: ItemDraft, onRemove: () -> Unit, onSave: () -> Unit) {
     }
 }
 
+/** `design/source/RemoveConfirm.dc.html` (#18): removing asks what happened to the item. */
 @Composable
-private fun RemoveDialog(draft: ItemDraft, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun RemoveDialog(draft: ItemDraft, onConfirm: (RemoveReason) -> Unit, onDismiss: () -> Unit) {
     val colors = PantryTheme.colors
+    var reason by rememberSaveable { mutableStateOf(RemoveReason.UsedUp) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = colors.surface,
         shape = MaterialTheme.shapes.extraLarge,
         title = { Text(stringResource(R.string.details_remove_title, draft.name.trim()), style = MaterialTheme.typography.titleLarge) },
         text = {
-            Text(
-                stringResource(R.string.details_remove_body, quantityText(draft.quantity), locationName(draft.location)),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Normal,
-                color = colors.inkMuted,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space4)) {
+                Text(
+                    stringResource(R.string.details_remove_body, quantityText(draft.quantity), locationName(draft.location)),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Normal,
+                    color = colors.inkMuted,
+                )
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        stringResource(R.string.details_remove_question),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.inkMuted,
+                        modifier = Modifier
+                            .padding(bottom = PantryDimens.space1)
+                            .semantics { heading() },
+                    )
+                    RemoveReason.entries.forEachIndexed { index, option ->
+                        if (index > 0) HorizontalDivider(color = colors.divider)
+                        ReasonRow(option, selected = option == reason, onSelect = { reason = option })
+                    }
+                }
+            }
         },
         confirmButton = {
             Button(
-                onClick = onConfirm,
+                onClick = { onConfirm(reason) },
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = colors.danger, contentColor = colors.surface),
             ) { Text(stringResource(R.string.details_remove), style = MaterialTheme.typography.labelLarge) }
@@ -525,6 +551,37 @@ private fun RemoveDialog(draft: ItemDraft, onConfirm: () -> Unit, onDismiss: () 
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.details_cancel), style = MaterialTheme.typography.labelLarge, color = colors.ink) }
         },
     )
+}
+
+@Composable
+private fun ReasonRow(reason: RemoveReason, selected: Boolean, onSelect: () -> Unit) {
+    val colors = PantryTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = PantryDimens.buttonHeight)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
+    ) {
+        RadioButton(selected = selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = colors.accent))
+        Column {
+            Text(stringResource(reasonLabel(reason)), style = MaterialTheme.typography.bodyLarge, color = colors.ink)
+            Text(stringResource(reasonHint(reason)), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+        }
+    }
+}
+
+private fun reasonLabel(reason: RemoveReason) = when (reason) {
+    RemoveReason.UsedUp -> R.string.details_remove_used_up
+    RemoveReason.ThrewOut -> R.string.details_remove_threw_out
+    RemoveReason.AddedByMistake -> R.string.details_remove_mistake
+}
+
+private fun reasonHint(reason: RemoveReason) = when (reason) {
+    RemoveReason.UsedUp -> R.string.details_remove_used_up_hint
+    RemoveReason.ThrewOut -> R.string.details_remove_threw_out_hint
+    RemoveReason.AddedByMistake -> R.string.details_remove_mistake_hint
 }
 
 // Previews and the screenshot test use a made-up item, marked as a sample.

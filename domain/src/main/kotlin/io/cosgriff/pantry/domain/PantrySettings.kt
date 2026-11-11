@@ -4,9 +4,13 @@ import java.time.LocalTime
 
 /** The Pantry settings screen's values (#8). Defaults are what a new install starts with. */
 data class PantrySettings(
-    val notifications: Boolean = false,
+    /** Whether the daily digest counts items expiring within [warningDays] (#27). */
+    val notifyExpiringSoon: Boolean = false,
+    /** Whether the daily digest counts items already past their date (#27). */
+    val notifyExpired: Boolean = false,
     /** Days before expiry an item counts as "use soon". */
     val warningDays: Int = DEFAULT_WARNING_DAYS,
+    /** When the daily digest goes out, while either alert is on. */
     val dailyDigestAt: LocalTime = LocalTime.of(8, 0),
     val batchScanByDefault: Boolean = false,
     val defaultLocation: DefaultLocation = DefaultLocation.LastUsed,
@@ -17,6 +21,10 @@ data class PantrySettings(
     init {
         require(warningDays >= 0) { "Warning window must not be negative: $warningDays" }
     }
+
+    /** Whether there is a daily digest at all: one of the two alerts is on. */
+    val digestOn: Boolean
+        get() = notifyExpiringSoon || notifyExpired
 }
 
 /** Where the Scan screen puts a new item unless told otherwise. */

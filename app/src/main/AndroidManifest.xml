@@ -6,6 +6,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Product lookup in Open Food Facts, only after the user says yes (#9, docs/adr/0001). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+        The daily expiry digest (#27): asked for in Pantry settings when an expiration alert is turned on
+        (Android 13 and later). The digest's alarm is inexact, so no SCHEDULE_EXACT_ALARM.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Sets the digest's alarm again after a restart, which clears alarms (#27). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <!--
@@ -29,5 +36,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- The daily digest's alarm; only the app's own PendingIntent reaches it. -->
+        <receiver
+            android:name=".notify.DigestReceiver"
+            android:exported="false" />
+        <!-- Sets the digest's alarm again; exported only so that Android's own broadcasts reach it. -->
+        <receiver
+            android:name=".notify.DigestRescheduleReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
