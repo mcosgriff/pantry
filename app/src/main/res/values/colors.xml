@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window and splash only; Compose takes its colors from ui/theme/Color.kt (Pantry design system). -->
+    <color name="ground">#F4F5F1</color>
+    <color name="accent">#2D6A4F</color>
+</resources>

@@ -1,0 +1,18 @@
+.gradle/
+build/
+/local.properties
+/.idea/
+*.iml
+.DS_Store
+/captures
+.externalNativeBuild/
+.cxx/
+.kotlin/
+
+# Signing — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Python caches from helper scripts
+__pycache__/

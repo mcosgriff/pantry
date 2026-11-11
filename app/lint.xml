@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+        Lint calls the -v26 on the adaptive icon's folder obsolete, since minSdk is 29, but AAPT can't find
+        an adaptive icon in a plain mipmap-anydpi folder.
+    -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+</lint>
