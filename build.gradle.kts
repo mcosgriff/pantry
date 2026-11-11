@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.room) apply false
+    alias(libs.plugins.roborazzi) apply false
+    alias(libs.plugins.kover)
 }
 
 subprojects {
@@ -16,10 +18,44 @@ subprojects {
     }
 }
 
-// Robolectric's Android jar. Left to itself, Robolectric fetches android-all-instrumented from Maven Central at
-// test time, outside Gradle: no cache holds it and a Maven Central hiccup fails every Robolectric test in CI.
-// Here Gradle resolves the jar (version in libs.versions.toml beside `robolectric`), copies it to
-// build/robolectric, and every unit test task reads it from there with Robolectric kept offline. As in glovebox.
+// Test coverage (Codecov, #5): `./gradlew koverXmlReportCoverage` runs the unit tests of :domain and :app
+// here, with a `coverage` variant in its build file, to measure it too.
+// here, and a `coverage` variant in its build file, once it exists.
+dependencies {
+    kover(project(":domain"))
+    kover(project(":app"))
+}
+
+kover {
+    currentProject {
+        createVariant("coverage") {}
+    }
+    reports {
+        filters {
+            excludes {
+                // Generated code: Compose's singletons, BuildConfig and resources.
+                classes("*ComposableSingletons*", "*.BuildConfig", "*.R", "*.R\$*")
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+            }
+        }
+    }
+}
+
+// :domain's coverage variant is set here, so its own build file stays the plain Kotlin module it is.
+project(":domain") {
+    apply(plugin = "org.jetbrains.kotlinx.kover")
+    extensions.configure<kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension> {
+        currentProject {
+            createVariant("coverage") { add("jvm") }
+        }
+    }
+}
+
+// Robolectric's Android jars. Left to itself, Robolectric fetches android-all-instrumented from Maven
+// Central at test time, outside Gradle: no cache holds it, and a Maven Central hiccup fails every
+// Robolectric test in CI. Here Gradle resolves the jars (one per SDK the tests run on, versions in
+// libs.versions.toml beside `robolectric`), copies them to build/robolectric, and every unit test task,
+// Roborazzi's and Kover's runs included, reads them from there with Robolectric kept offline.
 abstract class RobolectricOffline : CommandLineArgumentProvider {
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
@@ -31,14 +67,19 @@ abstract class RobolectricOffline : CommandLineArgumentProvider {
     )
 }
 
-configure(listOf(project(":data"))) {
-    val androidAll = configurations.create("robolectricAndroidAllSdk35") {
-        isCanBeConsumed = false
-        isTransitive = false
-    }.also { dependencies.add(it.name, rootProject.libs.robolectric.androidAll.sdk35) }
+configure(listOf(project(":app"), project(":data"))) {
+    // One configuration per jar: in one, Gradle would keep only the highest of the versions of the one module.
+    val androidAll = mapOf(
+        "Sdk35" to rootProject.libs.robolectric.androidAll.sdk35,
+    ).map { (sdk, jar) ->
+        configurations.create("robolectricAndroidAll$sdk") {
+            isCanBeConsumed = false
+            isTransitive = false
+        }.also { dependencies.add(it.name, jar) }
+    }
     val copyJars = tasks.register<Sync>("robolectricAndroidAll") {
-        description = "Copies the Android jar Robolectric runs the unit tests on, so it never downloads it."
-        from(androidAll)
+        description = "Copies the Android jars Robolectric runs the unit tests on, so it never downloads them."
+        androidAll.forEach { from(it) }
         into(layout.buildDirectory.dir("robolectric"))
     }
     val offline = objects.newInstance<RobolectricOffline>().apply {

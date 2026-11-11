@@ -22,6 +22,49 @@ object PantryDimens {
     val space5 = 20.dp // screen side gutter
     val space6 = 24.dp
 
+    // Between the scale's steps, where the boards draw them.
+    val hairline = 1.dp // borders and dividers
+    val borderSelected = 2.dp // a chosen option's outline
+    val space0 = 2.dp // a title and the line under it
+    val spaceBadge = 3.dp // a small badge's top and bottom
+    val spaceChip = 6.dp // between quick-pick chips; a label and its field
+    val spaceIcon = 10.dp // an icon and its text; stacked buttons
+    val spaceInset = 14.dp // inside rows, chips and the search field
+    val spaceSection = 18.dp // above a list section
+
+    /** Flat by default: borders, not shadows (CLAUDE.md). */
+    val flat = 0.dp
+
+    val iconSmall = 18.dp
+    val iconTiny = 14.dp
+    val iconMedium = 20.dp
+    val iconScanner = 22.dp // the scanner's round buttons
+    val iconHero = 48.dp // the camera-permission screen's icon
+    val heroBox = 96.dp // and the square it sits in
+    val liveDot = 8.dp // batch scan's "on" dot
+    val productPhoto = 64.dp // a known product's photo on the scan sheet
+
+    // The scanner's frame: four rounded corners and the live line across it.
+    val scanFrameWidth = 280.dp
+    val scanFrameHeight = 150.dp
+    val scanFrameStroke = 4.dp
+    val scanFrameArm = 34.dp
+    val scanFrameRadius = 14.dp
+    val scanLineInset = 20.dp
+    val scanLine = 2.dp
+    val iconLarge = 32.dp // the icon in an empty result's circle
+    val emptyIconCircle = 72.dp
+    val sheetHandleWidth = 40.dp
+    val sheetHandleHeight = 4.dp
+    val chipHeight = 36.dp // location tabs; the banner's badge
+    val tileSize = 40.dp // a location's letter tile
+    val tileSmall = 32.dp // the letter tile in a settings row
+    val tileMedium = 36.dp // the letter tile in a Use soon row
+    val rowTall = 60.dp // a settings row with a second line
+    val photoSize = 60.dp // an item's photo on Item details
+    val emptyArtWidth = 160.dp
+    val emptyArtHeight = 128.dp
+
     // Material asks for 48dp targets; the design's 44px is its floor, so the larger wins.
     val tapMin = 48.dp
     val fieldHeight = 48.dp

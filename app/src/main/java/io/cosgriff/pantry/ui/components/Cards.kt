@@ -22,7 +22,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
@@ -35,7 +34,7 @@ fun PantryCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         modifier
             .fillMaxWidth()
             .background(colors.surface, MaterialTheme.shapes.large)
-            .border(1.dp, colors.border, MaterialTheme.shapes.large),
+            .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.large),
     ) { content() }
 }
 
@@ -60,7 +59,7 @@ fun ValueRow(label: String, value: String, onClick: () -> Unit, modifier: Modifi
             .fillMaxWidth()
             .heightIn(min = PantryDimens.buttonHeight)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = PantryDimens.spaceInset),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
@@ -76,7 +75,7 @@ fun CheckRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modif
             .fillMaxWidth()
             .heightIn(min = PantryDimens.buttonHeight)
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = PantryDimens.spaceInset),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

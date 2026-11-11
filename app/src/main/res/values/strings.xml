@@ -204,6 +204,8 @@
     <string name="use_soon_throw_out">Throw out</string>
     <string name="use_soon_used_up">Used up</string>
     <string name="use_soon_freeze">Freeze</string>
+    <!-- What TalkBack reads for a row's button: "Used up: Sample eggs". -->
+    <string name="use_soon_action_on">%1$s: %2$s</string>
     <string name="use_soon_removed">Removed %1$s</string>
     <string name="use_soon_frozen">Moved %1$s to the Freezer</string>
     <string name="use_soon_undo">Undo</string>
