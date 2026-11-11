@@ -2,6 +2,7 @@ package io.cosgriff.pantry.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -55,7 +56,8 @@ class SettingsRepositoryTest {
 
     @Test
     fun `every value round-trips`() = runBlocking {
-        settings.setNotifications(true)
+        settings.setNotifyExpiringSoon(true)
+        settings.setNotifyExpired(true)
         settings.setWarningDays(5)
         settings.setDailyDigestAt(LocalTime.of(18, 30))
         settings.setBatchScanByDefault(true)
@@ -65,7 +67,8 @@ class SettingsRepositoryTest {
         settings.setContributing(ContributeChoice.Always)
         assertEquals(
             PantrySettings(
-                notifications = true,
+                notifyExpiringSoon = true,
+                notifyExpired = true,
                 warningDays = 5,
                 dailyDigestAt = LocalTime.of(18, 30),
                 batchScanByDefault = true,
@@ -78,6 +81,16 @@ class SettingsRepositoryTest {
         )
         settings.setProductLookup(false)
         assertEquals(LookupChoice.Off, settings.settings().first().productLookup)
+        settings.setNotifyExpired(false)
+        assertEquals(true to false, settings.settings().first().let { it.notifyExpiringSoon to it.notifyExpired })
+    }
+
+    @Test
+    fun `the single notifications switch from before the two alerts reads as both`() = runBlocking {
+        store.edit { it[booleanPreferencesKey("notifications")] = true }
+        assertEquals(true to true, settings.settings().first().let { it.notifyExpiringSoon to it.notifyExpired })
+        settings.setNotifyExpired(false)
+        assertEquals(true to false, settings.settings().first().let { it.notifyExpiringSoon to it.notifyExpired })
     }
 
     @Test

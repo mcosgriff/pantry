@@ -10,6 +10,13 @@ android.permission.CAMERA
 # the first lookup and the README explains it. Also adding a product to Open Food Facts with the user's own
 # account (#42, docs/adr/0004), only after the user signs in and taps Share.
 android.permission.INTERNET
+# The daily expiry digest (#27): asked for in Pantry settings when an expiration alert is turned on
+# (Android 13 and later), and explained under the alerts there.
+android.permission.POST_NOTIFICATIONS
+# The digest's alarm, set again after a restart (Android clears alarms). Install-time; Pantry settings say
+# the digest goes out once a day. An inexact alarm, so no SCHEDULE_EXACT_ALARM, and no WorkManager, which
+# would add WAKE_LOCK, ACCESS_NETWORK_STATE and FOREGROUND_SERVICE.
+android.permission.RECEIVE_BOOT_COMPLETED
 
 # Merged in from libraries. Install-time; the user is never asked for it.
 # androidx.core, which protects the app's own unexported receivers with it:

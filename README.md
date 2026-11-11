@@ -18,11 +18,14 @@ week and next, each with one tap to throw it out, mark it used up, or freeze it 
 a new date), and Undo. Items are
 scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan collects a whole haul to review, name and add in one go,
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
-from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A barcode
+from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Removing an item asks what happened to it: used up puts it on the shopping list,
+thrown out or added by mistake only takes it out. A barcode
 the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name; one it
 doesn't have either can be added there, under your own Open Food Facts account, once you've named it. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
-item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
+item counts as "use soon", and where new items start. Expiration alerts, each off until you turn it on,
+send one notification a day at the time you pick, counting what expires soon and what has already expired
+(either or both), which opens Use soon. The Shopping tab lists what is running low (at or under its
 low-stock alert), what this week's meals still need, what was used up, and what you add by hand, each name
 once; a shopping trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
@@ -43,17 +46,20 @@ labels) on each build. The plan, in order:
 | Scanning barcodes | [#10](https://github.com/mcosgriff/pantry/issues/10) |
 | Naming unknown products, store-packed labels, reviewing a haul | [#12](https://github.com/mcosgriff/pantry/issues/12), [#13](https://github.com/mcosgriff/pantry/issues/13), [#14](https://github.com/mcosgriff/pantry/issues/14) |
 | First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
-| Removing items with a reason (to be decided) | [#18](https://github.com/mcosgriff/pantry/issues/18) |
+| Removing items with a reason | [#18](https://github.com/mcosgriff/pantry/issues/18) |
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
+| Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |
 | Product lookup by barcode, and adding to Open Food Facts | [#9](https://github.com/mcosgriff/pantry/issues/9), [#42](https://github.com/mcosgriff/pantry/issues/42) |
 
 The screens are designed already: see [`design/`](design/README.md).
 
 ## Privacy
 
-No Pantry account, no server, no trackers, no ads. It asks for one permission, the camera, only when you open
-Scan; it reads barcodes from the picture on the phone and saves no pictures.
+No Pantry account, no server, no trackers, no ads. It asks for the camera only when you open Scan; it reads
+barcodes from the picture on the phone and saves no pictures. It asks to send notifications (Android 13 and
+later) only when you turn on an expiration alert. The daily digest is an alarm on the phone; to set it again
+after a restart, the app also has Android's "run at startup" permission, which Android grants without asking.
 
 The app talks only to Open Food Facts, and only after you say yes. First, looking up a scanned barcode the pantry
 doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by

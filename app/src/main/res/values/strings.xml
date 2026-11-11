@@ -155,6 +155,14 @@
     <!-- Remove confirmation. %1$s is the item's name; the quantity and location follow. -->
     <string name="details_remove_title">Remove %1$s?</string>
     <string name="details_remove_body">%1$s in the %2$s. Removing can\'t be undone.</string>
+    <!-- What happened to the item being removed (#18). -->
+    <string name="details_remove_question">What happened to it?</string>
+    <string name="details_remove_used_up">Used it up</string>
+    <string name="details_remove_used_up_hint">Adds it to the shopping list</string>
+    <string name="details_remove_threw_out">Threw it out</string>
+    <string name="details_remove_threw_out_hint">Leaves it off the shopping list</string>
+    <string name="details_remove_mistake">Added by mistake</string>
+    <string name="details_remove_mistake_hint">Just removes it</string>
 
     <!-- Pantry settings (#8). -->
     <string name="settings_title">Pantry settings</string>
@@ -187,6 +195,12 @@
         <item quantity="one">%1$d day before</item>
         <item quantity="other">%1$d days before</item>
     </plurals>
+    <string name="settings_notify_soon">Notify about items expiring soon</string>
+    <string name="settings_notify_expired">Notify about expired items</string>
+    <string name="settings_notify_blocked">Notifications are off in Android</string>
+    <string name="settings_notify_allow">Turn on</string>
+    <string name="settings_digest">Daily digest</string>
+    <string name="settings_alerts_body">One notification a day at the digest time: how many items expire within the warning window, and how many have expired. Android asks whether Pantry may send notifications when you turn one on.</string>
     <string name="settings_scanning">Scanning</string>
     <string name="settings_batch_scan">Batch scan by default</string>
     <string name="settings_lookup">Product lookup</string>
@@ -208,6 +222,20 @@
     <string name="settings_last_used">Last used</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
+
+    <!-- The daily expiry digest notification (#27). Its text joins the counts: "3 items expire soon · 1 item has expired". -->
+    <string name="notify_channel">Expiration alerts</string>
+    <string name="notify_channel_body">One notification a day, at the digest time set in Pantry settings.</string>
+    <string name="notify_title">Use soon</string>
+    <plurals name="notify_expiring_soon">
+        <item quantity="one">%1$d item expires soon</item>
+        <item quantity="other">%1$d items expire soon</item>
+    </plurals>
+    <plurals name="notify_expired">
+        <item quantity="one">%1$d item has expired</item>
+        <item quantity="other">%1$d items have expired</item>
+    </plurals>
+    <string name="notify_both">%1$s · %2$s</string>
 
     <!-- Use soon (#16). Group headings carry their count: "This week · 4". -->
     <string name="use_soon_title">Use soon</string>

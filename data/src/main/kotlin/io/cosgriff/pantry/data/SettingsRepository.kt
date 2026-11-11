@@ -31,8 +31,11 @@ class SettingsRepository @Inject constructor(
 ) {
     fun settings(): Flow<PantrySettings> = combine(store.data, pantry.locations()) { prefs, locations ->
         val defaults = PantrySettings()
+        // Before #27 one "notifications" switch stood for both alerts; a value stored then still reads as both.
+        val legacy = prefs[NOTIFICATIONS]
         PantrySettings(
-            notifications = prefs[NOTIFICATIONS] ?: defaults.notifications,
+            notifyExpiringSoon = prefs[NOTIFY_EXPIRING_SOON] ?: legacy ?: defaults.notifyExpiringSoon,
+            notifyExpired = prefs[NOTIFY_EXPIRED] ?: legacy ?: defaults.notifyExpired,
             warningDays = prefs[WARNING_DAYS]?.takeIf { it >= 0 } ?: defaults.warningDays,
             dailyDigestAt = prefs[DIGEST_MINUTE]?.let { runCatching { LocalTime.ofSecondOfDay(it * 60L) }.getOrNull() }
                 ?: defaults.dailyDigestAt,
@@ -48,7 +51,11 @@ class SettingsRepository @Inject constructor(
         )
     }
 
-    suspend fun setNotifications(on: Boolean) = store.edit { it[NOTIFICATIONS] = on }
+    /** The daily digest's count of items expiring within the warning window, on or off (#27). */
+    suspend fun setNotifyExpiringSoon(on: Boolean) = store.edit { it[NOTIFY_EXPIRING_SOON] = on }
+
+    /** The daily digest's count of items already expired, on or off (#27). */
+    suspend fun setNotifyExpired(on: Boolean) = store.edit { it[NOTIFY_EXPIRED] = on }
 
     suspend fun setWarningDays(days: Int) {
         require(days >= 0) { "Warning window must not be negative: $days" }
@@ -104,7 +111,10 @@ class SettingsRepository @Inject constructor(
     suspend fun setUnitSystem(system: UnitSystem) = store.edit { it[UNIT_SYSTEM] = system.name }
 
     private companion object {
+        /** Read only: the single switch from before #27. */
         val NOTIFICATIONS = booleanPreferencesKey("notifications")
+        val NOTIFY_EXPIRING_SOON = booleanPreferencesKey("notify_expiring_soon")
+        val NOTIFY_EXPIRED = booleanPreferencesKey("notify_expired")
         val WARNING_DAYS = intPreferencesKey("warning_days")
         val DIGEST_MINUTE = intPreferencesKey("daily_digest_minute")
         val BATCH_SCAN = booleanPreferencesKey("batch_scan_by_default")

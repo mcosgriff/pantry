@@ -1,5 +1,12 @@
 package io.cosgriff.pantry.ui.settings
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +23,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,13 +33,18 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -40,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ContributeChoice
@@ -47,6 +61,7 @@ import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.PantrySettings
+import io.cosgriff.pantry.notify.mayNotify
 import io.cosgriff.pantry.ui.components.BackTopBar
 import io.cosgriff.pantry.ui.components.CheckRow
 import io.cosgriff.pantry.ui.components.LocationTile
@@ -56,7 +71,9 @@ import io.cosgriff.pantry.ui.components.ValueRow
 import io.cosgriff.pantry.ui.components.locationName
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
+import java.time.LocalTime
 import java.time.Period
+import java.time.format.DateTimeFormatter
 
 /** Warning windows the "Warn me" row offers. */
 private val WARNING_CHOICES = listOf(1, 2, 3, 5, 7)
@@ -68,6 +85,11 @@ data class SettingsActions(
     val onDeleteLocation: (Location.Custom) -> Unit = {},
     val onDismissInUse: () -> Unit = {},
     val onWarningDays: (Int) -> Unit = {},
+    val onNotifyExpiringSoon: (Boolean) -> Unit = {},
+    val onNotifyExpired: (Boolean) -> Unit = {},
+    val onDigestAt: (LocalTime) -> Unit = {},
+    /** Opens Android's notification settings for the app, where a refused permission is turned back on. */
+    val onNotificationSettings: () -> Unit = {},
     val onBatchScan: (Boolean) -> Unit = {},
     val onProductLookup: (Boolean) -> Unit = {},
     val onDefaultLocation: (DefaultLocation) -> Unit = {},
@@ -78,10 +100,30 @@ data class SettingsActions(
 @Composable
 fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf(context.mayNotify()) }
+    // Android 13 and later ask, in context, when an alert is turned on (#27). The choice is kept either way;
+    // while Android refuses, the screen says so and links to its settings.
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed = it }
+    // Coming back from Android settings with notifications switched on or off.
+    LifecycleResumeEffect(Unit) {
+        allowed = context.mayNotify()
+        onPauseOrDispose {}
+    }
+    val turnOn: (Boolean, (Boolean) -> Unit) -> Unit = { on, save ->
+        save(on)
+        if (on && !allowed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
     SettingsContent(
-        state,
+        state.copy(notificationsAllowed = allowed),
         SettingsActions(
             onBack = onBack,
+            onNotifyExpiringSoon = { turnOn(it) { on -> viewModel.onNotifyExpiringSoon(on) } },
+            onNotifyExpired = { turnOn(it) { on -> viewModel.onNotifyExpired(on) } },
+            onDigestAt = { viewModel.onDigestAt(it) },
+            onNotificationSettings = {
+                context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+            },
             onAddLocation = { name, days -> viewModel.onAddLocation(name, days) },
             onUpdateLocation = { location, name, days -> viewModel.onUpdateLocation(location, name, days) },
             onDeleteLocation = { viewModel.onDeleteLocation(it) },
@@ -99,7 +141,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
 /**
  * `design/source/Settings.dc.html` (#8), with product lookup (#9; the board `OffSettings.dc.html`'s first switch) and
  * contributing to Open Food Facts (#42; that board's Contributing section).
- * Notifications, the daily digest and units are not here yet: each waits on something the app doesn't do yet.
+ * The board's one Notifications switch is two here, expiring soon and already expired (#27). Units are not here
+ * yet: they wait on something the app doesn't do yet.
  */
 @Composable
 fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Modifier = Modifier) {
@@ -108,6 +151,7 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
     var choosingWarning by rememberSaveable { mutableStateOf(false) }
     var choosingDefault by rememberSaveable { mutableStateOf(false) }
     var signingOut by rememberSaveable { mutableStateOf(false) }
+    var choosingTime by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = colors.ground,
@@ -150,12 +194,35 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                     )
                 }
             }
-            Section(stringResource(R.string.settings_alerts)) {
-                val days = state.settings.warningDays
-                ValueRow(
-                    stringResource(R.string.settings_warn_me),
-                    pluralStringResource(R.plurals.settings_days_before, days, days),
-                    onClick = { choosingWarning = true },
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                Section(stringResource(R.string.settings_alerts)) {
+                    val prefs = state.settings
+                    CheckRow(stringResource(R.string.settings_notify_soon), prefs.notifyExpiringSoon, actions.onNotifyExpiringSoon)
+                    HorizontalDivider(color = colors.divider)
+                    CheckRow(stringResource(R.string.settings_notify_expired), prefs.notifyExpired, actions.onNotifyExpired)
+                    if (prefs.digestOn && !state.notificationsAllowed) {
+                        HorizontalDivider(color = colors.divider)
+                        ValueRow(
+                            stringResource(R.string.settings_notify_blocked),
+                            stringResource(R.string.settings_notify_allow),
+                            onClick = actions.onNotificationSettings,
+                        )
+                    }
+                    HorizontalDivider(color = colors.divider)
+                    val days = prefs.warningDays
+                    ValueRow(
+                        stringResource(R.string.settings_warn_me),
+                        pluralStringResource(R.plurals.settings_days_before, days, days),
+                        onClick = { choosingWarning = true },
+                    )
+                    HorizontalDivider(color = colors.divider)
+                    ValueRow(stringResource(R.string.settings_digest), timeText(prefs.dailyDigestAt), onClick = { choosingTime = true })
+                }
+                Text(
+                    stringResource(R.string.settings_alerts_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.inkMuted,
+                    modifier = Modifier.padding(horizontal = PantryDimens.space1),
                 )
             }
             Section(stringResource(R.string.settings_scanning)) {
@@ -222,6 +289,13 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
             label = { pluralStringResource(R.plurals.settings_days_before, it, it) },
             onChoose = { choosingWarning = false; actions.onWarningDays(it) },
             onDismiss = { choosingWarning = false },
+        )
+    }
+    if (choosingTime) {
+        TimeDialog(
+            initial = state.settings.dailyDigestAt,
+            onChoose = { choosingTime = false; actions.onDigestAt(it) },
+            onDismiss = { choosingTime = false },
         )
     }
     if (choosingDefault) {
@@ -354,6 +428,34 @@ private fun defaultLocationName(location: DefaultLocation): String = when (locat
     is DefaultLocation.Fixed -> locationName(location.location)
 }
 
+/** [time] as the phone shows times: the user's locale, and 24-hour if they chose it in Android's settings. */
+@Composable
+private fun timeText(time: LocalTime): String {
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val skeleton = if (DateFormat.is24HourFormat(context)) "Hm" else "hma"
+    return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale).format(time)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeDialog(initial: LocalTime, onChoose: (LocalTime) -> Unit, onDismiss: () -> Unit) {
+    val picker = rememberTimePickerState(
+        initialHour = initial.hour,
+        initialMinute = initial.minute,
+        is24Hour = DateFormat.is24HourFormat(LocalContext.current),
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_digest)) },
+        text = { TimePicker(picker) },
+        confirmButton = {
+            TextButton(onClick = { onChoose(LocalTime.of(picker.hour, picker.minute)) }) { Text(stringResource(R.string.settings_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
+    )
+}
+
 @Composable
 private fun <T> ChoiceDialog(
     title: String,
@@ -441,7 +543,7 @@ private fun SettingsLightPreview() = PantryTheme(darkTheme = false) { SettingsCo
 private fun SettingsDarkPreview() = PantryTheme(darkTheme = true) {
     SettingsContent(
         SettingsState(
-            settings = PantrySettings(batchScanByDefault = true),
+            settings = PantrySettings(batchScanByDefault = true, notifyExpiringSoon = true),
             locations = Location.defaults + Location.Custom("Sample garage fridge", Period.ofDays(5), id = 4),
         ),
         SettingsActions(),
