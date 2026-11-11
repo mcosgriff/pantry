@@ -24,7 +24,10 @@ object PantryDimens {
 
     // Between the scale's steps, where the boards draw them.
     val hairline = 1.dp // borders and dividers
+    val borderSelected = 2.dp // a chosen option's outline
     val space0 = 2.dp // a title and the line under it
+    val spaceBadge = 3.dp // a small badge's top and bottom
+    val spaceChip = 6.dp // between quick-pick chips; a label and its field
     val spaceIcon = 10.dp // an icon and its text; stacked buttons
     val spaceInset = 14.dp // inside rows, chips and the search field
     val spaceSection = 18.dp // above a list section
@@ -33,8 +36,12 @@ object PantryDimens {
     val flat = 0.dp
 
     val iconSmall = 18.dp
+    val iconMedium = 20.dp
     val chipHeight = 36.dp // location tabs; the banner's badge
     val tileSize = 40.dp // a location's letter tile
+    val tileSmall = 32.dp // the letter tile in a settings row
+    val rowTall = 60.dp // a settings row with a second line
+    val photoSize = 60.dp // an item's photo on Item details
     val emptyArtWidth = 160.dp
     val emptyArtHeight = 128.dp
 

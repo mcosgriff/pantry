@@ -61,6 +61,22 @@ class PantryRepository @Inject constructor(
         return draft.copy(id = id)
     }
 
+    /** Renames a location the user added, or changes its shelf life. */
+    suspend fun updateLocation(location: Location.Custom) {
+        val row = locations.all().first { it.id == location.id }
+        locations.update(row.copy(name = location.name, shelfLife = location.shelfLife?.toString()))
+    }
+
+    /**
+     * Deletes a location the user added, if it holds no items. Returns false, deleting nothing, if it does: the
+     * user moves or removes them first.
+     */
+    suspend fun deleteLocation(location: Location.Custom): Boolean {
+        if (items.countIn(location.id) > 0) return false
+        locations.delete(locations.all().first { it.id == location.id })
+        return true
+    }
+
     private suspend fun locationById(id: Long): Location =
         locations.all().first { it.id == id }.toDomain()
 
