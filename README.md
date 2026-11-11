@@ -17,7 +17,8 @@ week and next, each with one tap to throw it out, mark it used up, or freeze it 
 a new date), and Undo. Items are
 scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan collects a whole haul to review, name and add in one go,
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
-from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
+from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A barcode
+the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
 low-stock alert), what this week's meals still need, what was used up, and what you add by hand; a shopping
@@ -49,10 +50,16 @@ The screens are designed already: see [`design/`](design/README.md).
 
 ## Privacy
 
-No account, no server, no trackers, no ads. The app makes no network calls today. It asks for one
-permission, the camera, only when you open Scan; it reads barcodes from the picture on the phone and saves
-no pictures. Product lookup by barcode
-would be the first, and is waiting on a decision about what it sends ([#9](https://github.com/mcosgriff/pantry/issues/9)).
+No account, no server, no trackers, no ads. It asks for one permission, the camera, only when you open
+Scan; it reads barcodes from the picture on the phone and saves no pictures.
+
+The app makes one kind of network call, and only after you say yes: looking up a scanned barcode the pantry
+doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by
+volunteers ([#9](https://github.com/mcosgriff/pantry/issues/9), [`docs/adr/0001`](docs/adr/0001-open-food-facts-lookup.md)).
+The first time a barcode isn't known, the scan sheet asks; Pantry settings turn it on or off. It sends only
+the barcode (and, as any request does, your IP address and the app's name and version), never store-packed
+meat and deli labels, and keeps only the product's name, brand and size. That needs Android's internet
+permission, which Android grants without asking.
 
 ## Install
 

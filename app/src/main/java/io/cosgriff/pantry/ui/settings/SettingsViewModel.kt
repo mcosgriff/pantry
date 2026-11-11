@@ -53,5 +53,6 @@ class SettingsViewModel @Inject constructor(
 
     fun onWarningDays(days: Int) = viewModelScope.launch { settings.setWarningDays(days) }
     fun onBatchScan(on: Boolean) = viewModelScope.launch { settings.setBatchScanByDefault(on) }
+    fun onProductLookup(on: Boolean) = viewModelScope.launch { settings.setProductLookup(on) }
     fun onDefaultLocation(location: DefaultLocation) = viewModelScope.launch { settings.setDefaultLocation(location) }
 }
