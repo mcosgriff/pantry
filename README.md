@@ -14,8 +14,8 @@ Early development. The Pantry list is the first screen: items in the dry pantry,
 soonest expiry first, with search, a tab per location and a banner for what expires this week. Items are
 added by hand and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A new
-install shows an empty pantry. The plan,
-in order:
+install shows an empty pantry. Every screen is screenshot-tested in light and dark and checked for
+accessibility (touch targets, contrast, labels) on each build. The plan, in order:
 
 | Step | Issue |
 | --- | --- |
