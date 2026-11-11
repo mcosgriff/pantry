@@ -36,6 +36,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -60,11 +63,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ExpirySummary
+import io.cosgriff.pantry.domain.ItemFilter
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
+import io.cosgriff.pantry.domain.SortOrder
 import io.cosgriff.pantry.ui.components.LocationTile
 import io.cosgriff.pantry.ui.components.PantryBottomBar
 import io.cosgriff.pantry.ui.components.TopLevel
@@ -81,12 +86,15 @@ import java.time.LocalDate
 data class PantryListActions(
     val onQueryChange: (String) -> Unit = {},
     val onSelectLocation: (Location?) -> Unit = {},
-    val onSortFilter: () -> Unit = {},
+    val onSort: (SortOrder) -> Unit = {},
+    val onToggleFilter: (ItemFilter) -> Unit = {},
+    val onResetView: () -> Unit = {},
     val onSettings: () -> Unit = {},
     val onViewExpiring: () -> Unit = {},
     val onItem: (Long) -> Unit = {},
     val onScan: () -> Unit = {},
-    val onAddByHand: () -> Unit = {},
+    /** Add an item by hand, its name filled in with the text given (empty for none). */
+    val onAddByHand: (String) -> Unit = {},
     val onNavigate: (TopLevel) -> Unit = {},
 )
 
@@ -95,7 +103,13 @@ fun PantryListScreen(actions: PantryListActions, viewModel: PantryListViewModel 
     val state by viewModel.state.collectAsStateWithLifecycle()
     PantryListContent(
         state = state,
-        actions = actions.copy(onQueryChange = viewModel::onQueryChange, onSelectLocation = viewModel::onSelect),
+        actions = actions.copy(
+            onQueryChange = viewModel::onQueryChange,
+            onSelectLocation = viewModel::onSelect,
+            onSort = { viewModel.onSort(it) },
+            onToggleFilter = { viewModel.onToggleFilter(it) },
+            onResetView = viewModel::onResetView,
+        ),
     )
 }
 
@@ -103,6 +117,7 @@ fun PantryListScreen(actions: PantryListActions, viewModel: PantryListViewModel 
 @Composable
 fun PantryListContent(state: PantryListState, actions: PantryListActions, modifier: Modifier = Modifier) {
     val empty = !state.loading && state.total == 0
+    var sorting by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = PantryTheme.colors.ground,
@@ -124,8 +139,11 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
         when {
             state.loading -> Box(Modifier.padding(insets))
             empty -> EmptyPantry(actions, Modifier.padding(insets))
-            else -> PantryList(state, actions, PaddingValues(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding()))
+            else -> PantryList(state, actions, PaddingValues(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding())) { sorting = true }
         }
+    }
+    if (sorting) {
+        SortFilterSheet(state, actions, onDismiss = { sorting = false })
     }
 }
 
@@ -150,7 +168,7 @@ private fun Header(modifier: Modifier = Modifier, buttons: @Composable () -> Uni
 }
 
 @Composable
-private fun PantryList(state: PantryListState, actions: PantryListActions, padding: PaddingValues) {
+private fun PantryList(state: PantryListState, actions: PantryListActions, padding: PaddingValues, onSortFilter: () -> Unit) {
     val colors = PantryTheme.colors
     val gutter = PantryDimens.space5
     LazyColumn(
@@ -163,7 +181,7 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
         item {
             Column(Modifier.padding(horizontal = gutter), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Header {
-                    IconButton(onClick = actions.onSortFilter) {
+                    IconButton(onClick = onSortFilter) {
                         Icon(painterResource(R.drawable.ic_sort), stringResource(R.string.pantry_sort_filter))
                     }
                     IconButton(onClick = actions.onSettings) {
@@ -183,7 +201,14 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
         }
         item {
             Text(
-                stringResource(R.string.pantry_expiring_first).uppercase(),
+                stringResource(
+                    when (state.sort) {
+                        SortOrder.ExpiresSoonest -> R.string.pantry_expiring_first
+                        SortOrder.NameAToZ -> R.string.pantry_sorted_name
+                        SortOrder.RecentlyAdded -> R.string.pantry_sorted_recent
+                        SortOrder.LowestStockFirst -> R.string.pantry_sorted_low_stock
+                    },
+                ).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.inkMuted,
                 modifier = Modifier
@@ -192,7 +217,9 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
                     .semantics { heading() },
             )
         }
-        if (state.rows.isEmpty()) {
+        if (state.rows.isEmpty() && state.query.isNotBlank()) {
+            item { SearchEmpty(state.query.trim(), onAdd = { actions.onAddByHand(state.query.trim()) }) }
+        } else if (state.rows.isEmpty()) {
             item {
                 Text(
                     stringResource(R.string.pantry_no_matches),
@@ -234,7 +261,7 @@ private fun SearchField(query: String, total: Int, onQueryChange: (String) -> Un
                     .height(PantryDimens.fieldHeight)
                     .background(colors.surface, MaterialTheme.shapes.medium)
                     .border(1.dp, colors.border, MaterialTheme.shapes.medium)
-                    .padding(horizontal = 14.dp),
+                    .padding(start = 14.dp, end = if (query.isEmpty()) 14.dp else 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -248,6 +275,11 @@ private fun SearchField(query: String, total: Int, onQueryChange: (String) -> Un
                         )
                     }
                     field()
+                }
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(painterResource(R.drawable.ic_clear), stringResource(R.string.pantry_clear_search), tint = colors.inkMuted, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         },
@@ -418,7 +450,7 @@ private fun EmptyPantry(actions: PantryListActions, modifier: Modifier = Modifie
                     Text(stringResource(R.string.pantry_scan), style = MaterialTheme.typography.labelLarge)
                 }
                 OutlinedButton(
-                    onClick = actions.onAddByHand,
+                    onClick = { actions.onAddByHand("") },
                     shape = MaterialTheme.shapes.medium,
                     border = BorderStroke(1.dp, colors.borderStrong),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
