@@ -11,6 +11,8 @@ data class PantrySettings(
     val batchScanByDefault: Boolean = false,
     val defaultLocation: DefaultLocation = DefaultLocation.LastUsed,
     val unitSystem: UnitSystem = UnitSystem.Us,
+    /** Whether a scanned barcode the pantry doesn't know is looked up in Open Food Facts (#9). */
+    val productLookup: LookupChoice = LookupChoice.Ask,
 ) {
     init {
         require(warningDays >= 0) { "Warning window must not be negative: $warningDays" }
@@ -25,3 +27,6 @@ sealed interface DefaultLocation {
 }
 
 enum class UnitSystem { Us, Metric }
+
+/** Product lookup's setting (#9, `docs/adr/0001`): off until the user says yes on the scan sheet or in settings. */
+enum class LookupChoice { Ask, On, Off }

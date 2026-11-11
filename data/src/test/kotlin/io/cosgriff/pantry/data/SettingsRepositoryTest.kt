@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.domain.UnitSystem
 import java.io.File
@@ -59,6 +60,7 @@ class SettingsRepositoryTest {
         settings.setBatchScanByDefault(true)
         settings.setDefaultLocation(DefaultLocation.Fixed(Location.Fridge))
         settings.setUnitSystem(UnitSystem.Metric)
+        settings.setProductLookup(true)
         assertEquals(
             PantrySettings(
                 notifications = true,
@@ -67,9 +69,12 @@ class SettingsRepositoryTest {
                 batchScanByDefault = true,
                 defaultLocation = DefaultLocation.Fixed(Location.Fridge),
                 unitSystem = UnitSystem.Metric,
+                productLookup = LookupChoice.On,
             ),
             settings.settings().first(),
         )
+        settings.setProductLookup(false)
+        assertEquals(LookupChoice.Off, settings.settings().first().productLookup)
     }
 
     @Test

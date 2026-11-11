@@ -189,6 +189,9 @@
     </plurals>
     <string name="settings_scanning">Scanning</string>
     <string name="settings_batch_scan">Batch scan by default</string>
+    <string name="settings_lookup">Product lookup</string>
+    <string name="settings_lookup_on">Look up scanned barcodes</string>
+    <string name="settings_lookup_body">Names products the pantry doesn’t know from Open Food Facts, a free database run by volunteers. Pantry sends only the barcode, never store-packed meat and deli labels.</string>
     <string name="settings_default_location">Default location</string>
     <string name="settings_last_used">Last used</string>
     <string name="settings_save">Save</string>
@@ -223,6 +226,17 @@
     <string name="scan_known">In your pantry before</string>
     <!-- Unknown product (#12). -->
     <string name="scan_no_match">No match for this barcode</string>
+    <!-- Open Food Facts lookup (#9, docs/adr/0001). -->
+    <string name="scan_found_off">Found in Open Food Facts</string>
+    <!-- Between a found product's brand and size: "Kirkland Signature · 24 ct" -->
+    <string name="scan_detail_separator">" · "</string>
+    <string name="scan_lookup_ask">Look it up in Open Food Facts?</string>
+    <string name="scan_lookup_ask_body">Open Food Facts is a free database of food products run by volunteers. Pantry sends only this barcode, and does the same for other barcodes it doesn’t know. You can turn it off in Pantry settings.</string>
+    <string name="scan_lookup_yes">Look it up</string>
+    <string name="scan_lookup_no">No thanks</string>
+    <string name="scan_lookup_running">Looking it up in Open Food Facts…</string>
+    <string name="scan_lookup_not_found">Not in Open Food Facts either.</string>
+    <string name="scan_lookup_failed">Couldn’t reach Open Food Facts.</string>
     <string name="scan_name_once">Name it once</string>
     <string name="scan_name_once_body">Pantry remembers this barcode, so the next scan fills it in.</string>
     <string name="scan_skip">Skip</string>

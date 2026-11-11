@@ -44,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.ui.components.BackTopBar
 import io.cosgriff.pantry.ui.components.CheckRow
@@ -67,6 +68,7 @@ data class SettingsActions(
     val onDismissInUse: () -> Unit = {},
     val onWarningDays: (Int) -> Unit = {},
     val onBatchScan: (Boolean) -> Unit = {},
+    val onProductLookup: (Boolean) -> Unit = {},
     val onDefaultLocation: (DefaultLocation) -> Unit = {},
 )
 
@@ -83,14 +85,15 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             onDismissInUse = viewModel::onDismissInUse,
             onWarningDays = { viewModel.onWarningDays(it) },
             onBatchScan = { viewModel.onBatchScan(it) },
+            onProductLookup = { viewModel.onProductLookup(it) },
             onDefaultLocation = { viewModel.onDefaultLocation(it) },
         ),
     )
 }
 
 /**
- * `design/source/Settings.dc.html` (#8). Notifications and the daily digest, product lookup (#9) and units are
- * not here yet: each waits on something the app doesn't do yet.
+ * `design/source/Settings.dc.html` (#8), with product lookup (#9; the board `OffSettings.dc.html`'s first switch).
+ * Notifications, the daily digest and units are not here yet: each waits on something the app doesn't do yet.
  */
 @Composable
 fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Modifier = Modifier) {
@@ -155,6 +158,17 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                     stringResource(R.string.settings_default_location),
                     defaultLocationName(state.settings.defaultLocation),
                     onClick = { choosingDefault = true },
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                Section(stringResource(R.string.settings_lookup)) {
+                    CheckRow(stringResource(R.string.settings_lookup_on), state.settings.productLookup == LookupChoice.On, actions.onProductLookup)
+                }
+                Text(
+                    stringResource(R.string.settings_lookup_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.inkMuted,
+                    modifier = Modifier.padding(horizontal = PantryDimens.space1),
                 )
             }
         }

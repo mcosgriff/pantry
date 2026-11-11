@@ -17,7 +17,9 @@ import io.cosgriff.pantry.ui.scan.ReviewHaulContent
 import io.cosgriff.pantry.ui.scan.ScanActions
 import io.cosgriff.pantry.ui.scan.ScanContent
 import io.cosgriff.pantry.ui.scan.ScanState
+import io.cosgriff.pantry.ui.scan.Lookup
 import io.cosgriff.pantry.ui.scan.previewFound
+import io.cosgriff.pantry.ui.scan.previewFromOff
 import io.cosgriff.pantry.ui.scan.previewStorePacked
 import io.cosgriff.pantry.ui.settings.SettingsActions
 import io.cosgriff.pantry.ui.settings.SettingsContent
@@ -83,6 +85,12 @@ class ScreensScreenshotTest(private val shade: Shade) {
 
     @Test
     fun scanStorePacked() = compose.shoot("scan_store_packed", shade) { ScanContent(previewStorePacked, torch = false, actions = ScanActions()) }
+
+    @Test
+    fun scanLookupAsk() = compose.shoot("scan_lookup_ask", shade) { ScanContent(previewFound(known = false, lookup = Lookup.Ask), torch = false, actions = ScanActions()) }
+
+    @Test
+    fun scanFoundInOpenFoodFacts() = compose.shoot("scan_found_off", shade) { ScanContent(previewFound(known = false, lookup = previewFromOff), torch = false, actions = ScanActions()) }
 
     @Test
     fun cameraPermission() = compose.shoot("camera_permission", shade) {

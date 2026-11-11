@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.ProductLookup
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.LookupChoice
+import io.cosgriff.pantry.domain.LookupResult
+import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.ScannedCode
@@ -43,8 +47,11 @@ fun parseWeight(text: String): BigDecimal? {
 sealed interface ScanPhase {
     data object Looking : ScanPhase
 
-    /** A product was read: the sheet is open on [draft]. [known] when the pantry has had this barcode before. */
-    data class Found(val draft: ItemDraft, val known: Boolean) : ScanPhase
+    /**
+     * A product was read: the sheet is open on [draft]. [known] when the pantry has had this barcode before;
+     * otherwise [lookup] says where looking it up in Open Food Facts stands (#9).
+     */
+    data class Found(val draft: ItemDraft, val known: Boolean, val lookup: Lookup = Lookup.None) : ScanPhase
 
     /**
      * A store-packed label was read (#13): [code] as printed, the label's price if the code carries one, the
@@ -57,6 +64,24 @@ sealed interface ScanPhase {
         val weight: String = "",
         val recent: List<String> = emptyList(),
     ) : ScanPhase
+}
+
+/** Open Food Facts lookup on the scan sheet (#9, `docs/adr/0001`). */
+sealed interface Lookup {
+    /** Not looked up: the pantry knows it, or lookup is off. */
+    data object None : Lookup
+
+    /** Lookup has never been answered: the sheet offers it, saying only the barcode is sent. */
+    data object Ask : Lookup
+
+    data object Running : Lookup
+
+    data class Found(val info: ProductInfo) : Lookup
+
+    data object NotFound : Lookup
+
+    /** Offline, slow or over the rate limit: named by hand. */
+    data object Failed : Lookup
 }
 
 data class ScanState(
@@ -76,6 +101,7 @@ data class ScanState(
 class ScanViewModel @Inject constructor(
     private val pantry: PantryRepository,
     private val settings: SettingsRepository,
+    private val products: ProductLookup,
     private val clock: Clock,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ScanState(today = LocalDate.now(clock)))
@@ -119,11 +145,57 @@ class ScanViewModel @Inject constructor(
                     val draft = ItemDraft.new(today, location, barcode = code.code).let { d ->
                         if (known == null) d else d.copy(name = known.name, quantity = d.quantity.copy(unit = known.unit))
                     }
-                    _state.update { it.copy(today = today, phase = ScanPhase.Found(draft, known = known != null)) }
+                    // Only a barcode the pantry doesn't know is looked up, and only once the user has said yes.
+                    val lookup = if (known != null) {
+                        Lookup.None
+                    } else {
+                        when (settings.settings().first().productLookup) {
+                            LookupChoice.On -> Lookup.Running
+                            LookupChoice.Ask -> Lookup.Ask
+                            LookupChoice.Off -> Lookup.None
+                        }
+                    }
+                    _state.update { it.copy(today = today, phase = ScanPhase.Found(draft, known = known != null, lookup = lookup)) }
+                    if (lookup == Lookup.Running) lookUp(code.code)
                 }
                 ScannedCode.Invalid -> Unit
             }
         }
+    }
+
+    /** The sheet's answer to "Look it up in Open Food Facts?": kept in settings, and acted on for this barcode. */
+    fun onLookupAnswer(yes: Boolean) {
+        val found = _state.value.phase as? ScanPhase.Found ?: return
+        viewModelScope.launch { settings.setProductLookup(yes) }
+        val barcode = found.draft.barcode
+        if (yes && barcode != null) {
+            setLookup(barcode, Lookup.Running)
+            viewModelScope.launch { lookUp(barcode) }
+        } else {
+            setLookup(barcode, Lookup.None)
+        }
+    }
+
+    /** Looks [barcode] up, and fills in the name unless the user has typed one meanwhile. */
+    private suspend fun lookUp(barcode: String) {
+        val result = when (val r = products.lookUp(barcode)) {
+            is LookupResult.Found -> Lookup.Found(r.info)
+            LookupResult.NotFound -> Lookup.NotFound
+            LookupResult.Failed -> Lookup.Failed
+        }
+        _state.update { s ->
+            val phase = s.phase as? ScanPhase.Found ?: return@update s
+            // The sheet may have moved on to another barcode while this one was out.
+            if (phase.draft.barcode != barcode) return@update s
+            val name = (result as? Lookup.Found)?.info?.suggestedName
+            val draft = if (name != null && phase.draft.name.isBlank()) phase.draft.copy(name = name) else phase.draft
+            s.copy(phase = phase.copy(draft = draft, lookup = result))
+        }
+    }
+
+    private fun setLookup(barcode: String?, lookup: Lookup) = _state.update { s ->
+        val phase = s.phase as? ScanPhase.Found ?: return@update s
+        if (phase.draft.barcode != barcode) s else s.copy(phase = phase.copy(lookup = lookup))
     }
 
     private fun edit(change: (ItemDraft) -> ItemDraft) = _state.update { s ->

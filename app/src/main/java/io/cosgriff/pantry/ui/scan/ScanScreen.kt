@@ -53,6 +53,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -90,6 +92,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ItemDraft
+import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.ui.components.DateDialog
 import io.cosgriff.pantry.ui.components.FieldLabel
@@ -180,6 +183,7 @@ fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) ->
             onRemoveFromHaul = viewModel::onRemoveFromHaul,
             onAddAll = viewModel::onAddAll,
             onMoreDetails = { draft -> viewModel.onDismiss(); onByHand(draft.name, draft.barcode.orEmpty()) },
+            onLookupAnswer = viewModel::onLookupAnswer,
         ),
         camera = { CameraFeed(analysis, torch) },
     )
@@ -203,6 +207,7 @@ data class ScanActions(
     val onRemoveFromHaul: (Int) -> Unit = {},
     val onAddAll: () -> Unit = {},
     val onMoreDetails: (ItemDraft) -> Unit = {},
+    val onLookupAnswer: (Boolean) -> Unit = {},
 )
 
 /** `design/source/Scan.dc.html`. [camera] is the live picture; previews leave it dark. */
@@ -362,9 +367,10 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             },
         )
     }
-    if (found.known) {
+    val fromOff = (found.lookup as? Lookup.Found)?.info
+    if (found.known || fromOff != null) {
         Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset)) {
-            // The photo waits for product lookup (#9).
+            // Lookup is text only (docs/adr/0001), so the photo stays a placeholder.
             Box(
                 Modifier
                     .size(PantryDimens.productPhoto)
@@ -377,9 +383,12 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
                     Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(PantryDimens.iconTiny))
-                    Text(stringResource(R.string.scan_known), style = MaterialTheme.typography.labelSmall, color = colors.accent)
+                    Text(stringResource(if (found.known) R.string.scan_known else R.string.scan_found_off), style = MaterialTheme.typography.labelSmall, color = colors.accent)
                 }
                 nameField(Modifier)
+                fromOff?.details?.takeIf { it.isNotEmpty() }?.let { details ->
+                    Text(details.joinToString(stringResource(R.string.scan_detail_separator)), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+                }
                 draft.barcode?.let { Text(barcodeText(it), style = PantryTheme.text.barcode, color = colors.inkMuted) }
             }
         }
@@ -391,6 +400,7 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             Text(stringResource(R.string.scan_name_once_body), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
             draft.barcode?.let { Text(barcodeText(it), style = PantryTheme.text.barcode, color = colors.inkMuted) }
         }
+        LookupNote(found.lookup, actions.onLookupAnswer)
         Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(nameLabel)
             nameField(
@@ -411,14 +421,46 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
     // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
     AddRow(
         state = state,
-        secondLabel = stringResource(if (found.known) R.string.scan_more_details else R.string.scan_skip),
-        onSecond = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
+        secondLabel = stringResource(if (found.known || fromOff != null) R.string.scan_more_details else R.string.scan_skip),
+        onSecond = { if (found.known || fromOff != null) actions.onMoreDetails(draft) else actions.onDismiss() },
         // In batch scan a name can wait for Review haul.
         enabled = state.batch || draft.name.isNotBlank(),
         onAdd = actions.onAdd,
     )
     if (picking) {
         DateDialog(initial = draft.expires ?: state.today, onPick = { picking = false; actions.onExpires(it) }, onDismiss = { picking = false })
+    }
+}
+
+/**
+ * Open Food Facts on the unknown-product sheet (#9): the one-time question (only the barcode is sent), a
+ * spinner while it looks, or a quiet line when it found nothing or couldn't be reached.
+ */
+@Composable
+private fun LookupNote(lookup: Lookup, onAnswer: (Boolean) -> Unit) {
+    val colors = PantryTheme.colors
+    when (lookup) {
+        Lookup.None, is Lookup.Found -> Unit
+        Lookup.Ask -> Column(
+            Modifier
+                .fillMaxWidth()
+                .background(colors.surfaceMuted, MaterialTheme.shapes.large)
+                .padding(start = PantryDimens.space4, end = PantryDimens.space4, top = PantryDimens.spaceInset, bottom = PantryDimens.space1),
+            verticalArrangement = Arrangement.spacedBy(PantryDimens.space1),
+        ) {
+            Text(stringResource(R.string.scan_lookup_ask), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.scan_lookup_ask_body), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+            Row(Modifier.align(Alignment.End)) {
+                TextButton(onClick = { onAnswer(false) }) { Text(stringResource(R.string.scan_lookup_no), color = colors.ink) }
+                TextButton(onClick = { onAnswer(true) }) { Text(stringResource(R.string.scan_lookup_yes), color = colors.accent, fontWeight = FontWeight.SemiBold) }
+            }
+        }
+        Lookup.Running -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+            CircularProgressIndicator(Modifier.size(PantryDimens.iconSmall), color = colors.accent, strokeWidth = PantryDimens.scanLine)
+            Text(stringResource(R.string.scan_lookup_running), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+        }
+        Lookup.NotFound -> Text(stringResource(R.string.scan_lookup_not_found), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+        Lookup.Failed -> Text(stringResource(R.string.scan_lookup_failed), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
     }
 }
 
@@ -673,15 +715,20 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
 // Previews and screenshot tests use made-up products, marked as samples. The camera stays dark in them.
 private val previewToday = LocalDate.of(2026, 11, 10)
 
-internal fun previewFound(known: Boolean) = ScanState(
+internal fun previewFound(known: Boolean, lookup: Lookup = Lookup.None) = ScanState(
     today = previewToday,
     batch = true,
     haul = List(6) { ItemDraft.new(previewToday).copy(name = "Sample") },
     phase = ScanPhase.Found(
-        ItemDraft.new(previewToday, Location.Dry, barcode = "041220576913").copy(name = if (known) "Sample sparkling water" else ""),
+        ItemDraft.new(previewToday, Location.Dry, barcode = "041220576913")
+            .copy(name = if (known) "Sample sparkling water" else (lookup as? Lookup.Found)?.info?.suggestedName.orEmpty()),
         known = known,
+        lookup = lookup,
     ),
 )
+
+/** A product found in Open Food Facts (made up, marked as a sample). */
+internal val previewFromOff = Lookup.Found(ProductInfo("Sample sparkling water, lime", "Sample brand", "35 × 12 fl oz"))
 
 @Preview
 @Composable

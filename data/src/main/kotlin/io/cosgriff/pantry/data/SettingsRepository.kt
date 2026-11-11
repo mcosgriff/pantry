@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.domain.UnitSystem
 import java.time.LocalTime
@@ -39,6 +40,8 @@ class SettingsRepository @Inject constructor(
                 ?.let(DefaultLocation::Fixed) ?: DefaultLocation.LastUsed,
             unitSystem = prefs[UNIT_SYSTEM]?.let { name -> UnitSystem.entries.firstOrNull { it.name == name } }
                 ?: defaults.unitSystem,
+            productLookup = prefs[PRODUCT_LOOKUP]?.let { name -> LookupChoice.entries.firstOrNull { it.name == name } }
+                ?: defaults.productLookup,
         )
     }
 
@@ -52,6 +55,9 @@ class SettingsRepository @Inject constructor(
     suspend fun setDailyDigestAt(time: LocalTime) = store.edit { it[DIGEST_MINUTE] = time.toSecondOfDay() / 60 }
 
     suspend fun setBatchScanByDefault(on: Boolean) = store.edit { it[BATCH_SCAN] = on }
+
+    /** Product lookup on or off (#9). Once answered, the scan sheet doesn't ask again. */
+    suspend fun setProductLookup(on: Boolean) = store.edit { it[PRODUCT_LOOKUP] = (if (on) LookupChoice.On else LookupChoice.Off).name }
 
     suspend fun setDefaultLocation(location: DefaultLocation) = store.edit {
         when (location) {
@@ -98,6 +104,7 @@ class SettingsRepository @Inject constructor(
         val BATCH_SCAN = booleanPreferencesKey("batch_scan_by_default")
         val DEFAULT_LOCATION = stringPreferencesKey("default_location")
         val UNIT_SYSTEM = stringPreferencesKey("unit_system")
+        val PRODUCT_LOOKUP = stringPreferencesKey("product_lookup")
         val LAST_USED_LOCATION = stringPreferencesKey("last_used_location")
         val RECENT_STORE_PACKED = stringPreferencesKey("recent_store_packed")
         const val RECENT_STORE_PACKED_MAX = 6

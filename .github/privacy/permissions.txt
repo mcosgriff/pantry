@@ -6,6 +6,9 @@
 # Declared by the app (AndroidManifest.xml) and explained in the app where it is asked for.
 # The Scan screen's permission page, before Android's prompt (#10):
 android.permission.CAMERA
+# Product lookup in Open Food Facts (#9, docs/adr/0001): granted at install, so the scan sheet asks before
+# the first lookup and the README explains it.
+android.permission.INTERNET
 
 # Merged in from libraries. Install-time; the user is never asked for it.
 # androidx.core, which protects the app's own unexported receivers with it:
