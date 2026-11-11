@@ -23,8 +23,8 @@ sealed interface Location {
         override val shelfLife: Period = Period.ofMonths(3)
     }
 
-    /** A location the user added. [name] is their own text, shown as typed. */
-    data class Custom(val name: String, override val shelfLife: Period?) : Location {
+    /** A location the user added. [name] is their own text, shown as typed. [id]: 0 until it is saved. */
+    data class Custom(val name: String, override val shelfLife: Period?, val id: Long = 0) : Location {
         init {
             require(name.isNotBlank()) { "Location name must not be blank" }
         }

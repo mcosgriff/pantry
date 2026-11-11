@@ -6,6 +6,7 @@ import java.time.LocalDate
 /**
  * One thing in the pantry.
  *
+ * @property id the stored item's id; 0 for one not saved yet.
  * @property lowStockAt warn when [quantity] is at or under this amount, counted in the quantity's unit
  *   ("at 6 each" on the Item details board). `null`: no alert.
  */
@@ -19,6 +20,7 @@ data class PantryItem(
     val opened: Boolean = false,
     val lowStockAt: BigDecimal? = null,
     val notes: String = "",
+    val id: Long = 0,
 ) {
     init {
         require(name.isNotBlank()) { "Item name must not be blank" }
