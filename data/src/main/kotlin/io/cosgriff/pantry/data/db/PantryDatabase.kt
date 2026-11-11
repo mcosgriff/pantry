@@ -9,11 +9,12 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
 @Database(
-    entities = [LocationEntity::class, ItemEntity::class, KnownProductEntity::class],
-    version = 2,
+    entities = [LocationEntity::class, ItemEntity::class, KnownProductEntity::class, ShoppingEntryEntity::class],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // known_products (#12)
+        AutoMigration(from = 2, to = 3), // shopping_entries (#20)
     ],
 )
 abstract class PantryDatabase : RoomDatabase() {
@@ -22,6 +23,8 @@ abstract class PantryDatabase : RoomDatabase() {
     abstract fun locations(): LocationDao
 
     abstract fun knownProducts(): KnownProductDao
+
+    abstract fun shopping(): ShoppingDao
 
     /** Puts the three built-in locations in a new database, in the order the app shows them. */
     object SeedBuiltIns : Callback() {

@@ -270,6 +270,36 @@
         <item quantity="other">Add %1$d to pantry</item>
     </plurals>
 
+    <!-- Shopping list (#20). -->
+    <string name="shopping_title">Shopping</string>
+    <plurals name="shopping_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="shopping_start_trip">Start trip</string>
+    <string name="shopping_add_hint">Add an item</string>
+    <string name="shopping_running_low">Running low · %1$d</string>
+    <string name="shopping_used_up">Used up · %1$d</string>
+    <string name="shopping_by_hand">Added by hand · %1$d</string>
+    <!-- "6 ea left · alert at 6 ea" -->
+    <string name="shopping_left">%1$s left · alert at %2$s</string>
+    <string name="shopping_finished">Finished %1$s</string>
+    <string name="shopping_added">Added %1$s</string>
+    <string name="shopping_remove">Remove %1$s from the list</string>
+    <string name="shopping_empty">Nothing to buy. Items at or under their low-stock alert, and what you use up, show here.</string>
+    <string name="search_empty_shopping">Add “%1$s” to shopping list</string>
+    <!-- Shopping trip. -->
+    <string name="trip_title">Shopping trip</string>
+    <string name="trip_back">Back to shopping list</string>
+    <!-- "9 of 12" over "in the cart". -->
+    <string name="trip_count">%1$d of %2$d</string>
+    <string name="trip_in_cart">in the cart</string>
+    <string name="trip_done">Done — scan to restock</string>
+    <plurals name="trip_left">
+        <item quantity="one">The %1$d item you didn\'t get stays on the list.</item>
+        <item quantity="other">The %1$d items you didn\'t get stay on the list.</item>
+    </plurals>
+
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>
     <string name="unit_name_pound">lb</string>
