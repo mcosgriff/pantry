@@ -211,6 +211,97 @@
     <string name="use_soon_undo">Undo</string>
     <string name="use_soon_nothing">Nothing expires in the next two weeks.</string>
 
+    <!-- Scan (#10). -->
+    <string name="scan_close">Close scanner</string>
+    <string name="scan_torch">Toggle flashlight</string>
+    <plurals name="scan_batch_count">
+        <item quantity="one">Batch scan · %1$d added</item>
+        <item quantity="other">Batch scan · %1$d added</item>
+    </plurals>
+    <string name="scan_point">Point at a barcode</string>
+    <string name="scan_product_photo">Product photo</string>
+    <string name="scan_known">In your pantry before</string>
+    <!-- Unknown product (#12). -->
+    <string name="scan_no_match">No match for this barcode</string>
+    <string name="scan_name_once">Name it once</string>
+    <string name="scan_name_once_body">Pantry remembers this barcode, so the next scan fills it in.</string>
+    <string name="scan_skip">Skip</string>
+    <string name="scan_store_in">Store in</string>
+    <string name="scan_suggested">suggested</string>
+    <string name="scan_more_details">More details</string>
+    <string name="scan_add_keep">Add &amp; keep scanning</string>
+    <string name="scan_add">Add</string>
+    <!-- Store-packed label (#13). %1$s is the price, in the user's currency format. -->
+    <string name="scan_store_packed_label">Store-packed label</string>
+    <string name="scan_what_is_it">What is it?</string>
+    <string name="scan_store_packed_body">Meat, cheese and deli labels change with every package, so this barcode won\'t be remembered.</string>
+    <string name="scan_label_price">Price on label %1$s</string>
+    <string name="scan_recent_store_packed">Recent store-packed items</string>
+    <string name="scan_weight">Weight</string>
+    <!-- Camera permission page, before Android's own prompt. -->
+    <string name="scan_permission_title">Scan barcodes with your camera</string>
+    <string name="scan_permission_body">Pantry uses the camera only while this screen is open, to read barcodes. No pictures are saved or sent anywhere.</string>
+    <string name="scan_permission_point_batch">Scan a whole haul in one go</string>
+    <string name="scan_permission_point_remember">Products you name are remembered on this phone</string>
+    <string name="scan_permission_point_settings">You can change this later in Android settings</string>
+    <string name="scan_permission_allow">Allow camera</string>
+    <string name="scan_permission_settings">Open Android settings</string>
+    <string name="scan_permission_by_hand">Add by hand instead</string>
+
+    <!-- Review haul (#14). -->
+    <string name="review_title">Review haul</string>
+    <string name="review_back">Back to scanner</string>
+    <plurals name="review_scanned">
+        <item quantity="one">%1$d item scanned</item>
+        <item quantity="other">%1$d items scanned</item>
+    </plurals>
+    <plurals name="review_need_name">
+        <item quantity="one">%1$d item needs a name</item>
+        <item quantity="other">%1$d items need a name</item>
+    </plurals>
+    <string name="review_fix">Fix</string>
+    <!-- Group heading: location and count, "Fridge · 5". -->
+    <string name="review_group">%1$s · %2$d</string>
+    <string name="review_needs_name">Needs a name</string>
+    <string name="review_expires">Expires %1$s</string>
+    <string name="review_rename">Name this item</string>
+    <string name="review_remove">Remove from haul</string>
+    <string name="review_scan_more">Scan more</string>
+    <plurals name="review_add_all">
+        <item quantity="one">Add %1$d to pantry</item>
+        <item quantity="other">Add %1$d to pantry</item>
+    </plurals>
+
+    <!-- Shopping list (#20). -->
+    <string name="shopping_title">Shopping</string>
+    <plurals name="shopping_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="shopping_start_trip">Start trip</string>
+    <string name="shopping_add_hint">Add an item</string>
+    <string name="shopping_running_low">Running low · %1$d</string>
+    <string name="shopping_used_up">Used up · %1$d</string>
+    <string name="shopping_by_hand">Added by hand · %1$d</string>
+    <!-- "6 ea left · alert at 6 ea" -->
+    <string name="shopping_left">%1$s left · alert at %2$s</string>
+    <string name="shopping_finished">Finished %1$s</string>
+    <string name="shopping_added">Added %1$s</string>
+    <string name="shopping_remove">Remove %1$s from the list</string>
+    <string name="shopping_empty">Nothing to buy. Items at or under their low-stock alert, and what you use up, show here.</string>
+    <string name="search_empty_shopping">Add “%1$s” to shopping list</string>
+    <!-- Shopping trip. -->
+    <string name="trip_title">Shopping trip</string>
+    <string name="trip_back">Back to shopping list</string>
+    <!-- "9 of 12" over "in the cart". -->
+    <string name="trip_count">%1$d of %2$d</string>
+    <string name="trip_in_cart">in the cart</string>
+    <string name="trip_done">Done — scan to restock</string>
+    <plurals name="trip_left">
+        <item quantity="one">The %1$d item you didn\'t get stays on the list.</item>
+        <item quantity="other">The %1$d items you didn\'t get stay on the list.</item>
+    </plurals>
+
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>
     <string name="unit_name_pound">lb</string>

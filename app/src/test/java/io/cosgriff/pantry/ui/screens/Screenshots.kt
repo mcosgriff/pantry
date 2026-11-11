@@ -22,8 +22,14 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.github.takahirom.roborazzi.checkRoboAccessibility
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckPreset
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResultUtils
+import com.google.android.apps.common.testing.accessibility.framework.checks.TextContrastCheck
+import com.google.android.apps.common.testing.accessibility.framework.uielement.ViewHierarchyElement
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import kotlin.math.abs
+import org.hamcrest.CoreMatchers
+import org.hamcrest.Description
+import org.hamcrest.TypeSafeMatcher
 
 /**
  * Exact: any pixel that differs fails. Roborazzi's default allows each pixel a small colour distance,
@@ -62,12 +68,30 @@ private object WithinOneStep : ImageComparator {
 }
 
 /**
+ * Text contrast inside a text field the user types in. ATF guesses a text's colour from the two most common
+ * colours in its bounds, and a field's 1dp border outnumbers the anti-aliased text, so it measures the border
+ * against the field (1.3:1) where the text is ink on surface. Only that check, only on editable fields; a
+ * field's label and placeholder are their own nodes and still checked.
+ */
+private val borderedFieldContrast = CoreMatchers.allOf(
+    AccessibilityCheckResultUtils.matchesCheck(TextContrastCheck::class.java),
+    AccessibilityCheckResultUtils.matchesElements(
+        object : TypeSafeMatcher<ViewHierarchyElement>() {
+            override fun matchesSafely(element: ViewHierarchyElement) = element.isEditable == true
+            override fun describeTo(description: Description) {
+                description.appendText("an editable text field")
+            }
+        },
+    ),
+)
+
+/**
  * Every check in the Accessibility Test Framework's latest set (#5): touch targets under 48dp, text contrast
  * under 4.5:1, missing labels, duplicates. A warning fails the test as an error does. A deliberate finding
  * is suppressed for the one kind of element it is about (`suppressions`), with a comment saying why.
  */
 private val accessibility = RoborazziATFAccessibilityCheckOptions(
-    checker = RoborazziATFAccessibilityChecker(preset = AccessibilityCheckPreset.LATEST),
+    checker = RoborazziATFAccessibilityChecker(preset = AccessibilityCheckPreset.LATEST, suppressions = borderedFieldContrast),
     failureLevel = RoborazziATFAccessibilityChecker.CheckLevel.Warning,
 )
 

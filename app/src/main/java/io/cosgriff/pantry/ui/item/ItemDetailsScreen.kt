@@ -77,6 +77,11 @@ import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
 import io.cosgriff.pantry.domain.expiryStatus
 import io.cosgriff.pantry.ui.components.BackTopBar
+import io.cosgriff.pantry.ui.components.DateDialog
+import io.cosgriff.pantry.ui.components.FieldLabel
+import io.cosgriff.pantry.ui.components.LocationPicker
+import io.cosgriff.pantry.ui.components.QuantityStepper
+import io.cosgriff.pantry.ui.components.barcodeText
 import io.cosgriff.pantry.ui.components.CheckRow
 import io.cosgriff.pantry.ui.components.PantryCard
 import io.cosgriff.pantry.ui.components.ValueRow
@@ -112,12 +117,19 @@ data class ItemDetailsActions(
 )
 
 /**
- * Item details for item [id], or a new item named [name] when it is `null`. Calls [onDone] once it is saved or
- * removed.
+ * Item details for item [id], or a new item with [name] and [barcode] (empty for none) when it is `null`. Calls
+ * [onDone] once it is saved or removed.
  */
 @Composable
-fun ItemDetailsScreen(id: Long?, name: String, onBack: () -> Unit, onDone: () -> Unit, viewModel: ItemDetailsViewModel = hiltViewModel()) {
-    LaunchedEffect(id) { viewModel.load(id, name) }
+fun ItemDetailsScreen(
+    id: Long?,
+    name: String,
+    barcode: String,
+    onBack: () -> Unit,
+    onDone: () -> Unit,
+    viewModel: ItemDetailsViewModel = hiltViewModel(),
+) {
+    LaunchedEffect(id) { viewModel.load(id, name, barcode) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onDone() }
     ItemDetailsContent(
@@ -185,11 +197,6 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
 }
 
 @Composable
-private fun FieldLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = PantryTheme.colors.inkMuted)
-}
-
-@Composable
 private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
     val colors = PantryTheme.colors
     val nameLabel = stringResource(R.string.details_name)
@@ -229,50 +236,6 @@ private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
 }
 
 @Composable
-private fun barcodeText(barcode: String): String =
-    if (barcode.length == 12 && barcode.all(Char::isDigit)) {
-        stringResource(R.string.details_upc, "${barcode[0]} ${barcode.substring(1, 6)} ${barcode.substring(6, 11)} ${barcode[11]}")
-    } else {
-        barcode
-    }
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LocationPicker(selected: Location, locations: List<Location>, onSelect: (Location) -> Unit) {
-    val colors = PantryTheme.colors
-    Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
-        FieldLabel(stringResource(R.string.details_location))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2),
-            verticalArrangement = Arrangement.spacedBy(PantryDimens.space2),
-            maxItemsInEachRow = 3,
-        ) {
-            locations.forEach { location ->
-                val on = location == selected
-                val (container, content) = locationColors(location)
-                val shape = MaterialTheme.shapes.small
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(PantryDimens.tapMin)
-                        .background(if (on) container else colors.surface, shape)
-                        .border(if (on) PantryDimens.borderSelected else PantryDimens.hairline, if (on) content else colors.border, shape)
-                        .selectable(selected = on, role = Role.RadioButton) { onSelect(location) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        locationName(location),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (on) content else colors.ink,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (QuantityUnit) -> Unit) {
     val colors = PantryTheme.colors
     val shape = MaterialTheme.shapes.small
@@ -284,16 +247,7 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
         Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
-            Row(field.padding(horizontal = PantryDimens.space1), verticalAlignment = Alignment.CenterVertically) {
-                StepButton("−", stringResource(R.string.details_decrease)) { onStep(-1) }
-                Text(
-                    NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 }.format(quantity.amount),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                )
-                StepButton("+", stringResource(R.string.details_increase)) { onStep(1) }
-            }
+            QuantityStepper(NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 }.format(quantity.amount), onStep)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_unit))
@@ -314,19 +268,6 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun StepButton(symbol: String, label: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(PantryDimens.tapMin)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(symbol, style = MaterialTheme.typography.titleLarge, color = PantryTheme.colors.ink)
     }
 }
 
@@ -472,24 +413,6 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
     }
     if (editingLowStock) {
         LowStockDialog(draft.lowStockAt, onDone = { editingLowStock = false; actions.onLowStock(it) }, onDismiss = { editingLowStock = false })
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DateDialog(initial: LocalDate, onPick: (LocalDate?) -> Unit, onDismiss: () -> Unit) {
-    // The picker works in UTC milliseconds at midnight.
-    val picker = rememberDatePickerState(initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                onPick(picker.selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() })
-            }) { Text(stringResource(R.string.details_ok)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.details_cancel)) } },
-    ) {
-        DatePicker(state = picker)
     }
 }
 

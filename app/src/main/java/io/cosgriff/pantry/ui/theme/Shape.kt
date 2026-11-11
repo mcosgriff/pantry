@@ -36,13 +36,29 @@ object PantryDimens {
     val flat = 0.dp
 
     val iconSmall = 18.dp
+    val iconTiny = 14.dp
     val iconMedium = 20.dp
+    val iconScanner = 22.dp // the scanner's round buttons
+    val iconHero = 48.dp // the camera-permission screen's icon
+    val heroBox = 96.dp // and the square it sits in
+    val liveDot = 8.dp // batch scan's "on" dot
+    val productPhoto = 64.dp // a known product's photo on the scan sheet
+
+    // The scanner's frame: four rounded corners and the live line across it.
+    val scanFrameWidth = 280.dp
+    val scanFrameHeight = 150.dp
+    val scanFrameStroke = 4.dp
+    val scanFrameArm = 34.dp
+    val scanFrameRadius = 14.dp
+    val scanLineInset = 20.dp
+    val scanLine = 2.dp
     val iconLarge = 32.dp // the icon in an empty result's circle
     val emptyIconCircle = 72.dp
     val sheetHandleWidth = 40.dp
     val sheetHandleHeight = 4.dp
     val chipHeight = 36.dp // location tabs; the banner's badge
     val tileSize = 40.dp // a location's letter tile
+    val tileTiny = 24.dp // the letter tile beside a haul's location heading
     val tileSmall = 32.dp // the letter tile in a settings row
     val tileMedium = 36.dp // the letter tile in a Use soon row
     val rowTall = 60.dp // a settings row with a second line

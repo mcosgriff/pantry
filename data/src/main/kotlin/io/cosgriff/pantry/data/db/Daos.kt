@@ -53,3 +53,24 @@ interface LocationDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM locations")
     suspend fun nextPosition(): Int
 }
+
+@Dao
+interface KnownProductDao {
+    @Query("SELECT * FROM known_products WHERE barcode = :barcode")
+    suspend fun get(barcode: String): KnownProductEntity?
+
+    @Upsert
+    suspend fun upsert(product: KnownProductEntity)
+}
+
+@Dao
+interface ShoppingDao {
+    @Query("SELECT * FROM shopping_entries ORDER BY id")
+    fun observeAll(): Flow<List<ShoppingEntryEntity>>
+
+    @Insert
+    suspend fun insert(entry: ShoppingEntryEntity): Long
+
+    @Query("DELETE FROM shopping_entries WHERE id IN (:ids)")
+    suspend fun delete(ids: List<Long>)
+}

@@ -185,12 +185,9 @@ private fun filterLabel(filter: ItemFilter) = stringResource(
     },
 )
 
-/**
- * A search with no results (`design/source/SearchEmpty.dc.html`, #17). "Add to shopping list" waits for the
- * shopping list (#20).
- */
+/** A search with no results (`design/source/SearchEmpty.dc.html`, #17). */
 @Composable
-internal fun SearchEmpty(query: String, onAdd: () -> Unit) {
+internal fun SearchEmpty(query: String, onAdd: () -> Unit, onAddToShopping: () -> Unit) {
     val colors = PantryTheme.colors
     Column(
         Modifier
@@ -221,6 +218,14 @@ internal fun SearchEmpty(query: String, onAdd: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
         }
+        Button(
+            onClick = onAddToShopping,
+            shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(PantryDimens.buttonHeight),
+        ) { Text(stringResource(R.string.search_empty_shopping, query), style = MaterialTheme.typography.labelLarge) }
         OutlinedButton(
             onClick = onAdd,
             shape = MaterialTheme.shapes.medium,

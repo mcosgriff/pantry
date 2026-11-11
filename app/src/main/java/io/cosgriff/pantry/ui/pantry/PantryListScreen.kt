@@ -95,6 +95,7 @@ data class PantryListActions(
     /** Add an item by hand, its name filled in with the text given (empty for none). */
     val onAddByHand: (String) -> Unit = {},
     val onNavigate: (TopLevel) -> Unit = {},
+    val onAddToShopping: (String) -> Unit = {},
 )
 
 @Composable
@@ -108,6 +109,7 @@ fun PantryListScreen(actions: PantryListActions, viewModel: PantryListViewModel 
             onSort = { viewModel.onSort(it) },
             onToggleFilter = { viewModel.onToggleFilter(it) },
             onResetView = viewModel::onResetView,
+            onAddToShopping = viewModel::onAddToShopping,
         ),
     )
 }
@@ -123,6 +125,7 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
         bottomBar = { PantryBottomBar(current = TopLevel.Pantry, onSelect = actions.onNavigate) },
         floatingActionButton = {
             if (!state.loading && !empty) {
+                val scanLabel = stringResource(R.string.pantry_scan)
                 ExtendedFloatingActionButton(
                     onClick = actions.onScan,
                     icon = { Icon(painterResource(R.drawable.ic_scan), contentDescription = null) },
@@ -130,7 +133,11 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
                     shape = MaterialTheme.shapes.large,
                     containerColor = PantryTheme.colors.accent,
                     contentColor = PantryTheme.colors.onAccent,
-                    modifier = Modifier.height(PantryDimens.fabHeight),
+                    // The text slot didn't reach the accessibility tree (TalkBack read an unlabelled button), so
+                    // the label is set on the button itself.
+                    modifier = Modifier
+                        .height(PantryDimens.fabHeight)
+                        .semantics { contentDescription = scanLabel },
                 )
             }
         },
@@ -217,7 +224,13 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
             )
         }
         if (state.rows.isEmpty() && state.query.isNotBlank()) {
-            item { SearchEmpty(state.query.trim(), onAdd = { actions.onAddByHand(state.query.trim()) }) }
+            item {
+                SearchEmpty(
+                    state.query.trim(),
+                    onAdd = { actions.onAddByHand(state.query.trim()) },
+                    onAddToShopping = { actions.onAddToShopping(state.query.trim()) },
+                )
+            }
         } else if (state.rows.isEmpty()) {
             item {
                 Text(

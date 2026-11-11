@@ -34,7 +34,7 @@ class SettingsRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context)
         .addCallback(PantryDatabase.SeedBuiltIns)
         .build()
-    private val pantry = PantryRepository(db.items(), db.locations())
+    private val pantry = PantryRepository(db.items(), db.locations(), db.knownProducts())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val file = File(context.filesDir, "settings_test.preferences_pb").apply { delete() }
     private val store = PreferenceDataStoreFactory.create(scope = scope) { file }
@@ -106,5 +106,15 @@ class SettingsRepositoryTest {
         settings.setLastUsedLocation(garage)
         pantry.deleteLocation(garage)
         assertEquals(Location.Dry, settings.newItemLocation())
+    }
+
+    @Test
+    fun `recent store-packed names, newest first, no repeats, at most six`() = runBlocking {
+        assertEquals(emptyList<String>(), settings.recentStorePacked().first())
+        listOf("Ground beef", "Salmon", "Chicken thighs", "ground beef").forEach { settings.rememberStorePacked(it) }
+        assertEquals(listOf("ground beef", "Chicken thighs", "Salmon"), settings.recentStorePacked().first())
+        (1..8).forEach { settings.rememberStorePacked("Test cut $it") }
+        assertEquals(6, settings.recentStorePacked().first().size)
+        assertEquals("Test cut 8", settings.recentStorePacked().first().first())
     }
 }

@@ -52,3 +52,36 @@ data class ItemEntity(
     val lowStockAt: String?,
     val notes: String,
 )
+
+/**
+ * A barcode the user has named (#12). Its location goes back to `null` when that location is deleted, and the
+ * scan then starts the item in the default one.
+ */
+@Entity(
+    tableName = "known_products",
+    foreignKeys = [
+        ForeignKey(
+            entity = LocationEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["locationId"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
+    ],
+    indices = [Index("locationId")],
+)
+data class KnownProductEntity(
+    @PrimaryKey val barcode: String,
+    val name: String,
+    val locationId: Long?,
+    val unit: String,
+)
+
+/** A line on the shopping list that isn't worked out from the pantry (#20): used up or added by hand. */
+@Entity(tableName = "shopping_entries")
+data class ShoppingEntryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** `USED_UP` or `BY_HAND`. */
+    val reason: String,
+    val addedOn: Long,
+)

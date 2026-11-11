@@ -2,8 +2,11 @@ package io.cosgriff.pantry.data
 
 import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.ItemEntity
+import io.cosgriff.pantry.data.db.KnownProductDao
+import io.cosgriff.pantry.data.db.KnownProductEntity
 import io.cosgriff.pantry.data.db.LocationDao
 import io.cosgriff.pantry.data.db.LocationEntity
+import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.Quantity
@@ -22,6 +25,7 @@ import kotlinx.coroutines.flow.map
 class PantryRepository @Inject constructor(
     private val items: ItemDao,
     private val locations: LocationDao,
+    private val known: KnownProductDao,
 ) {
     /** Every location, built-in ones first in their seeded order. */
     fun locations(): Flow<List<Location>> = locations.observeAll().map { rows -> rows.map { it.toDomain() } }
@@ -42,6 +46,18 @@ class PantryRepository @Inject constructor(
     suspend fun lastWithBarcode(barcode: String): PantryItem? {
         val row = items.lastWithBarcode(barcode) ?: return null
         return row.toDomain(locationById(row.locationId))
+    }
+
+    /** The name the user gave [barcode] before (#12), or `null`. */
+    suspend fun knownProduct(barcode: String): KnownProduct? {
+        val row = known.get(barcode) ?: return null
+        val location = row.locationId?.let { id -> locations.all().firstOrNull { it.id == id }?.toDomain() }
+        return KnownProduct(row.barcode, row.name, location, QuantityUnit.valueOf(row.unit))
+    }
+
+    /** Remembers [product]'s name, location and unit for its barcode, replacing what was remembered. */
+    suspend fun rememberProduct(product: KnownProduct) {
+        known.upsert(KnownProductEntity(product.barcode, product.name, product.location?.let { locationId(it) }, product.unit.name))
     }
 
     /** Saves [item]: a new one when its id is 0, otherwise the one with its id. Returns the id. */

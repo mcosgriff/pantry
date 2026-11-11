@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
+import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
@@ -41,16 +42,16 @@ class ItemDetailsViewModel @Inject constructor(
     private var loaded = false
 
     /**
-     * Opens item [id], or a new item named [name] when it is `null`. Only the first call counts (the screen calls
-     * it on entry).
+     * Opens item [id], or a new item with [name] and [barcode] (empty for none) when it is `null`. Only the first
+     * call counts (the screen calls it on entry).
      */
-    fun load(id: Long?, name: String = "") {
+    fun load(id: Long?, name: String = "", barcode: String = "") {
         if (loaded) return
         loaded = true
         viewModelScope.launch {
             val today = LocalDate.now(clock)
             val locations = pantry.locations().first()
-            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation()).copy(name = name)
+            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation(), barcode = barcode.ifEmpty { null }).copy(name = name)
             _state.update { it.copy(today = today, draft = draft, locations = locations) }
         }
     }
@@ -72,6 +73,8 @@ class ItemDetailsViewModel @Inject constructor(
         val item = _state.value.draft?.toItem() ?: return
         viewModelScope.launch {
             pantry.save(item)
+            // A named barcode fills in the next scan of it (#12).
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
             if (item.id == 0L) settings.setLastUsedLocation(item.location)
             _state.update { it.copy(done = true) }
         }

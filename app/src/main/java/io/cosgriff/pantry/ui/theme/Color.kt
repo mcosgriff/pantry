@@ -39,6 +39,10 @@ data class PantryColors(
     val dangerBorder: Color,
     val scannerGround: Color,
     val scannerLive: Color,
+    /** Text and icons over the camera picture. */
+    val scannerOn: Color,
+    /** The round buttons and pill over the camera picture. */
+    val scannerScrim: Color,
 )
 
 val LightPantryColors = PantryColors(
@@ -67,6 +71,8 @@ val LightPantryColors = PantryColors(
     dangerBorder = Color(0xFFE8B4AF),
     scannerGround = Color(0xFF0E1411),
     scannerLive = Color(0xFF7BD3A4),
+    scannerOn = Color(0xFFFFFFFF),
+    scannerScrim = Color(0x73000000),
 )
 
 val DarkPantryColors = PantryColors(
@@ -95,6 +101,8 @@ val DarkPantryColors = PantryColors(
     dangerBorder = Color(0xFF6B2C27),
     scannerGround = Color(0xFF0E1411),
     scannerLive = Color(0xFF7BD3A4),
+    scannerOn = Color(0xFFFFFFFF),
+    scannerScrim = Color(0x73000000),
 )
 
 val LocalPantryColors = staticCompositionLocalOf { LightPantryColors }
