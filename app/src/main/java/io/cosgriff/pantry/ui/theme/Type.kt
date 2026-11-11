@@ -64,12 +64,17 @@ data class PantryTextStyles(
     val dateDisplay: TextStyle,
     val locationLetter: TextStyle,
     val barcode: TextStyle,
+    /** A date's day number in Meal prep's week strip, and beside a planned meal ([dayNumberLarge]). */
+    val dayNumber: TextStyle,
+    val dayNumberLarge: TextStyle,
 )
 
 val DefaultPantryTextStyles = PantryTextStyles(
     dateDisplay = TextStyle(fontFamily = SpaceGrotesk, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold),
     locationLetter = TextStyle(fontFamily = SpaceGrotesk, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
     barcode = TextStyle(fontFamily = BarcodeMono, fontSize = 13.sp, lineHeight = 18.sp),
+    dayNumber = TextStyle(fontFamily = SpaceGrotesk, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+    dayNumberLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
 )
 
 val LocalPantryTextStyles = staticCompositionLocalOf { DefaultPantryTextStyles }

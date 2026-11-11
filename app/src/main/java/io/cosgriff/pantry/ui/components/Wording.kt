@@ -32,6 +32,20 @@ fun quantityText(quantity: Quantity): String {
     return pluralStringResource(plural, count, amount)
 }
 
+/** A unit by name ("each", "lb", "bag"), as the unit picker lists them. */
+@Composable
+@ReadOnlyComposable
+fun unitName(unit: QuantityUnit): String = stringResource(
+    when (unit) {
+        QuantityUnit.Each -> R.string.unit_name_each
+        QuantityUnit.Pound -> R.string.unit_name_pound
+        QuantityUnit.Ounce -> R.string.unit_name_ounce
+        QuantityUnit.Bag -> R.string.unit_name_bag
+        QuantityUnit.Pack -> R.string.unit_name_pack
+        QuantityUnit.Tub -> R.string.unit_name_tub
+    },
+)
+
 /** Whether [amount] is a whole number, for choosing a plural form. */
 internal fun isWhole(amount: BigDecimal): Boolean = amount.signum() == 0 || amount.stripTrailingZeros().scale() <= 0
 

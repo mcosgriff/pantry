@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -33,12 +30,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -47,7 +40,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,11 +55,13 @@ import io.cosgriff.pantry.domain.ShoppingLine
 import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.shoppingList
 import io.cosgriff.pantry.domain.tripProgress
+import io.cosgriff.pantry.ui.components.AddField
 import io.cosgriff.pantry.ui.components.BackTopBar
 import io.cosgriff.pantry.ui.components.PantryBottomBar
 import io.cosgriff.pantry.ui.components.TopLevel
 import io.cosgriff.pantry.ui.components.groupedRow
 import io.cosgriff.pantry.ui.components.quantityText
+import io.cosgriff.pantry.ui.meals.shortDay
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.math.BigDecimal
@@ -89,7 +83,7 @@ fun ShoppingScreen(onStartTrip: () -> Unit, onNavigate: (TopLevel) -> Unit, view
     ShoppingContent(state, ShoppingActions(viewModel::onAdd, viewModel::onRemove, viewModel::onToggle, onStartTrip, onNavigate))
 }
 
-/** `design/source/Shopping.dc.html` (#20). "For this week's meals" waits for Meal prep (#19). */
+/** `design/source/Shopping.dc.html` (#20), with Meal prep's missing ingredients under "For this week's meals" (#19). */
 @Composable
 fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Modifier = Modifier) {
     val colors = PantryTheme.colors
@@ -115,7 +109,7 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
                             ) { Text(stringResource(R.string.shopping_start_trip), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
                         }
                     }
-                    AddField(actions.onAdd)
+                    AddField(stringResource(R.string.shopping_add_hint), actions.onAdd)
                 }
             }
             if (!state.loading && state.lines.isEmpty()) {
@@ -134,6 +128,7 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
                         stringResource(
                             when (reason) {
                                 ShoppingReason.RunningLow -> R.string.shopping_running_low
+                                ShoppingReason.ForMeal -> R.string.shopping_for_meals
                                 ShoppingReason.UsedUp -> R.string.shopping_used_up
                                 ShoppingReason.ByHand -> R.string.shopping_by_hand
                             },
@@ -163,49 +158,6 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
     }
 }
 
-@Composable
-private fun AddField(onAdd: (String) -> Unit) {
-    val colors = PantryTheme.colors
-    var text by rememberSaveable { mutableStateOf("") }
-    val label = stringResource(R.string.shopping_add_hint)
-    val submit = {
-        if (text.isNotBlank()) onAdd(text)
-        text = ""
-    }
-    BasicTextField(
-        value = text,
-        onValueChange = { text = it },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.ink),
-        cursorBrush = SolidColor(colors.accent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { submit() }),
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = label },
-        decorationBox = { field ->
-            Row(
-                Modifier
-                    .height(PantryDimens.fieldHeight)
-                    .background(colors.surface, MaterialTheme.shapes.medium)
-                    .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.medium)
-                    .padding(start = PantryDimens.spaceInset),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
-            ) {
-                Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(PantryDimens.iconSmall))
-                Box(Modifier.weight(1f)) {
-                    if (text.isEmpty()) Text(label, style = MaterialTheme.typography.bodyLarge, color = colors.inkMuted)
-                    field()
-                }
-                if (text.isNotBlank()) {
-                    IconButton(onClick = submit) { Icon(painterResource(R.drawable.ic_check), label, tint = colors.accent) }
-                }
-            }
-        },
-    )
-}
-
 /** Why a line is on the list: "6 ea left · alert at 6 ea", "Finished Nov 8", "Added Nov 9". */
 @Composable
 private fun lineDetail(line: ShoppingLine): String {
@@ -215,6 +167,9 @@ private fun lineDetail(line: ShoppingLine): String {
         return stringResource(R.string.shopping_left, quantityText(item.quantity), quantityText(Quantity(at, item.quantity.unit)))
     }
     val entry = line.entry ?: return ""
+    val meal = entry.meal
+    val mealDay = entry.mealDay
+    if (meal != null && mealDay != null) return stringResource(R.string.shopping_for_meal, meal, shortDay(mealDay.dayOfWeek))
     return stringResource(
         if (entry.reason == ShoppingReason.UsedUp) R.string.shopping_finished else R.string.shopping_added,
         date.format(entry.addedOn),
@@ -330,6 +285,7 @@ internal val previewLines = shoppingList(
         PantryItem(id = 1, name = "Sample eggs", location = Location.Fridge, quantity = Quantity(BigDecimal("6"), QuantityUnit.Each), purchased = previewToday, lowStockAt = BigDecimal("6")),
     ),
     listOf(
+        ShoppingEntry(4, "Sample cottage cheese", ShoppingReason.ForMeal, previewToday, meal = "Sample egg bites", mealDay = previewToday.plusDays(1)),
         ShoppingEntry(2, "Sample yogurt", ShoppingReason.UsedUp, previewToday.minusDays(2)),
         ShoppingEntry(3, "Sample scallions", ShoppingReason.ByHand, previewToday),
     ),
