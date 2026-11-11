@@ -5,6 +5,7 @@ import io.cosgriff.pantry.data.db.PantryDatabase
 import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.QuickAction
+import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.cook
 import io.cosgriff.pantry.domain.freeze
@@ -23,9 +24,7 @@ data class Consumed(val action: QuickAction, val before: PantryItem, val shoppin
 /**
  * What using up, throwing out, freezing or cooking does to the pantry and the shopping list (#48). Each one is a
  * single transaction. Something used up leaves the pantry and goes on the list, unless its name is there already.
- *
- * Removing an item from item details isn't consumption: it's a correction, and adds no line until #18 decides
- * what a reason for removing means.
+ * Removing an item from item details says what happened to it (#18), and goes through here too.
  */
 @Singleton
 class Consumption @Inject constructor(
@@ -57,6 +56,16 @@ class Consumption @Inject constructor(
     suspend fun undo(consumed: Consumed) = db.withWriteTransaction {
         pantry.save(consumed.before)
         consumed.shoppingId?.let { shopping.remove(it) }
+    }
+
+    /**
+     * Removes [item] from item details for [reason] (#18). Used it up puts it on the list as the quick action does;
+     * thrown out and added by mistake only take it out (nothing records waste yet). Can't be undone.
+     */
+    suspend fun remove(item: PantryItem, reason: RemoveReason, today: LocalDate) {
+        db.withWriteTransaction {
+            if (reason.addsToShoppingList) usedUp(item, today) else pantry.delete(item.id)
+        }
     }
 
     /**

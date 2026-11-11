@@ -9,6 +9,8 @@ Words the code, issues and screens use for one thing each. Decisions behind them
 - **Meal plan:** a meal on a day, for a number of servings, which scales the ingredients.
 - **Consumption:** what using up, throwing out, freezing or cooking does to the pantry and the shopping list
   (#48).
+- **Remove reason:** what happened to an item removed from item details: used it up, threw it out, or added by
+  mistake (#18). Only used it up puts it on the shopping list.
 - **Amount:** how much of an item or ingredient: a measure or a packaged amount (`docs/adr/0002`).
 - **Measure:** a number and a unit: `12 each`, `1.24 lb`, `2 cup`.
 - **Unit:** each, dozen; tsp, tbsp, fl oz, cup, pint, quart, gallon, ml, l; oz, lb, g, kg. "Ounce" is always

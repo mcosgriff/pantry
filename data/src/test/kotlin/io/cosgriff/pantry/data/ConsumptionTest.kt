@@ -12,6 +12,7 @@ import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickAction
+import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.ShoppingReason
 import java.io.File
 import java.math.BigDecimal
@@ -171,5 +172,33 @@ class ConsumptionTest {
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("Test milk" to ShoppingReason.UsedUp), list())
         assertEquals(1, db.shopping().observeAll().first().size)
+    }
+
+    @Test
+    fun `removing as used up takes it out and puts it on the list`() = runBlocking {
+        val eggs = stock("Test eggs", "18")
+        consumption.remove(eggs, RemoveReason.UsedUp, today)
+        assertEquals(emptyList<String>(), names())
+        assertEquals(listOf("Test eggs" to ShoppingReason.UsedUp), list())
+    }
+
+    @Test
+    fun `removing as used up with the name already on the list adds nothing`() = runBlocking {
+        shopping.addByHand("test EGGS", today)
+        val eggs = stock("Test eggs", "18")
+        consumption.remove(eggs, RemoveReason.UsedUp, today)
+        assertEquals(emptyList<String>(), names())
+        assertEquals(listOf("test EGGS" to ShoppingReason.ByHand), list())
+    }
+
+    @Test
+    fun `removing as thrown out or added by mistake only takes it out`() = runBlocking {
+        val yogurt = stock("Test yogurt")
+        val rice = stock("Test rice", location = Location.Dry)
+        val kept = stock("Test butter")
+        consumption.remove(yogurt, RemoveReason.ThrewOut, today)
+        consumption.remove(rice, RemoveReason.AddedByMistake, today)
+        assertEquals(listOf(kept), pantry.items().first())
+        assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
     }
 }
