@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.ui.theme.PantryTheme
@@ -57,7 +57,7 @@ fun LocationTile(location: Location, modifier: Modifier = Modifier) {
     val (container, content) = locationColors(location)
     Box(
         modifier = modifier
-            .size(40.dp)
+            .size(PantryDimens.tileSize)
             .background(container, MaterialTheme.shapes.small),
         contentAlignment = Alignment.Center,
     ) {
