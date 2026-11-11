@@ -21,7 +21,9 @@ and a barcode you have named once fills in its name, location and unit on the ne
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A barcode
 the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
-item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
+item counts as "use soon", and where new items start. Expiration alerts, each off until you turn it on,
+send one notification a day at the time you pick, counting what expires soon and what has already expired
+(either or both), which opens Use soon. The Shopping tab lists what is running low (at or under its
 low-stock alert), what this week's meals still need, what was used up, and what you add by hand, each name
 once; a shopping trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
@@ -45,14 +47,17 @@ labels) on each build. The plan, in order:
 | Removing items with a reason (to be decided) | [#18](https://github.com/mcosgriff/pantry/issues/18) |
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
+| Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |
 | Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
 
 The screens are designed already: see [`design/`](design/README.md).
 
 ## Privacy
 
-No account, no server, no trackers, no ads. It asks for one permission, the camera, only when you open
-Scan; it reads barcodes from the picture on the phone and saves no pictures.
+No account, no server, no trackers, no ads. It asks for the camera only when you open Scan; it reads
+barcodes from the picture on the phone and saves no pictures. It asks to send notifications (Android 13 and
+later) only when you turn on an expiration alert. The daily digest is an alarm on the phone; to set it again
+after a restart, the app also has Android's "run at startup" permission, which Android grants without asking.
 
 The app makes one kind of network call, and only after you say yes: looking up a scanned barcode the pantry
 doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by
