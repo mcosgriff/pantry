@@ -3,9 +3,11 @@ package io.cosgriff.pantry.ui.pantry
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.data.ShoppingRepository
+import io.cosgriff.pantry.domain.DeletedLocation
 import io.cosgriff.pantry.domain.ItemFilter
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.SortOrder
@@ -26,6 +28,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class PantryListViewModel @Inject constructor(
     pantry: PantryRepository,
+    locations: LocationRepository,
     settings: SettingsRepository,
     private val shopping: ShoppingRepository,
     private val clock: Clock,
@@ -38,16 +41,16 @@ class PantryListViewModel @Inject constructor(
     private data class View(val sort: SortOrder = SortOrder.ExpiresSoonest, val filters: Set<ItemFilter> = emptySet())
 
     val state: StateFlow<PantryListState> =
-        combine(pantry.items(), pantry.locations(), settings.settings(), combine(query, selected, view, ::Triple)) { items, locations, prefs, (q, sel, v) ->
+        combine(pantry.items(), locations.locations(), settings.settings(), combine(query, selected, view, ::Triple)) { items, all, prefs, (q, sel, v) ->
             val today = LocalDate.now(clock)
             val counts = countByLocation(items)
-            // A location deleted while chosen falls back to All.
-            val chosen = sel?.takeIf { it in locations }
+            // A location deleted while chosen falls back to All; a renamed one stays chosen (#51).
+            val chosen = DeletedLocation.chosenTab(sel, all)
             PantryListState(
                 loading = false,
                 today = today,
                 total = items.size,
-                tabs = locations.map { LocationCount(it, counts[it] ?: 0) },
+                tabs = all.map { LocationCount(it, counts[it] ?: 0) },
                 selected = chosen,
                 query = q,
                 rows = pantryList(items, q, chosen, v.sort, v.filters, today),

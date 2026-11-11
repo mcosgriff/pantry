@@ -39,6 +39,9 @@ interface LocationDao {
     @Query("SELECT * FROM locations ORDER BY position, id")
     suspend fun all(): List<LocationEntity>
 
+    @Query("SELECT * FROM locations WHERE id = :id")
+    suspend fun get(id: Long): LocationEntity?
+
     @Query("SELECT * FROM locations WHERE builtIn = :builtIn")
     suspend fun builtIn(builtIn: String): LocationEntity?
 
