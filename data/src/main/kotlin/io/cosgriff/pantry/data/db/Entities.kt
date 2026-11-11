@@ -75,3 +75,13 @@ data class KnownProductEntity(
     val locationId: Long?,
     val unit: String,
 )
+
+/** A line on the shopping list that isn't worked out from the pantry (#20): used up or added by hand. */
+@Entity(tableName = "shopping_entries")
+data class ShoppingEntryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** `USED_UP` or `BY_HAND`. */
+    val reason: String,
+    val addedOn: Long,
+)

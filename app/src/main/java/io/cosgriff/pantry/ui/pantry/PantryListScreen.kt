@@ -96,6 +96,7 @@ data class PantryListActions(
     /** Add an item by hand, its name filled in with the text given (empty for none). */
     val onAddByHand: (String) -> Unit = {},
     val onNavigate: (TopLevel) -> Unit = {},
+    val onAddToShopping: (String) -> Unit = {},
 )
 
 @Composable
@@ -109,6 +110,7 @@ fun PantryListScreen(actions: PantryListActions, viewModel: PantryListViewModel 
             onSort = { viewModel.onSort(it) },
             onToggleFilter = { viewModel.onToggleFilter(it) },
             onResetView = viewModel::onResetView,
+            onAddToShopping = viewModel::onAddToShopping,
         ),
     )
 }
@@ -223,7 +225,13 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
             )
         }
         if (state.rows.isEmpty() && state.query.isNotBlank()) {
-            item { SearchEmpty(state.query.trim(), onAdd = { actions.onAddByHand(state.query.trim()) }) }
+            item {
+                SearchEmpty(
+                    state.query.trim(),
+                    onAdd = { actions.onAddByHand(state.query.trim()) },
+                    onAddToShopping = { actions.onAddToShopping(state.query.trim()) },
+                )
+            }
         } else if (state.rows.isEmpty()) {
             item {
                 Text(

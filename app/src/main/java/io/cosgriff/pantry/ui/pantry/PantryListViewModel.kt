@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.data.ShoppingRepository
 import io.cosgriff.pantry.domain.ItemFilter
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.SortOrder
 import io.cosgriff.pantry.domain.countByLocation
 import io.cosgriff.pantry.domain.expirySummary
@@ -20,11 +22,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PantryListViewModel @Inject constructor(
     pantry: PantryRepository,
     settings: SettingsRepository,
+    private val shopping: ShoppingRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val query = MutableStateFlow("")
@@ -67,6 +71,12 @@ class PantryListViewModel @Inject constructor(
 
     fun onToggleFilter(filter: ItemFilter) =
         view.update { it.copy(filters = if (filter in it.filters) it.filters - filter else it.filters + filter) }
+
+    /** Puts the search's text on the shopping list (#20) and clears the search. */
+    fun onAddToShopping(name: String) {
+        viewModelScope.launch { shopping.add(name, ShoppingReason.ByHand, LocalDate.now(clock)) }
+        query.value = ""
+    }
 
     fun onResetView() {
         view.value = View()

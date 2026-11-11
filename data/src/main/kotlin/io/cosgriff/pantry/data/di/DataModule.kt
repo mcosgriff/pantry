@@ -14,6 +14,7 @@ import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.KnownProductDao
 import io.cosgriff.pantry.data.db.LocationDao
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.data.db.ShoppingDao
 import javax.inject.Singleton
 
 @Module
@@ -30,6 +31,9 @@ object DataModule {
 
     @Provides
     fun knownProductDao(db: PantryDatabase): KnownProductDao = db.knownProducts()
+
+    @Provides
+    fun shoppingDao(db: PantryDatabase): ShoppingDao = db.shopping()
 
     @Provides @Singleton
     fun settingsStore(@ApplicationContext context: Context): DataStore<Preferences> =

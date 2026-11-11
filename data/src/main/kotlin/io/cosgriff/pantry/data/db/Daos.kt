@@ -62,3 +62,15 @@ interface KnownProductDao {
     @Upsert
     suspend fun upsert(product: KnownProductEntity)
 }
+
+@Dao
+interface ShoppingDao {
+    @Query("SELECT * FROM shopping_entries ORDER BY id")
+    fun observeAll(): Flow<List<ShoppingEntryEntity>>
+
+    @Insert
+    suspend fun insert(entry: ShoppingEntryEntity): Long
+
+    @Query("DELETE FROM shopping_entries WHERE id IN (:ids)")
+    suspend fun delete(ids: List<Long>)
+}

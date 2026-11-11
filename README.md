@@ -19,7 +19,9 @@ scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch sc
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
-item counts as "use soon", and where new items start. A new install shows an empty pantry. The plan,
+item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
+low-stock alert), what was used up, and what you add by hand; a shopping trip checks things off and ends by
+opening the scanner to restock. A new install shows an empty pantry. The plan,
 in order:
 
 | Step | Issue |
