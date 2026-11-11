@@ -11,6 +11,8 @@ import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.ScannedCode
+import io.cosgriff.pantry.domain.PantryItem
+import io.cosgriff.pantry.domain.haulItems
 import io.cosgriff.pantry.domain.readRetailCode
 import io.cosgriff.pantry.domain.storePackedPriceCents
 import io.cosgriff.pantry.domain.stepped
@@ -61,9 +63,12 @@ data class ScanState(
     val today: LocalDate,
     val phase: ScanPhase = ScanPhase.Looking,
     val batch: Boolean = false,
-    val added: Int = 0,
+    /** Batch scan's items so far, not yet in the pantry (#14). Lost if Android ends the app before they're added. */
+    val haul: List<ItemDraft> = emptyList(),
+    /** The Review haul screen is showing. */
+    val reviewing: Boolean = false,
     val locations: List<Location> = Location.defaults,
-    /** Set once an item is added outside batch scan: the screen closes. */
+    /** Set once items are in the pantry (one outside batch scan, the haul in it): the screen closes. */
     val finished: Boolean = false,
 )
 
@@ -140,26 +145,65 @@ class ScanViewModel @Inject constructor(
         s.copy(phase = phase.copy(weight = text))
     }
 
-    /** Saves the item. In batch scan the camera goes on looking; otherwise the screen closes. */
+    /**
+     * In batch scan, puts the sheet's item in the haul (a name can wait for the review) and looks again; otherwise
+     * saves it and closes the screen.
+     */
     fun onAdd() {
         val phase = _state.value.phase
-        val item = when (phase) {
-            is ScanPhase.Found -> phase.draft.toItem()
-            is ScanPhase.StorePacked -> parseWeight(phase.weight)?.let { pounds ->
-                phase.draft.copy(quantity = Quantity(pounds, QuantityUnit.Pound)).toItem()
-            }
+        val draft = when (phase) {
+            is ScanPhase.Found -> phase.draft
+            is ScanPhase.StorePacked -> parseWeight(phase.weight)?.let { pounds -> phase.draft.copy(quantity = Quantity(pounds, QuantityUnit.Pound)) }
             ScanPhase.Looking -> null
         } ?: return
-        viewModelScope.launch {
-            pantry.save(item)
-            when (phase) {
-                is ScanPhase.Found -> item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
-                is ScanPhase.StorePacked -> settings.rememberStorePacked(item.name)
-                ScanPhase.Looking -> Unit
-            }
-            settings.setLastUsedLocation(item.location)
-            _state.update { it.copy(added = it.added + 1, phase = ScanPhase.Looking, finished = !it.batch) }
+        if (_state.value.batch) {
+            _state.update { it.copy(haul = it.haul + draft, phase = ScanPhase.Looking) }
             paused = false
+            return
+        }
+        val item = draft.toItem() ?: return
+        viewModelScope.launch {
+            save(item, storePacked = phase is ScanPhase.StorePacked)
+            _state.update { it.copy(phase = ScanPhase.Looking, finished = true) }
+        }
+    }
+
+    private suspend fun save(item: PantryItem, storePacked: Boolean) {
+        pantry.save(item)
+        if (storePacked) {
+            settings.rememberStorePacked(item.name)
+        } else {
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
+        }
+        settings.setLastUsedLocation(item.location)
+    }
+
+    /** Opens Review haul; the camera stops reading meanwhile. */
+    fun onReview() {
+        paused = true
+        _state.update { it.copy(reviewing = true, phase = ScanPhase.Looking) }
+    }
+
+    /** Back from Review haul to the scanner. */
+    fun onScanMore() {
+        _state.update { it.copy(reviewing = false) }
+        paused = false
+    }
+
+    fun onRename(index: Int, name: String) = _state.update { s ->
+        s.copy(haul = s.haul.mapIndexed { i, d -> if (i == index) d.copy(name = name) else d })
+    }
+
+    fun onRemoveFromHaul(index: Int) = _state.update { s -> s.copy(haul = s.haul.filterIndexed { i, _ -> i != index }) }
+
+    /** Adds the whole haul once every item has a name, then closes the screen. */
+    fun onAddAll() {
+        val haul = _state.value.haul
+        val items = haulItems(haul) ?: return
+        viewModelScope.launch {
+            // Every scanned product has its barcode; only a store-packed item has none.
+            items.forEach { save(it, storePacked = it.barcode == null) }
+            _state.update { it.copy(haul = emptyList(), finished = true) }
         }
     }
 

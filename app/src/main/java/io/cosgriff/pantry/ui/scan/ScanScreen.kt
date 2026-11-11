@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.compose.CameraXViewfinder
@@ -143,6 +144,10 @@ fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) ->
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.finished) { if (state.finished) onClose() }
+    // Back from Review haul returns to the scanner; back from the scanner with a haul shows it for review.
+    BackHandler(enabled = state.reviewing || state.haul.isNotEmpty()) {
+        if (state.reviewing) viewModel.onScanMore() else viewModel.onReview()
+    }
     var torch by rememberSaveable { mutableStateOf(false) }
     val analysis = remember {
         ImageAnalysis.Builder()
@@ -170,6 +175,11 @@ fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) ->
             onAdd = viewModel::onAdd,
             onDismiss = viewModel::onDismiss,
             onWeight = viewModel::onWeight,
+            onReview = viewModel::onReview,
+            onScanMore = viewModel::onScanMore,
+            onRename = viewModel::onRename,
+            onRemoveFromHaul = viewModel::onRemoveFromHaul,
+            onAddAll = viewModel::onAddAll,
             onMoreDetails = { draft -> viewModel.onDismiss(); onByHand(draft.name, draft.barcode.orEmpty()) },
         ),
         camera = { CameraFeed(analysis, torch) },
@@ -188,12 +198,21 @@ data class ScanActions(
     val onAdd: () -> Unit = {},
     val onDismiss: () -> Unit = {},
     val onWeight: (String) -> Unit = {},
+    val onReview: () -> Unit = {},
+    val onScanMore: () -> Unit = {},
+    val onRename: (Int, String) -> Unit = { _, _ -> },
+    val onRemoveFromHaul: (Int) -> Unit = {},
+    val onAddAll: () -> Unit = {},
     val onMoreDetails: (ItemDraft) -> Unit = {},
 )
 
 /** `design/source/Scan.dc.html`. [camera] is the live picture; previews leave it dark. */
 @Composable
 fun ScanContent(state: ScanState, torch: Boolean, actions: ScanActions, modifier: Modifier = Modifier, camera: @Composable () -> Unit = {}) {
+    if (state.reviewing) {
+        ReviewHaulContent(state, actions, modifier)
+        return
+    }
     val colors = PantryTheme.colors
     Box(
         modifier
@@ -209,20 +228,23 @@ fun ScanContent(state: ScanState, torch: Boolean, actions: ScanActions, modifier
                     .padding(horizontal = PantryDimens.space4, vertical = PantryDimens.space2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RoundButton(R.drawable.ic_clear, stringResource(R.string.scan_close), actions.onClose)
+                // Closing with a haul shows it for review first, so nothing scanned is lost.
+                RoundButton(R.drawable.ic_clear, stringResource(R.string.scan_close), if (state.haul.isNotEmpty()) actions.onReview else actions.onClose)
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (state.batch) {
+                        // Tapping the counter opens Review haul (#14).
                         Row(
                             Modifier
                                 .height(36.dp)
                                 .background(colors.scannerScrim, MaterialTheme.shapes.extraLarge)
+                                .clickable(enabled = state.haul.isNotEmpty(), onClickLabel = stringResource(R.string.review_title), onClick = actions.onReview)
                                 .padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2),
                         ) {
                             Box(Modifier.size(8.dp).background(colors.scannerLive, MaterialTheme.shapes.extraLarge))
                             Text(
-                                pluralStringResource(R.plurals.scan_batch_count, state.added, state.added),
+                                pluralStringResource(R.plurals.scan_batch_count, state.haul.size, state.haul.size),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = colors.scannerOn,
@@ -392,7 +414,8 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
         state = state,
         secondLabel = stringResource(if (found.known) R.string.scan_more_details else R.string.scan_skip),
         onSecond = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
-        enabled = draft.name.isNotBlank(),
+        // In batch scan a name can wait for Review haul.
+        enabled = state.batch || draft.name.isNotBlank(),
         onAdd = actions.onAdd,
     )
     if (picking) {
@@ -487,7 +510,7 @@ private fun StorePackedSheet(packed: ScanPhase.StorePacked, state: ScanState, ac
         state = state,
         secondLabel = stringResource(R.string.scan_more_details),
         onSecond = { actions.onMoreDetails(draft.copy(barcode = null)) },
-        enabled = draft.name.isNotBlank() && parseWeight(packed.weight) != null,
+        enabled = (state.batch || draft.name.isNotBlank()) && parseWeight(packed.weight) != null,
         onAdd = actions.onAdd,
     )
     if (picking) {
@@ -648,7 +671,7 @@ private val previewToday = LocalDate.of(2026, 11, 10)
 private fun previewFound(known: Boolean) = ScanState(
     today = previewToday,
     batch = true,
-    added = 6,
+    haul = List(6) { ItemDraft.new(previewToday).copy(name = "Sample") },
     phase = ScanPhase.Found(
         ItemDraft.new(previewToday, Location.Dry, barcode = "041220576913").copy(name = if (known) "Sample sparkling water" else ""),
         known = known,
@@ -674,7 +697,7 @@ private fun ScanStorePackedPreview() = PantryTheme(darkTheme = false) {
         ScanState(
             today = previewToday,
             batch = true,
-            added = 7,
+            haul = List(7) { ItemDraft.new(previewToday).copy(name = "Sample") },
             phase = ScanPhase.StorePacked(
                 code = "204711018426",
                 priceCents = 1842,

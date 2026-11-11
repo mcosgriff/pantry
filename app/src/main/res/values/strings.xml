@@ -246,6 +246,30 @@
     <string name="scan_permission_settings">Open Android settings</string>
     <string name="scan_permission_by_hand">Add by hand instead</string>
 
+    <!-- Review haul (#14). -->
+    <string name="review_title">Review haul</string>
+    <string name="review_back">Back to scanner</string>
+    <plurals name="review_scanned">
+        <item quantity="one">%1$d item scanned</item>
+        <item quantity="other">%1$d items scanned</item>
+    </plurals>
+    <plurals name="review_need_name">
+        <item quantity="one">%1$d item needs a name</item>
+        <item quantity="other">%1$d items need a name</item>
+    </plurals>
+    <string name="review_fix">Fix</string>
+    <!-- Group heading: location and count, "Fridge · 5". -->
+    <string name="review_group">%1$s · %2$d</string>
+    <string name="review_needs_name">Needs a name</string>
+    <string name="review_expires">Expires %1$s</string>
+    <string name="review_rename">Name this item</string>
+    <string name="review_remove">Remove from haul</string>
+    <string name="review_scan_more">Scan more</string>
+    <plurals name="review_add_all">
+        <item quantity="one">Add %1$d to pantry</item>
+        <item quantity="other">Add %1$d to pantry</item>
+    </plurals>
+
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>
     <string name="unit_name_pound">lb</string>
