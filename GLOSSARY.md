@@ -4,6 +4,11 @@ Words the code, issues and screens use for one thing each. Decisions behind them
 
 - **Item:** one thing in the pantry, in a location, with an amount and maybe an expiry date.
 - **Location:** where an item is kept: the built-in Dry, Fridge and Freezer, or one the user adds.
+- **Location key:** a location's identity outside its row: `DRY`, `FRIDGE`, `FREEZER`, or `custom:<id>` for one
+  the user added. Settings store it; the database keeps the same names for the built-in ones (#51).
+- **Deleted location:** a location the user removed (only an empty one can be). What refers to it falls back,
+  per use: a default location to "Last used", a new item to the last used location then Dry, a known product
+  to no location, the pantry list's tab to All. `DeletedLocation` in :domain holds the whole policy (#51).
 - **Meal:** a recipe the household cooks: a name, servings and ingredients. Kept after it's cooked.
 - **Ingredient:** one line of a meal, from the pantry (it matches an item) or typed in (not tracked).
 - **Meal plan:** a meal on a day, for a number of servings, which scales the ingredients.

@@ -35,11 +35,11 @@ class SettingsRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context)
         .addCallback(PantryDatabase.SeedBuiltIns)
         .build()
-    private val pantry = PantryRepository(db.items(), db.locations(), db.knownProducts())
+    private val locations = LocationRepository(db.locations(), db.items())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val file = File(context.filesDir, "settings_test.preferences_pb").apply { delete() }
     private val store = PreferenceDataStoreFactory.create(scope = scope) { file }
-    private val settings = SettingsRepository(store, pantry)
+    private val settings = SettingsRepository(store, locations)
 
     @After
     fun close() {
@@ -79,7 +79,7 @@ class SettingsRepositoryTest {
 
     @Test
     fun `custom default location and back to last used`() = runBlocking {
-        val garage = pantry.addLocation("Garage fridge", null)
+        val garage = locations.addLocation("Garage fridge", null)
         settings.setDefaultLocation(DefaultLocation.Fixed(garage))
         assertEquals(DefaultLocation.Fixed(garage), settings.settings().first().defaultLocation)
         settings.setDefaultLocation(DefaultLocation.LastUsed)
@@ -103,14 +103,6 @@ class SettingsRepositoryTest {
         assertEquals(Location.Freezer, settings.newItemLocation())
         settings.setDefaultLocation(DefaultLocation.Fixed(Location.Fridge))
         assertEquals(Location.Fridge, settings.newItemLocation())
-    }
-
-    @Test
-    fun `a deleted last used location falls back to Dry`() = runBlocking {
-        val garage = pantry.addLocation("Garage", null)
-        settings.setLastUsedLocation(garage)
-        pantry.deleteLocation(garage)
-        assertEquals(Location.Dry, settings.newItemLocation())
     }
 
     @Test

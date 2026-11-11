@@ -31,7 +31,7 @@ import org.robolectric.annotation.Config
 class ShoppingRepositoryTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context).addCallback(PantryDatabase.SeedBuiltIns).build()
-    private val pantry = PantryRepository(db.items(), db.locations(), db.knownProducts())
+    private val pantry = PantryRepository(db.items(), LocationRepository(db.locations(), db.items()), db.knownProducts())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val file = File(context.filesDir, "shopping_test.preferences_pb").apply { delete() }
     private val shopping = ShoppingRepository(db.shopping(), pantry, PreferenceDataStoreFactory.create(scope = scope) { file })

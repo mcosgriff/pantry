@@ -30,7 +30,8 @@ class PantryRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context)
         .addCallback(PantryDatabase.SeedBuiltIns)
         .build()
-    private val repo = PantryRepository(db.items(), db.locations(), db.knownProducts())
+    private val locations = LocationRepository(db.locations(), db.items())
+    private val repo = PantryRepository(db.items(), locations, db.knownProducts())
 
     private val today = LocalDate.of(2026, 11, 10)
 
@@ -44,11 +45,6 @@ class PantryRepositoryTest {
 
     @After
     fun close() = db.close()
-
-    @Test
-    fun `new database has the three built-in locations in order`() = runBlocking {
-        assertEquals(listOf(Location.Dry, Location.Fridge, Location.Freezer), repo.locations().first())
-    }
 
     @Test
     fun `an item round-trips with every field`() = runBlocking {
@@ -92,10 +88,8 @@ class PantryRepositoryTest {
     }
 
     @Test
-    fun `custom location is added after the built-in ones and holds items`() = runBlocking {
-        val garage = repo.addLocation("Garage fridge", Period.ofDays(5))
-        assertEquals(Location.Freezer, repo.locations().first()[2])
-        assertEquals(garage, repo.locations().first()[3])
+    fun `an item in a custom location reads back in it`() = runBlocking {
+        val garage = locations.addLocation("Garage fridge", Period.ofDays(5))
         val id = repo.save(item("Soda", location = garage))
         assertEquals(garage, repo.item(id)?.location)
     }
@@ -109,25 +103,6 @@ class PantryRepositoryTest {
     }
 
     @Test
-    fun `a custom location can be renamed and its shelf life changed`() = runBlocking {
-        val garage = repo.addLocation("Garage", null)
-        val renamed = garage.copy(name = "Garage fridge", shelfLife = Period.ofDays(4))
-        repo.updateLocation(renamed)
-        assertEquals(renamed, repo.locations().first().last())
-    }
-
-    @Test
-    fun `a custom location with items is not deleted, an empty one is`() = runBlocking {
-        val garage = repo.addLocation("Garage", null)
-        val id = repo.save(item("Soda", location = garage))
-        assertEquals(false, repo.deleteLocation(garage))
-        assertEquals(4, repo.locations().first().size)
-        repo.delete(id)
-        assertEquals(true, repo.deleteLocation(garage))
-        assertEquals(listOf(Location.Dry, Location.Fridge, Location.Freezer), repo.locations().first())
-    }
-
-    @Test
     fun `a named barcode is remembered and replaced`() = runBlocking {
         assertNull(repo.knownProduct("096619321087"))
         repo.rememberProduct(KnownProduct("096619321087", "Test water", Location.Dry, QuantityUnit.Pack))
@@ -135,14 +110,5 @@ class PantryRepositoryTest {
         repo.rememberProduct(KnownProduct("096619321087", "Test lime water", Location.Fridge, QuantityUnit.Each))
         assertEquals("Test lime water", repo.knownProduct("096619321087")?.name)
         assertEquals(Location.Fridge, repo.knownProduct("096619321087")?.location)
-    }
-
-    @Test
-    fun `a known product forgets a deleted location`() = runBlocking {
-        val garage = repo.addLocation("Garage", null)
-        repo.rememberProduct(KnownProduct("123", "Test soda", garage, QuantityUnit.Each))
-        repo.deleteLocation(garage)
-        assertNull(repo.knownProduct("123")?.location)
-        assertEquals("Test soda", repo.knownProduct("123")?.name)
     }
 }

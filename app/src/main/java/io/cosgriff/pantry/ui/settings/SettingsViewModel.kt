@@ -3,7 +3,7 @@ package io.cosgriff.pantry.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
@@ -26,25 +26,25 @@ data class SettingsState(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val pantry: PantryRepository,
+    private val locations: LocationRepository,
     private val settings: SettingsRepository,
 ) : ViewModel() {
     private val inUse = MutableStateFlow<Location.Custom?>(null)
 
     val state: StateFlow<SettingsState> =
-        combine(settings.settings(), pantry.locations(), inUse) { prefs, locations, busy -> SettingsState(prefs, locations, busy) }
+        combine(settings.settings(), locations.locations(), inUse) { prefs, all, busy -> SettingsState(prefs, all, busy) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsState())
 
     fun onAddLocation(name: String, shelfLifeDays: Int?) = viewModelScope.launch {
-        pantry.addLocation(name.trim(), shelfLifeDays?.let(Period::ofDays))
+        locations.addLocation(name.trim(), shelfLifeDays?.let(Period::ofDays))
     }
 
     fun onUpdateLocation(location: Location.Custom, name: String, shelfLifeDays: Int?) = viewModelScope.launch {
-        pantry.updateLocation(location.copy(name = name.trim(), shelfLife = shelfLifeDays?.let(Period::ofDays)))
+        locations.updateLocation(location.copy(name = name.trim(), shelfLife = shelfLifeDays?.let(Period::ofDays)))
     }
 
     fun onDeleteLocation(location: Location.Custom) = viewModelScope.launch {
-        if (!pantry.deleteLocation(location)) inUse.value = location
+        if (!locations.deleteLocation(location)) inUse.value = location
     }
 
     fun onDismissInUse() {
