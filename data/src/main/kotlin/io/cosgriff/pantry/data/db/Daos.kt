@@ -25,6 +25,9 @@ interface ItemDao {
 
     @Query("DELETE FROM items WHERE id = :id")
     suspend fun delete(id: Long)
+
+    @Query("SELECT COUNT(*) FROM items WHERE locationId = :locationId")
+    suspend fun countIn(locationId: Long): Int
 }
 
 @Dao

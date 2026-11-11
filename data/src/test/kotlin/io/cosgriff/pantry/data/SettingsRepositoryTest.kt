@@ -90,4 +90,21 @@ class SettingsRepositoryTest {
         }
         assertEquals(PantrySettings(), settings.settings().first())
     }
+
+    @Test
+    fun `a new item starts in the last used location, or the default one when set`() = runBlocking {
+        assertEquals(Location.Dry, settings.newItemLocation())
+        settings.setLastUsedLocation(Location.Freezer)
+        assertEquals(Location.Freezer, settings.newItemLocation())
+        settings.setDefaultLocation(DefaultLocation.Fixed(Location.Fridge))
+        assertEquals(Location.Fridge, settings.newItemLocation())
+    }
+
+    @Test
+    fun `a deleted last used location falls back to Dry`() = runBlocking {
+        val garage = pantry.addLocation("Garage", null)
+        settings.setLastUsedLocation(garage)
+        pantry.deleteLocation(garage)
+        assertEquals(Location.Dry, settings.newItemLocation())
+    }
 }

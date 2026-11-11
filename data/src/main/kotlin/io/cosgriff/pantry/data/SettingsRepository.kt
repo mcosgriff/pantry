@@ -15,6 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 /**
  * The Pantry settings screen's values, in DataStore. A value never set reads as [PantrySettings]' default, and
@@ -58,6 +59,20 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    /**
+     * Where a new item starts: the default location, or with "Last used" the location of the last item added
+     * (Dry before any). A location deleted since falls back to Dry.
+     */
+    suspend fun newItemLocation(): Location {
+        val prefs = store.data.first()
+        val locations = pantry.locations().first()
+        val key = prefs[DEFAULT_LOCATION] ?: prefs[LAST_USED_LOCATION]
+        return locations.firstOrNull { it.key() == key } ?: Location.Dry
+    }
+
+    /** Remembers where the last new item went, for "Last used". */
+    suspend fun setLastUsedLocation(location: Location) = store.edit { it[LAST_USED_LOCATION] = location.key() }
+
     suspend fun setUnitSystem(system: UnitSystem) = store.edit { it[UNIT_SYSTEM] = system.name }
 
     private companion object {
@@ -67,6 +82,7 @@ class SettingsRepository @Inject constructor(
         val BATCH_SCAN = booleanPreferencesKey("batch_scan_by_default")
         val DEFAULT_LOCATION = stringPreferencesKey("default_location")
         val UNIT_SYSTEM = stringPreferencesKey("unit_system")
+        val LAST_USED_LOCATION = stringPreferencesKey("last_used_location")
 
         /** Stable key for a location in settings: the built-in name, or `custom:<id>`. */
         fun Location.key(): String = builtInKey() ?: "custom:${(this as Location.Custom).id}"

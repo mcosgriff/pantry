@@ -39,6 +39,8 @@ object PantryDimens {
     val iconMedium = 20.dp
     val chipHeight = 36.dp // location tabs; the banner's badge
     val tileSize = 40.dp // a location's letter tile
+    val tileSmall = 32.dp // the letter tile in a settings row
+    val rowTall = 60.dp // a settings row with a second line
     val photoSize = 60.dp // an item's photo on Item details
     val emptyArtWidth = 160.dp
     val emptyArtHeight = 128.dp

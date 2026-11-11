@@ -1,6 +1,8 @@
 package io.cosgriff.pantry.ui.screens
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.ui.item.ItemDetailsActions
 import io.cosgriff.pantry.ui.item.ItemDetailsContent
 import io.cosgriff.pantry.ui.item.previewState as itemDetailsState
@@ -9,6 +11,10 @@ import io.cosgriff.pantry.ui.pantry.PantryListContent
 import io.cosgriff.pantry.ui.pantry.PantryListState
 import io.cosgriff.pantry.ui.pantry.previewState
 import io.cosgriff.pantry.ui.pantry.previewToday
+import io.cosgriff.pantry.ui.settings.SettingsActions
+import io.cosgriff.pantry.ui.settings.SettingsContent
+import io.cosgriff.pantry.ui.settings.SettingsState
+import java.time.Period
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,6 +44,17 @@ class ScreensScreenshotTest(private val shade: Shade) {
 
     @Test
     fun itemDetails() = compose.shoot("item_details", shade) { ItemDetailsContent(itemDetailsState, ItemDetailsActions()) }
+
+    @Test
+    fun settings() = compose.shoot("settings", shade) {
+        SettingsContent(
+            SettingsState(
+                settings = PantrySettings(batchScanByDefault = true),
+                locations = Location.defaults + Location.Custom("Sample garage fridge", Period.ofDays(5), id = 4),
+            ),
+            SettingsActions(),
+        )
+    }
 
     companion object {
         @JvmStatic

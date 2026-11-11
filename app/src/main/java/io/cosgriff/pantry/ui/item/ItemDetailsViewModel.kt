@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.QuantityUnit
@@ -31,6 +32,7 @@ data class ItemDetailsState(
 @HiltViewModel
 class ItemDetailsViewModel @Inject constructor(
     private val pantry: PantryRepository,
+    private val settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ItemDetailsState(today = LocalDate.now(clock)))
@@ -45,7 +47,7 @@ class ItemDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             val today = LocalDate.now(clock)
             val locations = pantry.locations().first()
-            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today)
+            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation())
             _state.update { it.copy(today = today, draft = draft, locations = locations) }
         }
     }
@@ -67,6 +69,7 @@ class ItemDetailsViewModel @Inject constructor(
         val item = _state.value.draft?.toItem() ?: return
         viewModelScope.launch {
             pantry.save(item)
+            if (item.id == 0L) settings.setLastUsedLocation(item.location)
             _state.update { it.copy(done = true) }
         }
     }
