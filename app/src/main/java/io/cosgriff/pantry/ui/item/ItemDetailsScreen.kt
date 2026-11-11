@@ -66,7 +66,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
@@ -169,7 +168,7 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
                     .padding(insets)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = PantryDimens.space5, vertical = PantryDimens.space1),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset),
             ) {
                 NameCard(draft, actions.onName)
                 LocationPicker(draft.location, state.locations, actions.onLocation)
@@ -195,13 +194,13 @@ private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
     val colors = PantryTheme.colors
     val nameLabel = stringResource(R.string.details_name)
     PantryCard {
-        Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(PantryDimens.spaceInset), horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset), verticalAlignment = Alignment.CenterVertically) {
             // The photo is a placeholder until items can have one.
             Box(
                 Modifier
-                    .size(60.dp)
+                    .size(PantryDimens.photoSize)
                     .background(colors.surfaceMuted, MaterialTheme.shapes.medium)
-                    .border(1.dp, colors.borderStrong, MaterialTheme.shapes.medium),
+                    .border(PantryDimens.hairline, colors.borderStrong, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(stringResource(R.string.details_photo), style = MaterialTheme.typography.labelSmall.copy(letterSpacing = MaterialTheme.typography.bodySmall.letterSpacing), color = colors.inkMuted)
@@ -257,7 +256,7 @@ private fun LocationPicker(selected: Location, locations: List<Location>, onSele
                         .weight(1f)
                         .height(PantryDimens.tapMin)
                         .background(if (on) container else colors.surface, shape)
-                        .border(if (on) 2.dp else 1.dp, if (on) content else colors.border, shape)
+                        .border(if (on) PantryDimens.borderSelected else PantryDimens.hairline, if (on) content else colors.border, shape)
                         .selectable(selected = on, role = Role.RadioButton) { onSelect(location) },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -281,9 +280,9 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
         .fillMaxWidth()
         .height(PantryDimens.fieldHeight)
         .background(colors.surface, shape)
-        .border(1.dp, colors.border, shape)
+        .border(PantryDimens.hairline, colors.border, shape)
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
-        Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
             Row(field.padding(horizontal = PantryDimens.space1), verticalAlignment = Alignment.CenterVertically) {
                 StepButton("−", stringResource(R.string.details_decrease)) { onStep(-1) }
@@ -296,7 +295,7 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
                 StepButton("+", stringResource(R.string.details_increase)) { onStep(1) }
             }
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_unit))
             var open by remember { mutableStateOf(false) }
             Box {
@@ -349,7 +348,7 @@ private fun ExpiryCard(draft: ItemDraft, today: LocalDate, actions: ItemDetailsA
     val colors = PantryTheme.colors
     var picking by rememberSaveable { mutableStateOf(false) }
     PantryCard {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+        Column(Modifier.padding(PantryDimens.spaceInset), verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { FieldLabel(stringResource(R.string.details_expires)) }
                 ExpiryBadge(expiryStatus(draft.expires, today))
@@ -360,15 +359,15 @@ private fun ExpiryCard(draft: ItemDraft, today: LocalDate, actions: ItemDetailsA
                     .heightIn(min = PantryDimens.tapMin)
                     .clickable(onClickLabel = stringResource(R.string.details_pick_date)) { picking = true },
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
             ) {
-                Icon(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(PantryDimens.iconMedium))
                 Text(
                     draft.expires?.let { longDate(it) } ?: stringResource(R.string.details_no_date),
                     style = PantryTheme.text.dateDisplay,
                 )
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
                 QuickPick.entries.forEach { pick ->
                     val label = stringResource(
                         when (pick) {
@@ -381,7 +380,7 @@ private fun ExpiryCard(draft: ItemDraft, today: LocalDate, actions: ItemDetailsA
                     OutlinedButton(
                         onClick = { actions.onQuickPick(pick) },
                         shape = MaterialTheme.shapes.extraLarge,
-                        border = BorderStroke(1.dp, colors.border),
+                        border = BorderStroke(PantryDimens.hairline, colors.border),
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surfaceMuted, contentColor = colors.ink),
                         contentPadding = PaddingValues(horizontal = PantryDimens.space3),
                     ) {
@@ -411,7 +410,7 @@ private fun ExpiryBadge(status: ExpiryStatus) {
         color = fg,
         modifier = Modifier
             .background(bg, MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = PantryDimens.space2, vertical = 3.dp),
+            .padding(horizontal = PantryDimens.space2, vertical = PantryDimens.spaceBadge),
     )
 }
 
@@ -444,7 +443,7 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
                 onClick = { editingLowStock = true },
             )
             HorizontalDivider(color = colors.divider)
-            Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = PantryDimens.space3), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
+            Column(Modifier.padding(start = PantryDimens.spaceInset, end = PantryDimens.spaceInset, top = PantryDimens.spaceIcon, bottom = PantryDimens.space3), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
                 val notesLabel = stringResource(R.string.details_notes)
                 Text(notesLabel, style = MaterialTheme.typography.bodyLarge)
                 BasicTextField(
@@ -542,17 +541,17 @@ private fun Footer(draft: ItemDraft, onRemove: () -> Unit, onSave: () -> Unit) {
             .background(colors.ground)
             .navigationBarsPadding()
             .padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.space3, bottom = PantryDimens.space4),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
     ) {
         if (!draft.isNew) {
             OutlinedButton(
                 onClick = onRemove,
                 shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, colors.dangerBorder),
+                border = BorderStroke(PantryDimens.hairline, colors.dangerBorder),
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surface, contentColor = colors.danger),
                 modifier = Modifier.height(PantryDimens.buttonHeight),
             ) {
-                Icon(painterResource(R.drawable.ic_remove), contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_remove), contentDescription = null, modifier = Modifier.size(PantryDimens.iconSmall))
                 Spacer(Modifier.size(PantryDimens.space2))
                 Text(stringResource(R.string.details_remove), style = MaterialTheme.typography.labelLarge)
             }
@@ -600,9 +599,9 @@ private fun RemoveDialog(draft: ItemDraft, onConfirm: () -> Unit, onDismiss: () 
     )
 }
 
-// Previews use a made-up item, marked as a sample.
-private val previewToday = LocalDate.of(2026, 11, 10)
-private val previewState = ItemDetailsState(
+// Previews and the screenshot test use a made-up item, marked as a sample.
+internal val previewToday = LocalDate.of(2026, 11, 10)
+internal val previewState = ItemDetailsState(
     today = previewToday,
     draft = ItemDraft.new(previewToday, Location.Fridge, barcode = "096619321084").copy(
         id = 1,

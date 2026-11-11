@@ -31,8 +31,21 @@ jobs:
       # Also validates the Gradle wrapper jar.
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
+      # The unit tests, the screenshot and accessibility tests among them, with Kover measuring them; the
+      # merged report goes to Codecov.
       - name: Unit tests
-        run: ./gradlew :domain:test testDebugUnitTest
+        run: ./gradlew :domain:test testDebugUnitTest koverXmlReportCoverage
+
+      # Coverage only: a failed upload doesn't fail the build. CODECOV_TOKEN is a repository secret, so
+      # a pull request from a fork uploads nothing.
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/reports/kover/reportCoverage.xml
+          disable_search: true
+          fail_ci_if_error: false
 
       - name: Android lint
         run: ./gradlew lintDebug
@@ -56,6 +69,16 @@ jobs:
             git status --porcelain -- data/schemas
             exit 1
           fi
+
+      # The screenshot tests run with the unit tests: on a mismatch, Roborazzi writes each screen as drawn
+      # now beside its reference and the difference (`*_compare.png`).
+      - name: Upload screenshot differences
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshot-differences
+          path: app/build/outputs/roborazzi
+          if-no-files-found: ignore
 
       # Each test's output and the HTML report, for a failure that only happens here.
       - name: Upload test results

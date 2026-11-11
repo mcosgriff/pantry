@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.roborazzi)
+    alias(libs.plugins.kover)
 }
 
 // CI passes -PversionName=1.2.0 -PversionCode=<run number>. Local builds use version.txt, which the
@@ -69,6 +71,11 @@ android {
         compose = true
     }
 
+    // The screenshot tests draw screens under Robolectric, which needs the app's resources and fonts.
+    testOptions.unitTests.isIncludeAndroidResources = true
+    // Gradle's default 512 MB test heap is too little for Robolectric drawing Compose screens.
+    testOptions.unitTests.all { it.maxHeapSize = "2g" }
+
     lint {
         abortOnError = true
         // No warnings are kept: a new one fails the build, as an error does.
@@ -108,4 +115,22 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.roborazzi.accessibility.check)
+    // The empty activity the Compose test rule draws into; only in the debug manifest, never the release.
+    debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// Feeds the merged coverage report (root build.gradle.kts): the debug unit tests only, so the screenshot
+// tests aren't run twice.
+kover {
+    currentProject {
+        createVariant("coverage") { add("debug") }
+    }
 }

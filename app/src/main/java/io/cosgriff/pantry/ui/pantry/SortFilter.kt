@@ -43,7 +43,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ItemFilter
 import io.cosgriff.pantry.domain.SortOrder
@@ -70,8 +69,8 @@ internal fun SortFilterSheet(state: PantryListState, actions: PantryListActions,
         dragHandle = {
             Box(
                 Modifier
-                    .padding(top = 10.dp)
-                    .size(width = 40.dp, height = 4.dp)
+                    .padding(top = PantryDimens.spaceIcon)
+                    .size(width = PantryDimens.sheetHandleWidth, height = PantryDimens.sheetHandleHeight)
                     .background(colors.borderStrong, MaterialTheme.shapes.extraSmall),
             )
         },
@@ -114,10 +113,10 @@ internal fun SortFilterSheet(state: PantryListState, actions: PantryListActions,
                         ) {
                             Box(
                                 Modifier
-                                    .height(36.dp)
+                                    .height(PantryDimens.chipHeight)
                                     .background(if (on) colors.surfaceMuted else colors.surface, shape)
-                                    .border(if (on) 2.dp else 1.dp, if (on) colors.accent else colors.border, shape)
-                                    .padding(horizontal = 14.dp),
+                                    .border(if (on) PantryDimens.borderSelected else PantryDimens.hairline, if (on) colors.accent else colors.border, shape)
+                                    .padding(horizontal = PantryDimens.spaceInset),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
@@ -130,11 +129,11 @@ internal fun SortFilterSheet(state: PantryListState, actions: PantryListActions,
                     }
                 }
             }
-            Row(Modifier.padding(top = PantryDimens.space2), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.padding(top = PantryDimens.space2), horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon)) {
                 OutlinedButton(
                     onClick = actions.onResetView,
                     shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(1.dp, colors.borderStrong),
+                    border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surface, contentColor = colors.ink),
                     modifier = Modifier
                         .weight(1f)
@@ -202,11 +201,11 @@ internal fun SearchEmpty(query: String, onAdd: () -> Unit) {
     ) {
         Box(
             Modifier
-                .size(72.dp)
+                .size(PantryDimens.emptyIconCircle)
                 .background(colors.surfaceMuted, MaterialTheme.shapes.extraLarge),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(32.dp))
+            Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(PantryDimens.iconLarge))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
             Text(
@@ -225,7 +224,7 @@ internal fun SearchEmpty(query: String, onAdd: () -> Unit) {
         OutlinedButton(
             onClick = onAdd,
             shape = MaterialTheme.shapes.medium,
-            border = BorderStroke(1.dp, colors.borderStrong),
+            border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
             modifier = Modifier
                 .fillMaxWidth()
