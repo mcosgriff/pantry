@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 // CI passes -PversionName=1.2.0 -PversionCode=<run number>. Local builds use version.txt, which the
@@ -82,6 +84,10 @@ kotlin {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":data"))
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

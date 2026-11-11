@@ -35,7 +35,7 @@ jobs:
         run: ./gradlew :domain:test testDebugUnitTest
 
       - name: Android lint
-        run: ./gradlew :app:lintDebug
+        run: ./gradlew lintDebug
 
       # Release builds run R8; catches shrinking problems before a tag does. No signing secrets here,
       # so the APK is unsigned.
@@ -46,6 +46,16 @@ jobs:
       # .github/privacy/permissions.txt. The same check as release.yml, so a problem shows before merging.
       - name: Exodus tracker scan
         run: .github/scripts/exodus-scan.sh app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/exodus"
+
+      # Room exports schemas during compilation. A change here that isn't committed usually means a schema
+      # change without its migration: the pantry lives only on the phone, so that is data loss.
+      - name: Room schemas committed
+        run: |
+          if [ -n "$(git status --porcelain -- data/schemas)" ]; then
+            echo "::error::Room schema changed but data/schemas isn't committed. Commit the new schema JSON and add a migration."
+            git status --porcelain -- data/schemas
+            exit 1
+          fi
 
       # Each test's output and the HTML report, for a failure that only happens here.
       - name: Upload test results
@@ -63,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lint-report
-          path: app/build/reports/lint-results-debug.html
+          path: "*/build/reports/lint-results-debug.html"
           if-no-files-found: ignore

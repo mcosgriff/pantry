@@ -19,4 +19,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "pantry"
 
-include(":app", ":domain")
+include(":app", ":data", ":domain")
