@@ -4,8 +4,6 @@ import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.ItemEntity
 import io.cosgriff.pantry.data.db.KnownProductDao
 import io.cosgriff.pantry.data.db.KnownProductEntity
-import io.cosgriff.pantry.data.db.LocationDao
-import io.cosgriff.pantry.data.db.LocationEntity
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
@@ -13,46 +11,41 @@ import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.number
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.Period
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
-/** The pantry as :domain sees it: items and locations, read as Flows for the screens. */
+/**
+ * The pantry as :domain sees it: items and remembered products, read as Flows for the screens. Locations are
+ * [LocationRepository]'s (#51).
+ */
 @Singleton
 class PantryRepository @Inject constructor(
     private val items: ItemDao,
-    private val locations: LocationDao,
+    private val locations: LocationRepository,
     private val known: KnownProductDao,
 ) {
-    /** Every location, built-in ones first in their seeded order. */
-    fun locations(): Flow<List<Location>> = locations.observeAll().map { rows -> rows.map { it.toDomain() } }
-
     /** Every item, soonest expiry first and undated last. */
     fun items(): Flow<List<PantryItem>> =
-        combine(items.observeAll(), locations.observeAll()) { itemRows, locationRows ->
-            val byId = locationRows.associate { it.id to it.toDomain() }
+        combine(items.observeAll(), locations.byId()) { itemRows, byId ->
             itemRows.map { it.toDomain(byId.getValue(it.locationId)) }
         }
 
-    suspend fun item(id: Long): PantryItem? {
-        val row = items.get(id) ?: return null
-        return row.toDomain(locationById(row.locationId))
-    }
+    suspend fun item(id: Long): PantryItem? = items.get(id)?.let { it.toDomain(locationOf(it)) }
 
     /** The most recently added item with [barcode], to fill in a scanned product the pantry has seen (#12). */
-    suspend fun lastWithBarcode(barcode: String): PantryItem? {
-        val row = items.lastWithBarcode(barcode) ?: return null
-        return row.toDomain(locationById(row.locationId))
-    }
+    suspend fun lastWithBarcode(barcode: String): PantryItem? = items.lastWithBarcode(barcode)?.let { it.toDomain(locationOf(it)) }
 
-    /** The name the user gave [barcode] before (#12), or `null`. */
+    /** The name the user gave [barcode] before (#12), or `null`. Its location is `null` once deleted (`DeletedLocation`). */
     suspend fun knownProduct(barcode: String): KnownProduct? {
         val row = known.get(barcode) ?: return null
-        val location = row.locationId?.let { id -> locations.all().firstOrNull { it.id == id }?.toDomain() }
-        return KnownProduct(row.barcode, row.name, location, amountUnit(row.unit, row.contentsAmount, row.contentsUnit))
+        return KnownProduct(
+            row.barcode,
+            row.name,
+            row.locationId?.let { locations.location(it) },
+            amountUnit(row.unit, row.contentsAmount, row.contentsUnit),
+        )
     }
 
     /** Remembers [product]'s name, location and unit (with any contents size) for its barcode, replacing what was remembered. */
@@ -61,7 +54,7 @@ class PantryRepository @Inject constructor(
             KnownProductEntity(
                 barcode = product.barcode,
                 name = product.name,
-                locationId = product.location?.let { locationId(it) },
+                locationId = product.location?.let { locations.idOf(it) },
                 unit = product.unit.storedName,
                 contentsAmount = product.unit.storedContentsAmount,
                 contentsUnit = product.unit.storedContentsUnit,
@@ -71,60 +64,15 @@ class PantryRepository @Inject constructor(
 
     /** Saves [item]: a new one when its id is 0, otherwise the one with its id. Returns the id. */
     suspend fun save(item: PantryItem): Long {
-        val id = items.upsert(item.toEntity(locationId(item.location)))
+        val id = items.upsert(item.toEntity(locations.idOf(item.location)))
         return if (item.id == 0L) id else item.id
     }
 
     suspend fun delete(id: Long) = items.delete(id)
 
-    /** Adds a location the user named, after the others. Returns it with its id. */
-    suspend fun addLocation(name: String, shelfLife: Period?): Location.Custom {
-        val draft = Location.Custom(name = name, shelfLife = shelfLife)
-        val id = locations.insert(
-            LocationEntity(builtIn = null, name = draft.name, shelfLife = shelfLife?.toString(), position = locations.nextPosition()),
-        )
-        return draft.copy(id = id)
-    }
-
-    /** Renames a location the user added, or changes its shelf life. */
-    suspend fun updateLocation(location: Location.Custom) {
-        val row = locations.all().first { it.id == location.id }
-        locations.update(row.copy(name = location.name, shelfLife = location.shelfLife?.toString()))
-    }
-
-    /**
-     * Deletes a location the user added, if it holds no items. Returns false, deleting nothing, if it does: the
-     * user moves or removes them first.
-     */
-    suspend fun deleteLocation(location: Location.Custom): Boolean {
-        if (items.countIn(location.id) > 0) return false
-        locations.delete(locations.all().first { it.id == location.id })
-        return true
-    }
-
-    private suspend fun locationById(id: Long): Location =
-        locations.all().first { it.id == id }.toDomain()
-
-    private suspend fun locationId(location: Location): Long = when (location) {
-        is Location.Custom -> location.id.also { require(it != 0L) { "Save a new location before an item in it" } }
-        else -> checkNotNull(locations.builtIn(checkNotNull(location.builtInKey()))) { "Built-in location missing: $location" }.id
-    }
-}
-
-/** `locations.builtIn` of a built-in location; `null` for one the user added. */
-internal fun Location.builtInKey(): String? = when (this) {
-    Location.Dry -> "DRY"
-    Location.Fridge -> "FRIDGE"
-    Location.Freezer -> "FREEZER"
-    is Location.Custom -> null
-}
-
-internal fun LocationEntity.toDomain(): Location = when (builtIn) {
-    "DRY" -> Location.Dry
-    "FRIDGE" -> Location.Fridge
-    "FREEZER" -> Location.Freezer
-    null -> Location.Custom(name = checkNotNull(name), shelfLife = shelfLife?.let(Period::parse), id = id)
-    else -> error("Unknown built-in location: $builtIn")
+    /** An item's location always exists: the foreign key refuses to delete a location that holds items. */
+    private suspend fun locationOf(row: ItemEntity): Location =
+        checkNotNull(locations.location(row.locationId)) { "Item ${row.id} is in missing location ${row.locationId}" }
 }
 
 internal fun ItemEntity.toDomain(location: Location) = PantryItem(

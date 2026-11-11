@@ -9,6 +9,7 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.execSQL
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.ShoppingRepository
@@ -135,7 +136,7 @@ class MigrationTest {
         val db = Room.databaseBuilder<PantryDatabase>(context, name).build()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         try {
-            val pantry = PantryRepository(db.items(), db.locations(), db.knownProducts())
+            val pantry = PantryRepository(db.items(), LocationRepository(db.locations(), db.items()), db.knownProducts())
             val file = File(context.filesDir, "migration_units.preferences_pb").apply { delete() }
             val shopping = ShoppingRepository(db.shopping(), pantry, PreferenceDataStoreFactory.create(scope = scope) { file })
             val meals = MealRepository(db.meals(), pantry, shopping)
