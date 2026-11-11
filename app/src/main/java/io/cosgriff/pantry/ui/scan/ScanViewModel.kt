@@ -3,6 +3,7 @@ package io.cosgriff.pantry.ui.scan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.ProductLookup
 import io.cosgriff.pantry.data.SettingsRepository
@@ -107,6 +108,7 @@ data class ScanState(
 @HiltViewModel
 class ScanViewModel @Inject constructor(
     private val pantry: PantryRepository,
+    private val locations: LocationRepository,
     private val settings: SettingsRepository,
     private val products: ProductLookup,
     private val clock: Clock,
@@ -121,8 +123,8 @@ class ScanViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val prefs = settings.settings().first()
-            val locations = pantry.locations().first()
-            _state.update { it.copy(batch = prefs.batchScanByDefault, locations = locations) }
+            val all = locations.locations().first()
+            _state.update { it.copy(batch = prefs.batchScanByDefault, locations = all) }
         }
     }
 

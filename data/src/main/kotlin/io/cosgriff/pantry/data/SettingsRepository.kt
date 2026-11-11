@@ -8,10 +8,13 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
+import io.cosgriff.pantry.domain.DeletedLocation
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.LocationKey
 import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.domain.UnitSystem
+import io.cosgriff.pantry.domain.withKey
 import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,14 +25,15 @@ import kotlinx.coroutines.flow.map
 
 /**
  * The Pantry settings screen's values, in DataStore. A value never set reads as [PantrySettings]' default, and
- * a stored value the app no longer understands does too, rather than failing the screen.
+ * a stored value the app no longer understands does too, rather than failing the screen. Locations are stored
+ * by their `LocationKey` and resolved through [LocationRepository] (#51).
  */
 @Singleton
 class SettingsRepository @Inject constructor(
     private val store: DataStore<Preferences>,
-    private val pantry: PantryRepository,
+    private val locations: LocationRepository,
 ) {
-    fun settings(): Flow<PantrySettings> = combine(store.data, pantry.locations()) { prefs, locations ->
+    fun settings(): Flow<PantrySettings> = combine(store.data, locations.locations()) { prefs, all ->
         val defaults = PantrySettings()
         // Before #27 one "notifications" switch stood for both alerts; a value stored then still reads as both.
         val legacy = prefs[NOTIFICATIONS]
@@ -40,8 +44,7 @@ class SettingsRepository @Inject constructor(
             dailyDigestAt = prefs[DIGEST_MINUTE]?.let { runCatching { LocalTime.ofSecondOfDay(it * 60L) }.getOrNull() }
                 ?: defaults.dailyDigestAt,
             batchScanByDefault = prefs[BATCH_SCAN] ?: defaults.batchScanByDefault,
-            defaultLocation = prefs[DEFAULT_LOCATION]?.let { key -> locations.firstOrNull { it.key() == key } }
-                ?.let(DefaultLocation::Fixed) ?: DefaultLocation.LastUsed,
+            defaultLocation = DeletedLocation.defaultLocation(all.withKey(prefs[DEFAULT_LOCATION]?.let(LocationKey::parse))),
             unitSystem = prefs[UNIT_SYSTEM]?.let { name -> UnitSystem.entries.firstOrNull { it.name == name } }
                 ?: defaults.unitSystem,
             productLookup = prefs[PRODUCT_LOOKUP]?.let { name -> LookupChoice.entries.firstOrNull { it.name == name } }
@@ -75,23 +78,22 @@ class SettingsRepository @Inject constructor(
     suspend fun setDefaultLocation(location: DefaultLocation) = store.edit {
         when (location) {
             DefaultLocation.LastUsed -> it.remove(DEFAULT_LOCATION)
-            is DefaultLocation.Fixed -> it[DEFAULT_LOCATION] = location.location.key()
+            is DefaultLocation.Fixed -> it[DEFAULT_LOCATION] = LocationKey.of(location.location).text
         }
     }
 
     /**
      * Where a new item starts: the default location, or with "Last used" the location of the last item added
-     * (Dry before any). A location deleted since falls back to Dry.
+     * (Dry before any). A location deleted since is skipped as `DeletedLocation.newItem` says.
      */
     suspend fun newItemLocation(): Location {
         val prefs = store.data.first()
-        val locations = pantry.locations().first()
-        val key = prefs[DEFAULT_LOCATION] ?: prefs[LAST_USED_LOCATION]
-        return locations.firstOrNull { it.key() == key } ?: Location.Dry
+        suspend fun resolve(text: String?) = text?.let(LocationKey::parse)?.let { locations.location(it) }
+        return DeletedLocation.newItem(default = resolve(prefs[DEFAULT_LOCATION]), lastUsed = resolve(prefs[LAST_USED_LOCATION]))
     }
 
     /** Remembers where the last new item went, for "Last used". */
-    suspend fun setLastUsedLocation(location: Location) = store.edit { it[LAST_USED_LOCATION] = location.key() }
+    suspend fun setLastUsedLocation(location: Location) = store.edit { it[LAST_USED_LOCATION] = LocationKey.of(location).text }
 
     /** Names given to store-packed items (#13), most recent first, for the scan sheet's quick picks. */
     fun recentStorePacked(): Flow<List<String>> =
@@ -126,8 +128,5 @@ class SettingsRepository @Inject constructor(
         val RECENT_STORE_PACKED = stringPreferencesKey("recent_store_packed")
         const val RECENT_STORE_PACKED_MAX = 6
         const val NAME_SEPARATOR = "\n"
-
-        /** Stable key for a location in settings: the built-in name, or `custom:<id>`. */
-        fun Location.key(): String = builtInKey() ?: "custom:${(this as Location.Custom).id}"
     }
 }
