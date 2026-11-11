@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
+import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.ScannedCode
 import io.cosgriff.pantry.domain.readRetailCode
@@ -73,12 +74,14 @@ class ScanViewModel @Inject constructor(
                 is ScannedCode.VariableWeight -> _state.update { it.copy(phase = ScanPhase.StorePacked) }
                 is ScannedCode.Product -> {
                     val today = LocalDate.now(clock)
-                    val seen = pantry.lastWithBarcode(code.code)
-                    val location = seen?.location ?: settings.newItemLocation()
+                    // A name the user gave this barcode (#12); before that table, the last item with it.
+                    val known = pantry.knownProduct(code.code)
+                        ?: pantry.lastWithBarcode(code.code)?.let { KnownProduct(code.code, it.name, it.location, it.quantity.unit) }
+                    val location = known?.location ?: settings.newItemLocation()
                     val draft = ItemDraft.new(today, location, barcode = code.code).let { d ->
-                        if (seen == null) d else d.copy(name = seen.name, quantity = d.quantity.copy(unit = seen.quantity.unit))
+                        if (known == null) d else d.copy(name = known.name, quantity = d.quantity.copy(unit = known.unit))
                     }
-                    _state.update { it.copy(today = today, phase = ScanPhase.Found(draft, known = seen != null)) }
+                    _state.update { it.copy(today = today, phase = ScanPhase.Found(draft, known = known != null)) }
                 }
                 ScannedCode.Invalid -> Unit
             }
@@ -101,13 +104,14 @@ class ScanViewModel @Inject constructor(
         val item = found.draft.toItem() ?: return
         viewModelScope.launch {
             pantry.save(item)
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
             settings.setLastUsedLocation(item.location)
             _state.update { it.copy(added = it.added + 1, phase = ScanPhase.Looking, finished = !it.batch) }
             paused = false
         }
     }
 
-    /** Closes the sheet without adding, and looks again. */
+    /** Closes the sheet without adding ("Skip"), and looks again. */
     fun onDismiss() {
         _state.update { it.copy(phase = ScanPhase.Looking) }
         paused = false

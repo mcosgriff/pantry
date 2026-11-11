@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
+import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
@@ -72,6 +73,8 @@ class ItemDetailsViewModel @Inject constructor(
         val item = _state.value.draft?.toItem() ?: return
         viewModelScope.launch {
             pantry.save(item)
+            // A named barcode fills in the next scan of it (#12).
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
             if (item.id == 0L) settings.setLastUsedLocation(item.location)
             _state.update { it.copy(done = true) }
         }

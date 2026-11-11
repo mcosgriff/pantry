@@ -16,7 +16,7 @@ filters (opened, low stock, no date, added this week), a tab per location and a 
 week and next, each with one tap to throw it out, mark it used up, or freeze it (moved to the Freezer with
 a new date), and Undo. Items are
 scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan adds one after another,
-and a barcode seen before fills in its name) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
+and a barcode you have named once fills in its name, location and unit on the next scan) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. A new install shows an empty pantry. The plan,

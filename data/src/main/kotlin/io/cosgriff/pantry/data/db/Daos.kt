@@ -53,3 +53,12 @@ interface LocationDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM locations")
     suspend fun nextPosition(): Int
 }
+
+@Dao
+interface KnownProductDao {
+    @Query("SELECT * FROM known_products WHERE barcode = :barcode")
+    suspend fun get(barcode: String): KnownProductEntity?
+
+    @Upsert
+    suspend fun upsert(product: KnownProductEntity)
+}
