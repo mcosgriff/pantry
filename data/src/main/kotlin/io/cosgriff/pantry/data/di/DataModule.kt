@@ -10,7 +10,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.cosgriff.pantry.data.KeystoreSecretBox
 import io.cosgriff.pantry.data.OpenFoodFacts
+import io.cosgriff.pantry.data.OpenFoodFactsWriter
+import io.cosgriff.pantry.data.ProductWriter
+import io.cosgriff.pantry.data.SecretBox
+import io.cosgriff.pantry.data.UrlConnectionPost
 import io.cosgriff.pantry.data.ProductLookup
 import io.cosgriff.pantry.data.UrlConnectionGet
 import io.cosgriff.pantry.data.db.ItemDao
@@ -44,10 +49,27 @@ object DataModule {
      * Open Food Facts asks of apps; no personal contact.
      */
     @Provides @Singleton
-    fun productLookup(@ApplicationContext context: Context): ProductLookup {
-        val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
-        return OpenFoodFacts(UrlConnectionGet(), userAgent = "Pantry/$version (https://github.com/mcosgriff/pantry)")
+    fun productLookup(@ApplicationContext context: Context): ProductLookup =
+        OpenFoodFacts(UrlConnectionGet(), userAgent = userAgent(appVersion(context)))
+
+    /**
+     * Adding products to Open Food Facts with the user's own account (#42, `docs/adr/0004`): the same
+     * `User-Agent`, and the app's name and version in each write, as Open Food Facts asks of apps.
+     */
+    @Provides @Singleton
+    fun productWriter(@ApplicationContext context: Context): ProductWriter {
+        val version = appVersion(context)
+        return OpenFoodFactsWriter(UrlConnectionPost(), userAgent = userAgent(version), appVersion = version)
     }
+
+    /** Seals the Open Food Facts session with a key in the Android Keystore (`docs/adr/0004`). */
+    @Provides @Singleton
+    fun secretBox(): SecretBox = KeystoreSecretBox()
+
+    private fun appVersion(context: Context): String =
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
+
+    private fun userAgent(version: String) = "Pantry/$version (https://github.com/mcosgriff/pantry)"
 
     @Provides
     fun mealDao(db: PantryDatabase): MealDao = db.meals()

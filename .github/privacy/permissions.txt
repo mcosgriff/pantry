@@ -7,7 +7,8 @@
 # The Scan screen's permission page, before Android's prompt (#10):
 android.permission.CAMERA
 # Product lookup in Open Food Facts (#9, docs/adr/0001): granted at install, so the scan sheet asks before
-# the first lookup and the README explains it.
+# the first lookup and the README explains it. Also adding a product to Open Food Facts with the user's own
+# account (#42, docs/adr/0004), only after the user signs in and taps Share.
 android.permission.INTERNET
 
 # Merged in from libraries. Install-time; the user is never asked for it.

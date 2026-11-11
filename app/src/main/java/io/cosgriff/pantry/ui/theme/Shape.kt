@@ -73,6 +73,8 @@ object PantryDimens {
     val photoSize = 60.dp // an item's photo on Item details
     val emptyArtWidth = 160.dp
     val emptyArtHeight = 128.dp
+    val shareIconBox = 48.dp // the globe's square on the Open Food Facts share prompt (#42)
+    val shareIcon = 26.dp
 
     // Material asks for 48dp targets; the design's 44px is its floor, so the larger wins.
     val tapMin = 48.dp

@@ -191,6 +191,18 @@
     <string name="settings_batch_scan">Batch scan by default</string>
     <string name="settings_lookup">Product lookup</string>
     <string name="settings_lookup_on">Look up scanned barcodes</string>
+    <string name="settings_contributing">Contributing</string>
+    <string name="settings_contributing_when">When a product isn’t found</string>
+    <string name="settings_contributing_ask">Ask me</string>
+    <string name="settings_contributing_always">Always share</string>
+    <string name="settings_contributing_never">Never share</string>
+    <string name="settings_contributing_account">Open Food Facts account</string>
+    <string name="settings_contributing_signed_out">Not signed in</string>
+    <string name="settings_contributing_added">Products you’ve added</string>
+    <string name="settings_contributing_body">After a product Open Food Facts doesn’t have is named, Pantry can offer to add it there, under your own account. It sends the barcode, the name and any brand and size you type, nothing else. Shared data is public: ODbL, with each product’s data under DbCL.</string>
+    <string name="settings_sign_out_title">Sign out of Open Food Facts?</string>
+    <string name="settings_sign_out_body">Pantry forgets the session on this phone. Products you added stay in Open Food Facts.</string>
+    <string name="settings_sign_out">Sign out</string>
     <string name="settings_lookup_body">Names products the pantry doesn’t know from Open Food Facts, a free database run by volunteers. Pantry sends only the barcode, never store-packed meat and deli labels.</string>
     <string name="settings_default_location">Default location</string>
     <string name="settings_last_used">Last used</string>
@@ -413,6 +425,43 @@
     </plurals>
     <string name="meal_cooked_it">Cooked it — take from pantry</string>
     <string name="meal_already_cooked">Cooked</string>
+
+    <!-- Sharing a product Open Food Facts doesn't have (#42, docs/adr/0004). -->
+    <string name="share_title">Share with Open Food Facts?</string>
+    <string name="share_body">Open Food Facts is a free, open database of food products. Adding this one helps the next person who scans it, in any app.</string>
+    <string name="share_what">What gets shared</string>
+    <string name="share_sent_name">The barcode and the name you typed</string>
+    <string name="share_sent_details">Brand and size, if you add them</string>
+    <string name="share_sent_account">Your Open Food Facts user name, as the one who added it</string>
+    <string name="share_never_sent">Never your pantry, quantities, dates, photos or where you are</string>
+    <string name="share_licence">Shared data is public and free for anyone to reuse: the database under the Open Database Licence (ODbL), each product’s data under the Database Contents Licence (DbCL). Photos, which Pantry doesn’t send, would be CC BY-SA.</string>
+    <string name="share_always">Don’t ask again, always share</string>
+    <string name="share_not_now">Not now</string>
+    <string name="share_continue">Continue</string>
+    <string name="share_details_title">Add to Open Food Facts</string>
+    <string name="share_back">Back</string>
+    <string name="share_name">Name</string>
+    <string name="share_brand">Brand</string>
+    <string name="share_brand_hint">As printed on the package</string>
+    <string name="share_size">Size</string>
+    <string name="share_size_hint">As printed, e.g. 12 fl oz</string>
+    <string name="share_account">Your Open Food Facts account</string>
+    <string name="share_account_body">Products are added under your own account. Pantry sends your password to Open Food Facts once to sign in and keeps only the sign-in session, on this phone.</string>
+    <string name="share_user">User name</string>
+    <string name="share_password">Password</string>
+    <string name="share_create_account">No account? Create one at openfoodfacts.org</string>
+    <string name="share_as">Shared as %1$s. New products may appear after a volunteer checks them.</string>
+    <string name="share_skip">Skip</string>
+    <string name="share_send">Share product</string>
+    <string name="share_sending">Sharing…</string>
+    <string name="share_wrong_details">Open Food Facts didn’t accept that user name and password.</string>
+    <string name="share_offline">Couldn’t reach Open Food Facts. Try again in a moment.</string>
+    <string name="share_already_there">Someone has added this product meanwhile, so nothing was sent.</string>
+    <string name="share_signed_out">Your Open Food Facts session has ended. Sign in again to share.</string>
+    <string name="share_rejected">Open Food Facts didn’t take this product. Check the name and try again.</string>
+    <string name="share_done_title">Added to Open Food Facts</string>
+    <string name="share_done_body">Thank you. It helps the next person who scans it, once a volunteer has checked it.</string>
+    <string name="share_done">Done</string>
 
     <string name="nav_pantry">Pantry</string>
     <string name="nav_meal_prep">Meal prep</string>
