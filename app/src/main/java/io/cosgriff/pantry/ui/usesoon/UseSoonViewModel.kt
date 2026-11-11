@@ -40,7 +40,7 @@ class UseSoonViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UseSoonState(today = LocalDate.now(clock)))
 
     fun onAction(item: PantryItem) {
-        viewModelScope.launch { done.value = consumption.quickAction(item, LocalDate.now(clock)) }
+        viewModelScope.launch { done.value = consumption.takeQuickAction(item, LocalDate.now(clock)) }
     }
 
     /** Puts the item back as it was before the last quick action. */

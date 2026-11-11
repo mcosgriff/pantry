@@ -85,4 +85,16 @@ class ShoppingRepositoryTest {
         shopping.finishTrip()
         assertEquals(emptyList<String>(), shopping.lines().first().map { it.name })
     }
+
+    @Test
+    fun `finishing a trip clears a used-up entry hidden behind a running-low line`() = runBlocking {
+        val id = pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
+        db.shopping().insert(ShoppingEntryEntity(name = "Test milk", reason = "USED_UP", addedOn = today.toEpochDay()))
+        val milk = shopping.lines().first().single()
+        shopping.setInCart(milk.key, true)
+        shopping.finishTrip()
+        // Restocked after the trip: the running-low line leaves, and the hidden entry mustn't take its place.
+        pantry.save(checkNotNull(pantry.item(id)).copy(quantity = Quantity(BigDecimal("4"), QuantityUnit.Each)))
+        assertEquals(emptyList<String>(), shopping.lines().first().map { it.name })
+    }
 }

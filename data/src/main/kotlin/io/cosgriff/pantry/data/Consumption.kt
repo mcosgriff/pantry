@@ -8,7 +8,7 @@ import io.cosgriff.pantry.domain.QuickAction
 import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.cook
 import io.cosgriff.pantry.domain.freeze
-import io.cosgriff.pantry.domain.quickAction as chooseQuickAction
+import io.cosgriff.pantry.domain.quickAction
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,8 +35,8 @@ class Consumption @Inject constructor(
     private val meals: MealRepository,
 ) {
     /** Takes Use soon's quick action on [item] (`quickAction` decides which); returns what undoes it. */
-    suspend fun quickAction(item: PantryItem, today: LocalDate): Consumed {
-        val action = chooseQuickAction(item, today)
+    suspend fun takeQuickAction(item: PantryItem, today: LocalDate): Consumed {
+        val action = quickAction(item, today)
         return db.withWriteTransaction {
             val shoppingId = when (action) {
                 QuickAction.ThrowOut -> {

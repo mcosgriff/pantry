@@ -42,8 +42,11 @@ fun shoppingList(items: List<PantryItem>, entries: List<ShoppingEntry>): List<Sh
     val stored = entries.sortedWith(compareBy<ShoppingEntry> { it.reason }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name })
         .map { ShoppingLine("entry:${it.id}", it.name, it.reason, entry = it) }
     val seen = mutableSetOf<String>()
-    return (low + stored).filter { seen.add(it.name.trim().lowercase()) }
+    return (low + stored).filter { seen.add(shoppingKey(it.name)) }
 }
+
+/** How the list compares names: a name is on it once, whatever its case or spacing (#48). */
+fun shoppingKey(name: String): String = name.trim().lowercase()
 
 /** The trip's count: lines in the cart out of the whole list. Keys of lines no longer on the list don't count. */
 data class TripProgress(val inCart: Int, val total: Int) {

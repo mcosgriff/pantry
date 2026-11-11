@@ -68,7 +68,7 @@ class ConsumptionTest {
     @Test
     fun `used up takes the item out and puts it on the list, and undo puts both back`() = runBlocking {
         val milk = stock("Test milk", opened = true)
-        val done = consumption.quickAction(milk, today)
+        val done = consumption.takeQuickAction(milk, today)
         assertEquals(QuickAction.UsedUp, done.action)
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("Test milk" to ShoppingReason.UsedUp), list())
@@ -82,7 +82,7 @@ class ConsumptionTest {
     fun `used up with the name already on the list adds nothing, and undo leaves that line alone`() = runBlocking {
         shopping.addByHand("test MILK", today)
         val milk = stock("Test milk", opened = true)
-        val done = consumption.quickAction(milk, today)
+        val done = consumption.takeQuickAction(milk, today)
         assertEquals(listOf("test MILK" to ShoppingReason.ByHand), list())
 
         consumption.undo(done)
@@ -93,7 +93,7 @@ class ConsumptionTest {
     @Test
     fun `thrown out takes the item out without a list line, and undo puts it back`() = runBlocking {
         val yogurt = stock("Test yogurt", expires = today.minusDays(1))
-        val done = consumption.quickAction(yogurt, today)
+        val done = consumption.takeQuickAction(yogurt, today)
         assertEquals(QuickAction.ThrowOut, done.action)
         assertEquals(emptyList<String>(), names())
         assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
@@ -105,7 +105,7 @@ class ConsumptionTest {
     @Test
     fun `frozen moves the item to the Freezer, and undo moves it back`() = runBlocking {
         val chicken = stock("Test chicken", expires = today.plusDays(2))
-        val done = consumption.quickAction(chicken, today)
+        val done = consumption.takeQuickAction(chicken, today)
         assertEquals(QuickAction.Freeze, done.action)
         assertEquals(Location.Freezer, pantry.item(chicken.id)?.location)
         assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
@@ -151,5 +151,25 @@ class ConsumptionTest {
         stock("Test eggs", "12")
         consumption.cooked(meals.plans().first().single(), today)
         assertEquals(listOf("9"), pantry.items().first().map { it.quantity.amount.toPlainString() })
+    }
+
+    @Test
+    fun `used up on an item that was running low puts it on the list as used up`() = runBlocking {
+        val id = pantry.save(PantryItem(name = "Test butter", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, opened = true, lowStockAt = BigDecimal("1")))
+        assertEquals(listOf("Test butter" to ShoppingReason.RunningLow), list())
+        consumption.takeQuickAction(checkNotNull(pantry.item(id)), today)
+        assertEquals(listOf("Test butter" to ShoppingReason.UsedUp), list())
+    }
+
+    @Test
+    fun `cooking that empties two items of one name puts it on the list once`() = runBlocking {
+        val a = stock("Test milk")
+        val b = stock("Test milk")
+        val id = meals.save(Meal("Test custard", 1, listOf(Ingredient.of(a).copy(amount = BigDecimal("1")), Ingredient.of(b).copy(amount = BigDecimal("1")))))
+        meals.plan(id, today, 1)
+        consumption.cooked(meals.plans().first().single(), today)
+        assertEquals(emptyList<String>(), names())
+        assertEquals(listOf("Test milk" to ShoppingReason.UsedUp), list())
+        assertEquals(1, db.shopping().observeAll().first().size)
     }
 }
