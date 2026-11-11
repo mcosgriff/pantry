@@ -22,24 +22,49 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 2  # the PR's merge commit and its first parent, the base branch's tip
+
+      # A pull request that only changes docs (Markdown, docs/, design/, LICENSE) skips the steps below and
+      # passes in seconds. The job still runs, because the "Main: CI must pass" ruleset requires the `build`
+      # check: a paths filter on the trigger would leave it waiting forever. Pushes to main and manual runs
+      # always do everything, so every commit a release tag points at was fully checked (release.yml waits
+      # for that run).
+      - name: Docs-only change?
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          code=true
+          if [ "$EVENT" = pull_request ]; then
+            changed="$(git diff --name-only HEAD^1 HEAD)"
+            echo "$changed"
+            if ! echo "$changed" | grep -qvE '(\.md$|^docs/|^design/|^LICENSE$)'; then
+              code=false
+              echo "::notice::Docs-only change: tests, lint, builds and the Exodus scan skipped."
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        if: steps.changes.outputs.code == 'true'
         with:
           distribution: temurin
           java-version: '17'
 
       # Also validates the Gradle wrapper jar.
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        if: steps.changes.outputs.code == 'true'
 
       # The unit tests, the screenshot and accessibility tests among them, with Kover measuring them; the
       # merged report goes to Codecov.
       - name: Unit tests
+        if: steps.changes.outputs.code == 'true'
         run: ./gradlew :domain:test testDebugUnitTest koverXmlReportCoverage
 
       # Coverage only: a failed upload doesn't fail the build. CODECOV_TOKEN is a repository secret, so
       # a pull request from a fork uploads nothing.
       - name: Upload coverage to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.changes.outputs.code == 'true' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -48,21 +73,25 @@ jobs:
           fail_ci_if_error: false
 
       - name: Android lint
+        if: steps.changes.outputs.code == 'true'
         run: ./gradlew lintDebug
 
       # Release builds run R8; catches shrinking problems before a tag does. No signing secrets here,
       # so the APK is unsigned.
       - name: Debug + release builds
+        if: steps.changes.outputs.code == 'true'
         run: ./gradlew :app:assembleDebug :app:assembleRelease
 
       # Exodus Privacy's tracker scanner on that release APK: no tracker, and no permission that isn't in
       # .github/privacy/permissions.txt. The same check as release.yml, so a problem shows before merging.
       - name: Exodus tracker scan
+        if: steps.changes.outputs.code == 'true'
         run: .github/scripts/exodus-scan.sh app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/exodus"
 
       # Room exports schemas during compilation. A change here that isn't committed usually means a schema
       # change without its migration: the pantry lives only on the phone, so that is data loss.
       - name: Room schemas committed
+        if: steps.changes.outputs.code == 'true'
         run: |
           if [ -n "$(git status --porcelain -- data/schemas)" ]; then
             echo "::error::Room schema changed but data/schemas isn't committed. Commit the new schema JSON and add a migration."
