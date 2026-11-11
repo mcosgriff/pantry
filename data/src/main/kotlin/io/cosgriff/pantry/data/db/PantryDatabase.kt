@@ -1,6 +1,7 @@
 package io.cosgriff.pantry.data.db
 
 import android.content.Context
+import androidx.room3.AutoMigration
 import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
@@ -8,14 +9,19 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
 @Database(
-    entities = [LocationEntity::class, ItemEntity::class],
-    version = 1,
+    entities = [LocationEntity::class, ItemEntity::class, KnownProductEntity::class],
+    version = 2,
     exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), // known_products (#12)
+    ],
 )
 abstract class PantryDatabase : RoomDatabase() {
     abstract fun items(): ItemDao
 
     abstract fun locations(): LocationDao
+
+    abstract fun knownProducts(): KnownProductDao
 
     /** Puts the three built-in locations in a new database, in the order the app shows them. */
     object SeedBuiltIns : Callback() {

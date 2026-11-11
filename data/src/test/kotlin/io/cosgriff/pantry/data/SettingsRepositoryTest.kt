@@ -34,7 +34,7 @@ class SettingsRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context)
         .addCallback(PantryDatabase.SeedBuiltIns)
         .build()
-    private val pantry = PantryRepository(db.items(), db.locations())
+    private val pantry = PantryRepository(db.items(), db.locations(), db.knownProducts())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val file = File(context.filesDir, "settings_test.preferences_pb").apply { delete() }
     private val store = PreferenceDataStoreFactory.create(scope = scope) { file }

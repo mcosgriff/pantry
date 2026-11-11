@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.Quantity
@@ -29,7 +30,7 @@ class PantryRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder<PantryDatabase>(context)
         .addCallback(PantryDatabase.SeedBuiltIns)
         .build()
-    private val repo = PantryRepository(db.items(), db.locations())
+    private val repo = PantryRepository(db.items(), db.locations(), db.knownProducts())
 
     private val today = LocalDate.of(2026, 11, 10)
 
@@ -124,5 +125,24 @@ class PantryRepositoryTest {
         repo.delete(id)
         assertEquals(true, repo.deleteLocation(garage))
         assertEquals(listOf(Location.Dry, Location.Fridge, Location.Freezer), repo.locations().first())
+    }
+
+    @Test
+    fun `a named barcode is remembered and replaced`() = runBlocking {
+        assertNull(repo.knownProduct("096619321087"))
+        repo.rememberProduct(KnownProduct("096619321087", "Test water", Location.Dry, QuantityUnit.Pack))
+        assertEquals(KnownProduct("096619321087", "Test water", Location.Dry, QuantityUnit.Pack), repo.knownProduct("096619321087"))
+        repo.rememberProduct(KnownProduct("096619321087", "Test lime water", Location.Fridge, QuantityUnit.Each))
+        assertEquals("Test lime water", repo.knownProduct("096619321087")?.name)
+        assertEquals(Location.Fridge, repo.knownProduct("096619321087")?.location)
+    }
+
+    @Test
+    fun `a known product forgets a deleted location`() = runBlocking {
+        val garage = repo.addLocation("Garage", null)
+        repo.rememberProduct(KnownProduct("123", "Test soda", garage, QuantityUnit.Each))
+        repo.deleteLocation(garage)
+        assertNull(repo.knownProduct("123")?.location)
+        assertEquals("Test soda", repo.knownProduct("123")?.name)
     }
 }

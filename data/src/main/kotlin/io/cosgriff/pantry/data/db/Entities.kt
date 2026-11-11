@@ -52,3 +52,26 @@ data class ItemEntity(
     val lowStockAt: String?,
     val notes: String,
 )
+
+/**
+ * A barcode the user has named (#12). Its location goes back to `null` when that location is deleted, and the
+ * scan then starts the item in the default one.
+ */
+@Entity(
+    tableName = "known_products",
+    foreignKeys = [
+        ForeignKey(
+            entity = LocationEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["locationId"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
+    ],
+    indices = [Index("locationId")],
+)
+data class KnownProductEntity(
+    @PrimaryKey val barcode: String,
+    val name: String,
+    val locationId: Long?,
+    val unit: String,
+)

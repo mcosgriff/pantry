@@ -219,7 +219,11 @@
     <string name="scan_point">Point at a barcode</string>
     <string name="scan_product_photo">Product photo</string>
     <string name="scan_known">In your pantry before</string>
-    <string name="scan_new_product">New product: give it a name</string>
+    <!-- Unknown product (#12). -->
+    <string name="scan_no_match">No match for this barcode</string>
+    <string name="scan_name_once">Name it once</string>
+    <string name="scan_name_once_body">Pantry remembers this barcode, so the next scan fills it in.</string>
+    <string name="scan_skip">Skip</string>
     <string name="scan_store_in">Store in</string>
     <string name="scan_suggested">suggested</string>
     <string name="scan_more_details">More details</string>

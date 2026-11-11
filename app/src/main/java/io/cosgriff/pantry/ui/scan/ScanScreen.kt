@@ -12,7 +12,7 @@ import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
+import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -72,6 +72,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -312,44 +313,61 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
     val colors = PantryTheme.colors
     val draft = found.draft
     var picking by rememberSaveable { mutableStateOf(false) }
-    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        // The photo waits for product lookup (#9).
-        Box(
-            Modifier
-                .size(64.dp)
-                .background(colors.surfaceMuted, MaterialTheme.shapes.medium)
-                .border(1.dp, colors.borderStrong, MaterialTheme.shapes.medium),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.scan_product_photo), style = MaterialTheme.typography.labelSmall, color = colors.inkMuted)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (found.known) Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(14.dp))
-                Text(
-                    stringResource(if (found.known) R.string.scan_known else R.string.scan_new_product),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (found.known) colors.accent else colors.inkMuted,
-                )
+    val nameLabel = stringResource(R.string.details_name)
+    val nameField: @Composable (Modifier) -> Unit = { modifier ->
+        BasicTextField(
+            value = draft.name,
+            onValueChange = actions.onName,
+            textStyle = MaterialTheme.typography.titleLarge.copy(color = colors.ink),
+            cursorBrush = SolidColor(colors.accent),
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = PantryDimens.tapMin)
+                .semantics { contentDescription = nameLabel },
+            decorationBox = { field ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (draft.name.isEmpty()) Text(nameLabel, style = MaterialTheme.typography.titleLarge, color = colors.inkMuted)
+                    field()
+                }
+            },
+        )
+    }
+    if (found.known) {
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            // The photo waits for product lookup (#9).
+            Box(
+                Modifier
+                    .size(64.dp)
+                    .background(colors.surfaceMuted, MaterialTheme.shapes.medium)
+                    .border(1.dp, colors.borderStrong, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.scan_product_photo), style = MaterialTheme.typography.labelSmall, color = colors.inkMuted)
             }
-            val nameLabel = stringResource(R.string.details_name)
-            BasicTextField(
-                value = draft.name,
-                onValueChange = actions.onName,
-                textStyle = MaterialTheme.typography.titleLarge.copy(color = colors.ink),
-                cursorBrush = SolidColor(colors.accent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = PantryDimens.tapMin)
-                    .semantics { contentDescription = nameLabel },
-                decorationBox = { field ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (draft.name.isEmpty()) Text(nameLabel, style = MaterialTheme.typography.titleLarge, color = colors.inkMuted)
-                        field()
-                    }
-                },
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(14.dp))
+                    Text(stringResource(R.string.scan_known), style = MaterialTheme.typography.labelSmall, color = colors.accent)
+                }
+                nameField(Modifier)
+                draft.barcode?.let { Text(barcodeText(it), style = PantryTheme.text.barcode, color = colors.inkMuted) }
+            }
+        }
+    } else {
+        // `design/source/ScanNotFound.dc.html` (#12): name it once, and the next scan fills it in.
+        Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
+            Text(stringResource(R.string.scan_no_match), style = MaterialTheme.typography.labelSmall, color = colors.warning)
+            Text(stringResource(R.string.scan_name_once), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+            Text(stringResource(R.string.scan_name_once_body), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
             draft.barcode?.let { Text(barcodeText(it), style = PantryTheme.text.barcode, color = colors.inkMuted) }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FieldLabel(nameLabel)
+            nameField(
+                Modifier
+                    .border(1.dp, colors.border, MaterialTheme.shapes.small)
+                    .padding(horizontal = PantryDimens.space3),
+            )
         }
     }
     LocationPicker(draft.location, state.locations, actions.onLocation, label = stringResource(R.string.scan_store_in))
@@ -383,15 +401,16 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
         }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
         OutlinedButton(
-            onClick = { actions.onMoreDetails(draft) },
+            onClick = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
             shape = MaterialTheme.shapes.medium,
             border = BorderStroke(1.dp, colors.borderStrong),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
             modifier = Modifier
                 .weight(1f)
                 .height(PantryDimens.buttonHeight),
-        ) { Text(stringResource(R.string.scan_more_details), style = MaterialTheme.typography.labelLarge) }
+        ) { Text(stringResource(if (found.known) R.string.scan_more_details else R.string.scan_skip), style = MaterialTheme.typography.labelLarge) }
         Button(
             onClick = actions.onAdd,
             enabled = draft.name.isNotBlank(),
@@ -442,7 +461,7 @@ private fun CameraFeed(analysis: ImageAnalysis, torch: Boolean) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var request by remember { mutableStateOf<SurfaceRequest?>(null) }
     var camera by remember { mutableStateOf<Camera?>(null) }
-    val preview = remember { Preview.Builder().build().apply { setSurfaceProvider { request = it } } }
+    val preview = remember { CameraPreview.Builder().build().apply { setSurfaceProvider { request = it } } }
     LaunchedEffect(analysis, lifecycleOwner) {
         val provider = ProcessCameraProvider.awaitInstance(context)
         try {
@@ -523,3 +542,28 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
         Spacer(Modifier.height(PantryDimens.space1))
     }
 }
+
+// Previews use made-up products, marked as samples. The camera stays dark in a preview.
+private val previewToday = LocalDate.of(2026, 11, 10)
+
+private fun previewFound(known: Boolean) = ScanState(
+    today = previewToday,
+    batch = true,
+    added = 6,
+    phase = ScanPhase.Found(
+        ItemDraft.new(previewToday, Location.Dry, barcode = "041220576913").copy(name = if (known) "Sample sparkling water" else ""),
+        known = known,
+    ),
+)
+
+@Preview
+@Composable
+private fun ScanKnownPreview() = PantryTheme(darkTheme = false) { ScanContent(previewFound(known = true), torch = false, actions = ScanActions()) }
+
+@Preview
+@Composable
+private fun ScanUnknownDarkPreview() = PantryTheme(darkTheme = true) { ScanContent(previewFound(known = false), torch = false, actions = ScanActions()) }
+
+@Preview
+@Composable
+private fun CameraPermissionPreview() = PantryTheme(darkTheme = false) { CameraPermissionContent(refused = false, onAllow = {}, onByHand = {}, onBack = {}) }
