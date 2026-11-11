@@ -1,6 +1,7 @@
 # Pantry
 
 [![CI](https://github.com/mcosgriff/pantry/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mcosgriff/pantry/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/mcosgriff/pantry?sort=semver)](https://github.com/mcosgriff/pantry/releases/latest)
 [![Licence: GPL-3.0](https://img.shields.io/github/license/mcosgriff/pantry)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white)](#install)
 
@@ -61,17 +62,95 @@ Pantry isn't on the Play Store. Add `https://github.com/mcosgriff/pantry` in
 download the APK from the [latest release](https://github.com/mcosgriff/pantry/releases/latest).
 Android 10 or later.
 
-Each release APK has a SHA-256 checksum and a build-provenance attestation:
+## Verify your download
 
-```
-gh attestation verify pantry-vX.Y.Z.apk --repo mcosgriff/pantry
-```
+Every release APK is signed with the same key. Its SHA-256 certificate fingerprint:
+
+> **Not published yet.** It goes here with the first release (v0.1.0). Until then there is no release APK
+> to check.
+
+Check an APK before installing it with `apksigner verify --print-certs pantry-vX.Y.Z.apk` (the "SHA-256
+digest" line, without colons), or the installed app with [AppVerifier](https://github.com/soupslurpr/AppVerifier).
+Android also refuses an update signed with a different key.
+
+Each release also carries:
+
+- `pantry-vX.Y.Z.apk.sha256`, the APK's SHA-256 checksum: `sha256sum -c pantry-vX.Y.Z.apk.sha256`.
+- A build-provenance attestation, which shows the APK was built by this repo's release workflow from its
+  tag:
+  ```
+  gh attestation verify pantry-vX.Y.Z.apk --repo mcosgriff/pantry
+  ```
+  The same signed provenance is attached as `pantry-vX.Y.Z.apk.intoto.jsonl`, which `gh attestation verify`
+  takes with `--bundle`.
+- `pantry-vX.Y.Z.exodus.json`, the [Exodus Privacy](https://reports.exodus-privacy.eu.org/) scan of that APK:
+  no trackers, and only the permissions listed in
+  [`.github/privacy/permissions.txt`](.github/privacy/permissions.txt).
 
 ## Building
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+| Module | What lives there |
+|---|---|
+| `:domain` | Pure Kotlin: items, locations, quantities and units, expiry, shopping and meal rules. Unit-tested, no Android. |
+| `:data` | The Room database (schemas in `data/schemas`), DataStore settings, the Hilt module. |
+| `:app` | Jetpack Compose UI, Navigation 3, theme, barcode scanning (zxing-cpp). |
+
+1. Open this folder in Android Studio and let Gradle sync. JDK 17.
+2. Turn on the repo's git hooks once per clone (the pre-commit hook refuses commits on `main`):
+   `git config core.hooksPath .githooks`
+3. Run on a device or emulator with the `app` run configuration, or `./gradlew :app:installDebug` (debug app
+   id `io.cosgriff.pantry.debug`, which installs beside a release build).
+4. `./gradlew :domain:test` runs the business rules' tests in seconds; `./gradlew build` runs everything:
+   unit tests, screenshot and accessibility tests, and lint. Lint fails the build on a warning.
+5. Upgrade the Android Gradle Plugin with Tools → AGP Upgrade Assistant.
+
+Commit messages and PR titles follow [Conventional Commits](https://www.conventionalcommits.org/). More on
+tests, screenshots and pull requests is in [`CONTRIBUTING.md`](CONTRIBUTING.md). The rules a change is held
+to are in [`CLAUDE.md`](CLAUDE.md); the reasons behind the big decisions are in [`docs/adr/`](docs/adr/).
+
+## Releasing (maintainers)
+
+1. Create a release keystore once and **back it up** somewhere other than GitHub. Every update must be
+   signed with the same key, or Android and Obtainium refuse it:
+   ```
+   keytool -genkeypair -v -keystore pantry-release.jks -storetype PKCS12 -alias pantry -keyalg RSA -keysize 4096 -validity 36500
+   ```
+2. Add the signing secrets to the `release` environment (Settings → Environments → release → Environment
+   secrets), not as repository secrets. The environment needs a maintainer's approval and accepts only `v*`
+   tags.
+   - `KEYSTORE_B64`: `base64 -w0 pantry-release.jks | gh secret set KEYSTORE_B64 --env release`
+   - `KEYSTORE_PASSWORD`, `KEY_ALIAS` (the `-alias` above), `KEY_PASSWORD` (the same as the keystore's, for
+     PKCS12)
+3. Release: merge the open **release PR** (`chore(main): release X.Y.Z`). The `release-please` workflow keeps
+   it up to date from the Conventional Commits on `main`: `fix:` bumps the patch version, `feat:` the minor,
+   a breaking change the major. It updates `CHANGELOG.md` and `version.txt`. Merging tags `vX.Y.Z`, creates
+   the GitHub Release and starts the signed build once CI has passed on that commit; approve the waiting
+   `release` run in the Actions tab. The build attaches the APK, its checksum, the provenance and the Exodus
+   report to the release.
+4. After the first release, put the signing certificate's SHA-256 fingerprint in
+   [Verify your download](#verify-your-download):
+   `apksigner verify --print-certs pantry-v0.1.0.apk`.
+
+`applicationId` (`io.cosgriff.pantry`) and the signing key must never change.
+
+## How Pantry is made
+
+Pantry is written with an AI coding assistant, and this says how, so nobody has to guess.
+
+- **I decide what it does and how it works.** What the app should do, what it must never do (track you,
+  send anything but a barcode you agreed to look up, use Google's ML Kit), and the architecture that keeps
+  those promises are my calls. They're written down, with their reasons, in [`CLAUDE.md`](CLAUDE.md) and
+  [`docs/adr/`](docs/adr/).
+- **Claude writes most of the code.** It works from those decisions. Every commit it had a hand in says so
+  (`Co-Authored-By: Claude`), so the history shows which work is which.
+- **Nothing reaches `main` without me.** Every change is a pull request that I review and merge myself.
+- **It's tested.** The business rules live in a pure Kotlin module with unit tests. Every screen is
+  screenshot-tested in light and dark and checked for accessibility, and CI runs those, lint and an Exodus
+  Privacy scan of the APK on every pull request.
+
+If you find something that looks careless, open an issue: it's mine to fix, whoever typed it.
 
 ## Licence
 
-GPL-3.0. The bundled Inter and Space Grotesk fonts are under the SIL Open Font License
+GPL-3.0 ([`LICENSE`](LICENSE)). The bundled Inter and Space Grotesk fonts are under the SIL Open Font License
 (`app/src/main/assets/licences/`).
