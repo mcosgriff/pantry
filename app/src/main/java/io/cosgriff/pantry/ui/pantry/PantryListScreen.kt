@@ -55,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
@@ -132,7 +131,7 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
 @Composable
 private fun Header(modifier: Modifier = Modifier, buttons: @Composable () -> Unit = {}) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(
                 stringResource(R.string.home_place),
                 style = MaterialTheme.typography.bodySmall,
@@ -161,7 +160,7 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
         ),
     ) {
         item {
-            Column(Modifier.padding(horizontal = gutter), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.padding(horizontal = gutter), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset)) {
                 Header {
                     IconButton(onClick = actions.onSortFilter) {
                         Icon(painterResource(R.drawable.ic_sort), stringResource(R.string.pantry_sort_filter))
@@ -174,7 +173,7 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
             }
         }
         item {
-            LocationTabs(state, actions.onSelectLocation, Modifier.padding(top = 14.dp, bottom = PantryDimens.space3))
+            LocationTabs(state, actions.onSelectLocation, Modifier.padding(top = PantryDimens.spaceInset, bottom = PantryDimens.space3))
         }
         if (state.summary.thisWeek > 0) {
             item {
@@ -188,7 +187,7 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
                 color = colors.inkMuted,
                 modifier = Modifier
                     .padding(horizontal = gutter)
-                    .padding(top = 18.dp, bottom = PantryDimens.space2)
+                    .padding(top = PantryDimens.spaceSection, bottom = PantryDimens.space2)
                     .semantics { heading() },
             )
         }
@@ -209,7 +208,7 @@ private fun PantryList(state: PantryListState, actions: PantryListActions, paddi
                 onClick = { actions.onItem(item.id) },
                 modifier = Modifier
                     .padding(horizontal = gutter)
-                    .groupedRow(index, state.rows.size, 18.dp, colors.surface, colors.border, colors.divider),
+                    .groupedRow(index, state.rows.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider),
             )
         }
     }
@@ -233,12 +232,12 @@ private fun SearchField(query: String, total: Int, onQueryChange: (String) -> Un
                 Modifier
                     .height(PantryDimens.fieldHeight)
                     .background(colors.surface, MaterialTheme.shapes.medium)
-                    .border(1.dp, colors.border, MaterialTheme.shapes.medium)
-                    .padding(horizontal = 14.dp),
+                    .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.medium)
+                    .padding(horizontal = PantryDimens.spaceInset),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
             ) {
-                Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(PantryDimens.iconSmall))
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) {
                         Text(
@@ -284,10 +283,10 @@ private fun Tab(text: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Box(
             Modifier
-                .height(36.dp)
+                .height(PantryDimens.chipHeight)
                 .background(if (selected) colors.ink else colors.surface, shape)
-                .then(if (selected) Modifier else Modifier.border(1.dp, colors.border, shape))
-                .padding(horizontal = 14.dp),
+                .then(if (selected) Modifier else Modifier.border(PantryDimens.hairline, colors.border, shape))
+                .padding(horizontal = PantryDimens.spaceInset),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -307,19 +306,19 @@ private fun ExpiringBanner(summary: ExpirySummary, onView: () -> Unit, modifier:
         modifier
             .fillMaxWidth()
             .background(colors.warningContainer, MaterialTheme.shapes.large)
-            .padding(start = PantryDimens.space4, end = PantryDimens.space2, top = 14.dp, bottom = 14.dp),
+            .padding(start = PantryDimens.space4, end = PantryDimens.space2, top = PantryDimens.spaceInset, bottom = PantryDimens.spaceInset),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
     ) {
         Box(
             Modifier
-                .size(36.dp)
+                .size(PantryDimens.chipHeight)
                 .background(colors.warningContainerStrong, MaterialTheme.shapes.extraLarge),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(painterResource(R.drawable.ic_timer), contentDescription = null, tint = colors.onWarningContainer, modifier = Modifier.size(18.dp))
+            Icon(painterResource(R.drawable.ic_timer), contentDescription = null, tint = colors.onWarningContainer, modifier = Modifier.size(PantryDimens.iconSmall))
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(
                 pluralStringResource(R.plurals.pantry_expiring_this_week, summary.thisWeek, summary.thisWeek),
                 style = MaterialTheme.typography.titleMedium,
@@ -352,12 +351,12 @@ private fun ItemRow(item: PantryItem, status: ExpiryStatus, onClick: () -> Unit,
             .fillMaxWidth()
             .heightIn(min = PantryDimens.tapMin)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = PantryDimens.space3),
+            .padding(horizontal = PantryDimens.spaceInset, vertical = PantryDimens.space3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
     ) {
         LocationTile(item.location)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(item.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 stringResource(R.string.expiry_with_location, expiryText(status, item.expires), locationName(item.location)),
@@ -373,7 +372,7 @@ private fun ItemRow(item: PantryItem, status: ExpiryStatus, onClick: () -> Unit,
             maxLines = 1,
             modifier = Modifier
                 .background(colors.surfaceMuted, MaterialTheme.shapes.extraSmall)
-                .padding(horizontal = 10.dp, vertical = PantryDimens.space1),
+                .padding(horizontal = PantryDimens.spaceIcon, vertical = PantryDimens.space1),
         )
     }
 }
@@ -406,7 +405,7 @@ private fun EmptyPantry(actions: PantryListActions, modifier: Modifier = Modifie
                     textAlign = TextAlign.Center,
                 )
             }
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon)) {
                 Button(
                     onClick = actions.onScan,
                     shape = MaterialTheme.shapes.medium,
@@ -414,13 +413,13 @@ private fun EmptyPantry(actions: PantryListActions, modifier: Modifier = Modifie
                     modifier = Modifier.fillMaxWidth().height(PantryDimens.buttonHeight),
                 ) {
                     Icon(painterResource(R.drawable.ic_scan), contentDescription = null)
-                    Spacer(Modifier.size(10.dp))
+                    Spacer(Modifier.size(PantryDimens.spaceIcon))
                     Text(stringResource(R.string.pantry_scan), style = MaterialTheme.typography.labelLarge)
                 }
                 OutlinedButton(
                     onClick = actions.onAddByHand,
                     shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(1.dp, colors.borderStrong),
+                    border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
                     modifier = Modifier.fillMaxWidth().height(PantryDimens.buttonHeight),
                 ) {
@@ -435,7 +434,7 @@ private fun EmptyPantry(actions: PantryListActions, modifier: Modifier = Modifie
 @Composable
 private fun EmptyShelves() {
     val colors = PantryTheme.colors
-    Canvas(Modifier.size(width = 160.dp, height = 128.dp)) {
+    Canvas(Modifier.size(width = PantryDimens.emptyArtWidth, height = PantryDimens.emptyArtHeight)) {
         val u = size.width / 160f
         fun box(x: Int, y: Int, w: Int, h: Int, color: Color) =
             drawRoundRect(color, Offset(x * u, y * u), Size(w * u, h * u), CornerRadius(6 * u))
@@ -449,13 +448,13 @@ private fun EmptyShelves() {
     }
 }
 
-// Previews use made-up items, marked as samples.
-private val previewToday: LocalDate = LocalDate.of(2026, 11, 10)
+// Previews and screenshot tests use made-up items, marked as samples.
+internal val previewToday: LocalDate = LocalDate.of(2026, 11, 10)
 
 private fun sample(id: Long, name: String, location: Location, expires: LocalDate?, amount: String, unit: QuantityUnit) =
     PantryItem(id = id, name = name, location = location, quantity = Quantity(BigDecimal(amount), unit), purchased = previewToday, expires = expires)
 
-private val previewState = PantryListState(
+internal val previewState = PantryListState(
     today = previewToday,
     loading = false,
     total = 6,
