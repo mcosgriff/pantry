@@ -10,12 +10,32 @@ again; change a mockup on the canvas, not here.
 
 ## Boards
 
-| Screen | Source | Issue |
-| --- | --- | --- |
-| Pantry list | `source/Main.dc.html` | #6 |
-| Scan | `source/Scan.dc.html` | #10 |
-| Item details | `source/ItemEdit.dc.html` | #7 |
-| Pantry settings | `source/Settings.dc.html` | #8 |
+The canvas groups boards into pages; this table follows them.
+
+| Page | Screen | Source | Issue |
+| --- | --- | --- | --- |
+| Core screens | Pantry list | `source/Main.dc.html` | #6 |
+| Core screens | Scan | `source/Scan.dc.html` | #10 |
+| Core screens | Item details | `source/ItemEdit.dc.html` | #7 |
+| Core screens | Pantry settings | `source/Settings.dc.html` | #8 |
+| Scan flow | Camera permission | `source/ScanPermission.dc.html` | #10 |
+| Scan flow | Product not found | `source/ScanNotFound.dc.html` | #12 |
+| Scan flow | Store-packed label | `source/ScanWeighed.dc.html` | #13 |
+| Scan flow | Review haul | `source/ScanReview.dc.html` | #14 |
+| Empty & edge states | Empty pantry | `source/PantryEmpty.dc.html` | #15 |
+| Empty & edge states | Use soon | `source/Expiring.dc.html` | #16 |
+| Empty & edge states | Search: no results | `source/SearchEmpty.dc.html` | #17 |
+| Empty & edge states | Sort and filter | `source/SortFilter.dc.html` | #17 |
+| Empty & edge states | Remove item | `source/RemoveConfirm.dc.html` | #18 |
+| Meal prep | Meal prep week | `source/MealPrep.dc.html` | #19 |
+| Meal prep | Meal details | `source/MealDetail.dc.html` | #19 |
+| Shopping | Shopping list | `source/Shopping.dc.html` | #20 |
+| Shopping | Shopping trip | `source/ShoppingTrip.dc.html` | #20 |
+| Open Food Facts (exploration) | Share prompt | `source/OffShare.dc.html` | #9 |
+| Open Food Facts (exploration) | Product details and photos | `source/OffDetails.dc.html` | #9 |
+| Open Food Facts (exploration) | Product lookup settings | `source/OffSettings.dc.html` | #9 |
+
+The Open Food Facts boards show look and feel only; bracketed text on them waits on the research in #9.
 
 Each board is an HTML page drawn at 390×844 with the design system's variables from
 `source/ds/pantry/tokens.css`, the same values as `app/src/main/java/io/cosgriff/pantry/ui/theme/`. Each board

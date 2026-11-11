@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scan: camera permission</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 48px var(--space-2) var(--space-2); display: flex; align-items: center">
+    <a href="Main.dc.html" aria-label="Back to pantry" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); color: var(--ink); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18 9 12l6-6"></path></svg>
+    </a>
+  </header>
+
+  <main style="flex: 1; padding: 0 var(--space-6); display: flex; flex-direction: column; justify-content: center; gap: var(--space-5)">
+    <div aria-hidden="true" style="width: 96px; height: 96px; border-radius: var(--radius-xl); background: var(--surface-muted); color: var(--accent); display: flex; align-items: center; justify-content: center">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"></path></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+      <h1 style="margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px">Scan barcodes with your camera</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 22px; color: var(--ink-muted)">Pantry uses the camera only while this screen is open, to read barcodes. No pictures are saved or sent anywhere.</p>
+    </div>
+    <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-3)">
+      <sc-for list="{{points}}" as="p" hint-placeholder-count="3">
+        <li style="display: flex; gap: var(--space-3); align-items: flex-start; font-size: 15px; line-height: 20px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--accent); flex-shrink: 0"><path d="m5 12 5 5 9-10"></path></svg>
+          {{p}}
+        </li>
+      </sc-for>
+    </ul>
+  </main>
+
+  <footer style="padding: var(--space-4) var(--space-5) 28px; display: flex; flex-direction: column; gap: 10px">
+    <a href="Scan.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Allow camera</a>
+    <a href="ItemEdit.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Add by hand instead</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      points: [
+        'Scan a whole haul in one go, then review it',
+        'Products you name are remembered on this phone',
+        'You can change this later in Android settings'
+      ],
+      theme: this.props.theme ?? 'light'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Meal details</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 48px var(--space-2) var(--space-2); display: flex; align-items: center; gap: var(--space-1)">
+    <a href="MealPrep.dc.html" aria-label="Back to meal prep" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); color: var(--ink); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18 9 12l6-6"></path></svg>
+    </a>
+    <span style="flex: 1; font-size: 13px; color: var(--ink-muted)">Monday, Nov 10</span>
+    <button aria-label="More actions" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); border: none; background: transparent; color: var(--ink); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+    </button>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 var(--space-5); display: flex; flex-direction: column; gap: var(--space-4)">
+    <div style="display: flex; flex-direction: column; gap: var(--space-3)">
+      <h1 style="margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px">Spinach egg bites</h1>
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="font-size: 15px; color: var(--ink-muted)">Servings</span>
+        <div style="height: var(--field-height); width: 150px; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 var(--space-1)">
+          <button aria-label="Fewer servings" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">−</button>
+          <span style="font-size: 16px; font-weight: 600">12</span>
+          <button aria-label="More servings" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted)">Ingredients</h2>
+      <ul style="list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden">
+        <sc-for list="{{ingredients}}" as="g" hint-placeholder-count="5">
+          <li style="border-top: {{g.divider}}; display: flex; align-items: center; gap: var(--space-3); padding: 12px 14px; min-height: var(--tap-min)">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 5px; background: {{g.dot}}; flex-shrink: 0"></span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 15px; font-weight: 600">{{g.name}}</span>
+              <span style="font-size: 13px; color: {{g.statusColor}}; font-weight: {{g.statusWeight}}">{{g.status}}</span>
+            </div>
+            <span style="font-size: 14px; font-weight: 600; white-space: nowrap">{{g.amount}}</span>
+          </li>
+        </sc-for>
+      </ul>
+    </section>
+
+    <section style="display: flex; align-items: center; gap: var(--space-3); padding: 14px var(--space-4); background: var(--warning-container); border-radius: var(--radius-xl)">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 15px; font-weight: 600; color: var(--on-warning-container)">Spinach expired yesterday</span>
+        <span style="font-size: 13px; color: var(--on-warning-container)">Check it before cooking, or buy fresh.</span>
+      </div>
+    </section>
+  </main>
+
+  <footer style="padding: var(--space-3) var(--space-5) 28px; display: flex; flex-direction: column; gap: 10px; background: var(--ground)">
+    <a href="Shopping.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Add missing to shopping list</a>
+    <button style="height: var(--button-height); border-radius: var(--radius-lg); border: none; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600">Cooked it — take from pantry</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const have = { dot: 'var(--accent)', statusColor: 'var(--ink-muted)', statusWeight: 400 };
+    const old = { dot: 'var(--danger)', statusColor: 'var(--danger)', statusWeight: 600 };
+    const none = { dot: 'var(--border-strong)', statusColor: 'var(--warning)', statusWeight: 600 };
+    const ingredients = [
+      { name: 'Organic large eggs', status: '18 ea in Fridge · uses 12', amount: '12 ea', ...have },
+      { name: 'Baby spinach', status: 'Expired yesterday', amount: '1 bag', ...old },
+      { name: 'Shredded mozzarella', status: '1 bag in Fridge', amount: '1 cup', ...have },
+      { name: 'Cottage cheese', status: 'Not in pantry', amount: '1 cup', ...none },
+      { name: 'Salt and pepper', status: 'Not tracked', amount: 'to taste', dot: 'transparent', statusColor: 'var(--ink-muted)', statusWeight: 400 }
+    ].map((g, i) => ({ ...g, divider: i === 0 ? 'none' : '1px solid var(--divider)' }));
+    return { ingredients, theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

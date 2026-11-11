@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pantry: empty</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--ground); font-family: var(--font-sans); color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 52px var(--space-5) var(--space-3); display: flex; flex-direction: column; gap: 2px">
+    <span style="font-size: 13px; color: var(--ink-muted); font-weight: 500">Home pantry</span>
+    <h1 style="margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.5px">Pantry</h1>
+  </header>
+
+  <main style="flex: 1; padding: 0 var(--space-6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); text-align: center">
+    <svg width="160" height="128" viewBox="0 0 160 128" aria-hidden="true">
+      <rect x="18" y="6" width="124" height="116" rx="12" fill="none" stroke="var(--border-strong)" stroke-width="3"></rect>
+      <path d="M18 46h124M18 84h124" stroke="var(--border-strong)" stroke-width="3"></path>
+      <rect x="32" y="20" width="22" height="22" rx="6" fill="var(--dry-container)"></rect>
+      <rect x="60" y="26" width="30" height="16" rx="6" fill="var(--dry-container)"></rect>
+      <rect x="32" y="60" width="36" height="20" rx="6" fill="var(--fridge-container)"></rect>
+      <rect x="96" y="96" width="30" height="22" rx="6" fill="var(--freezer-container)"></rect>
+    </svg>
+    <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+      <h2 style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600">Your pantry is empty</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 22px; color: var(--ink-muted)">Scan your groceries after a shopping run, or add items by hand. Each one goes to Dry, Fridge or Freezer.</p>
+    </div>
+    <div style="align-self: stretch; display: flex; flex-direction: column; gap: 10px">
+      <a href="ScanPermission.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; font-size: 15px; font-weight: 600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"></path></svg>
+        Scan items
+      </a>
+      <a href="ItemEdit.dc.html" style="height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">Add by hand</a>
+    </div>
+  </main>
+
+  <nav aria-label="Main" style="height: var(--nav-height); background: var(--surface); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: var(--space-2)">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <a href="{{t.href}}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1); text-decoration: none; color: {{t.color}}; font-size: 12px; font-weight: {{t.weight}}">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
+        {{t.label}}
+      </a>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tab = (label, href, icon, on) => ({ label, href, icon, color: on ? 'var(--accent)' : 'var(--ink-muted)', weight: on ? 600 : 500 });
+    return {
+      tabs: [
+        tab('Pantry', 'Main.dc.html', 'M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4 10h16M4 16h16', true),
+        tab('Meal prep', 'MealPrep.dc.html', 'M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 9h18M8 2v4M16 2v4', false),
+        tab('Shopping', 'Shopping.dc.html', 'M6 6h15l-1.5 9h-12zM6 6 5 3H2M9 20h.01M18 20h.01', false)
+      ],
+      theme: this.props.theme ?? 'light'
+    };
+  }
+}
+</script>
+</body>
+</html>

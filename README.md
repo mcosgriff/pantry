@@ -22,7 +22,12 @@ in order:
 | Add, edit and remove items | [#7](https://github.com/mcosgriff/pantry/issues/7) |
 | Pantry settings | [#8](https://github.com/mcosgriff/pantry/issues/8) |
 | Scanning barcodes | [#10](https://github.com/mcosgriff/pantry/issues/10) |
-| Product lookup by barcode (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
+| Naming unknown products, store-packed labels, reviewing a haul | [#12](https://github.com/mcosgriff/pantry/issues/12), [#13](https://github.com/mcosgriff/pantry/issues/13), [#14](https://github.com/mcosgriff/pantry/issues/14) |
+| First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
+| Removing items with a reason (to be decided) | [#18](https://github.com/mcosgriff/pantry/issues/18) |
+| Meal prep (to be decided) | [#19](https://github.com/mcosgriff/pantry/issues/19) |
+| Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
+| Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
 
 The screens are designed already: see [`design/`](design/README.md).
 
