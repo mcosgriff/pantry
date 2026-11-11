@@ -92,9 +92,15 @@ fun LocationPicker(selected: Location, locations: List<Location>, onSelect: (Loc
     }
 }
 
-/** The bordered − [value] + field. */
+/** The bordered − [value] + field; its buttons read [decreaseLabel] and [increaseLabel] to TalkBack. */
 @Composable
-fun QuantityStepper(value: String, onStep: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun QuantityStepper(
+    value: String,
+    onStep: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    decreaseLabel: String = stringResource(R.string.details_decrease),
+    increaseLabel: String = stringResource(R.string.details_increase),
+) {
     val colors = PantryTheme.colors
     val shape = MaterialTheme.shapes.small
     Row(
@@ -106,9 +112,9 @@ fun QuantityStepper(value: String, onStep: (Int) -> Unit, modifier: Modifier = M
             .padding(horizontal = PantryDimens.space1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepButton("−", stringResource(R.string.details_decrease)) { onStep(-1) }
+        StepButton("−", decreaseLabel) { onStep(-1) }
         Text(value, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-        StepButton("+", stringResource(R.string.details_increase)) { onStep(1) }
+        StepButton("+", increaseLabel) { onStep(1) }
     }
 }
 

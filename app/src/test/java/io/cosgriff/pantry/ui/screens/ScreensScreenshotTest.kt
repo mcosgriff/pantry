@@ -7,6 +7,15 @@ import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.ui.item.ItemDetailsActions
 import io.cosgriff.pantry.ui.item.ItemDetailsContent
 import io.cosgriff.pantry.ui.item.previewState as itemDetailsState
+import io.cosgriff.pantry.ui.meals.MealDetailsActions
+import io.cosgriff.pantry.ui.meals.MealDetailsContent
+import io.cosgriff.pantry.ui.meals.MealPrepActions
+import io.cosgriff.pantry.ui.meals.MealPrepContent
+import io.cosgriff.pantry.ui.meals.PlanMealActions
+import io.cosgriff.pantry.ui.meals.PlanMealContent
+import io.cosgriff.pantry.ui.meals.previewMealDetails
+import io.cosgriff.pantry.ui.meals.previewPlanMeal
+import io.cosgriff.pantry.ui.meals.previewWeek
 import io.cosgriff.pantry.ui.pantry.PantryListActions
 import io.cosgriff.pantry.ui.pantry.PantryListContent
 import io.cosgriff.pantry.ui.pantry.PantryListState
@@ -116,6 +125,15 @@ class ScreensScreenshotTest(private val shade: Shade) {
     fun shoppingTrip() = compose.shoot("shopping_trip", shade) {
         ShoppingTripContent(ShoppingState(false, previewLines, setOf("entry:2")), onBack = {}, onToggle = { _, _ -> }, onDone = {})
     }
+
+    @Test
+    fun mealPrep() = compose.shoot("meal_prep", shade) { MealPrepContent(previewWeek, MealPrepActions()) }
+
+    @Test
+    fun planMeal() = compose.shoot("plan_meal", shade) { PlanMealContent(previewPlanMeal, PlanMealActions()) }
+
+    @Test
+    fun mealDetails() = compose.shoot("meal_details", shade) { MealDetailsContent(previewMealDetails, MealDetailsActions()) }
 
     companion object {
         @JvmStatic

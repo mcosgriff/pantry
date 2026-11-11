@@ -76,12 +76,61 @@ data class KnownProductEntity(
     val unit: String,
 )
 
-/** A line on the shopping list that isn't worked out from the pantry (#20): used up or added by hand. */
+/**
+ * A line on the shopping list that isn't worked out from the pantry (#20): used up, added by hand, or missing for
+ * a planned meal (#19), which names the [meal] and the [mealDay] (epoch day) it's planned for.
+ */
 @Entity(tableName = "shopping_entries")
 data class ShoppingEntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    /** `USED_UP` or `BY_HAND`. */
+    /** `USED_UP`, `BY_HAND` or `FOR_MEAL`. */
     val reason: String,
     val addedOn: Long,
+    val meal: String? = null,
+    val mealDay: Long? = null,
+)
+
+/** A meal (#19): kept after it's cooked, so it can be planned again. */
+@Entity(tableName = "meals")
+data class MealEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val servings: Int,
+)
+
+/**
+ * One ingredient of a meal, in the meal's order ([position]). [itemId] is the pantry item it was picked from, with
+ * no foreign key: the item may be eaten or thrown out, and the ingredient then matches by [barcode] or name.
+ * [amount] is decimal text in [unit], `null` for "some".
+ */
+@Entity(
+    tableName = "meal_ingredients",
+    foreignKeys = [ForeignKey(entity = MealEntity::class, parentColumns = ["id"], childColumns = ["mealId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("mealId")],
+)
+data class MealIngredientEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val mealId: Long,
+    val position: Int,
+    val name: String,
+    val fromPantry: Boolean,
+    val itemId: Long?,
+    val barcode: String?,
+    val unit: String?,
+    val amount: String?,
+)
+
+/** A meal planned on a [day] (epoch day) for [servings]. Deleting the meal deletes its plans. */
+@Entity(
+    tableName = "meal_plans",
+    foreignKeys = [ForeignKey(entity = MealEntity::class, parentColumns = ["id"], childColumns = ["mealId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("mealId"), Index("day")],
+)
+data class MealPlanEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val mealId: Long,
+    val day: Long,
+    val servings: Int,
+    val cooked: Boolean,
 )

@@ -46,6 +46,20 @@ class ShoppingTest {
         assertEquals(2, tripProgress(lines, setOf("low:1", "entry:10")).left)
     }
 
+    @Test
+    fun `what a planned meal needs comes after running low and before used up`() {
+        val forMeal = ShoppingEntry(13, "Test cottage cheese", ShoppingReason.ForMeal, today, meal = "Test egg bites", mealDay = today.plusDays(1))
+        assertEquals(
+            listOf("Test coffee", "Test eggs", "Test cottage cheese", "Test yogurt", "Test scallions"),
+            shoppingList(items, entries + forMeal).map { it.name },
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `a for-meal entry names its meal`() {
+        ShoppingEntry(1, "Test", ShoppingReason.ForMeal, today)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `a stored entry can't claim to be running low`() {
         ShoppingEntry(1, "Test", ShoppingReason.RunningLow, today)

@@ -36,9 +36,18 @@ class ShoppingRepository @Inject constructor(
     /** Puts [name] on the list; returns its id, or `null` for a blank name. */
     suspend fun add(name: String, reason: ShoppingReason, today: LocalDate): Long? {
         require(reason != ShoppingReason.RunningLow) { "Running-low lines come from the pantry" }
+        require(reason != ShoppingReason.ForMeal) { "Use addForMeal" }
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return null
         return dao.insert(ShoppingEntryEntity(name = trimmed, reason = reason.stored(), addedOn = today.toEpochDay()))
+    }
+
+    /** Puts [names] on the list for [meal], planned on [day] (#19). A name already on the list isn't added again. */
+    suspend fun addForMeal(names: List<String>, meal: String, day: LocalDate, today: LocalDate) {
+        val onList = lines().first().map { it.name.trim().lowercase() }.toMutableSet()
+        names.map { it.trim() }.filter { it.isNotEmpty() && onList.add(it.lowercase()) }.forEach {
+            dao.insert(ShoppingEntryEntity(name = it, reason = "FOR_MEAL", addedOn = today.toEpochDay(), meal = meal, mealDay = day.toEpochDay()))
+        }
     }
 
     suspend fun remove(entry: ShoppingEntry) = dao.delete(listOf(entry.id))
@@ -69,12 +78,19 @@ class ShoppingRepository @Inject constructor(
 private fun ShoppingReason.stored() = when (this) {
     ShoppingReason.UsedUp -> "USED_UP"
     ShoppingReason.ByHand -> "BY_HAND"
+    ShoppingReason.ForMeal -> "FOR_MEAL"
     ShoppingReason.RunningLow -> error("not stored")
 }
 
 private fun ShoppingEntryEntity.toDomain() = ShoppingEntry(
     id = id,
     name = name,
-    reason = if (reason == "USED_UP") ShoppingReason.UsedUp else ShoppingReason.ByHand,
+    reason = when (reason) {
+        "USED_UP" -> ShoppingReason.UsedUp
+        "FOR_MEAL" -> ShoppingReason.ForMeal
+        else -> ShoppingReason.ByHand
+    },
     addedOn = LocalDate.ofEpochDay(addedOn),
+    meal = meal,
+    mealDay = mealDay?.let(LocalDate::ofEpochDay),
 )

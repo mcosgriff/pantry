@@ -16,6 +16,7 @@ import io.cosgriff.pantry.data.UrlConnectionGet
 import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.KnownProductDao
 import io.cosgriff.pantry.data.db.LocationDao
+import io.cosgriff.pantry.data.db.MealDao
 import io.cosgriff.pantry.data.db.PantryDatabase
 import io.cosgriff.pantry.data.db.ShoppingDao
 import javax.inject.Singleton
@@ -47,6 +48,9 @@ object DataModule {
         val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
         return OpenFoodFacts(UrlConnectionGet(), userAgent = "Pantry/$version (https://github.com/mcosgriff/pantry)")
     }
+
+    @Provides
+    fun mealDao(db: PantryDatabase): MealDao = db.meals()
 
     @Provides @Singleton
     fun settingsStore(@ApplicationContext context: Context): DataStore<Preferences> =

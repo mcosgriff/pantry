@@ -297,6 +297,9 @@
     <string name="shopping_running_low">Running low · %1$d</string>
     <string name="shopping_used_up">Used up · %1$d</string>
     <string name="shopping_by_hand">Added by hand · %1$d</string>
+    <string name="shopping_for_meals">For this week’s meals · %1$d</string>
+    <!-- A for-meal line's detail: the meal and its day, "Spinach egg bites · Mon". -->
+    <string name="shopping_for_meal">%1$s · %2$s</string>
     <!-- "6 ea left · alert at 6 ea" -->
     <string name="shopping_left">%1$s left · alert at %2$s</string>
     <string name="shopping_finished">Finished %1$s</string>
@@ -325,6 +328,92 @@
     <string name="unit_name_tub">tub</string>
 
     <!-- Bottom navigation. -->
+    <!-- Meal prep (#19). -->
+    <!-- "Week of Nov 9" -->
+    <string name="meals_week_of">Week of %1$s</string>
+    <string name="meals_title">Meal prep</string>
+    <string name="meals_previous_week">Previous week</string>
+    <string name="meals_next_week">Next week</string>
+    <string name="meals_use_soon">Use soon</string>
+    <string name="meals_see_all">See all %1$d</string>
+    <string name="meals_this_week">This week</string>
+    <string name="meals_plan">Plan a meal</string>
+    <string name="meals_nothing_planned">Nothing planned this week. Plan a meal from what’s in your pantry, starting with what expires first.</string>
+    <string name="meals_all_in_pantry">All in pantry</string>
+    <plurals name="meals_to_buy">
+        <item quantity="one">%1$d to buy</item>
+        <item quantity="other">%1$d to buy</item>
+    </plurals>
+    <string name="meals_cooked">Cooked</string>
+    <!-- A planned meal's line under its name: its ingredients, then servings. "Eggs, spinach, cheese · 12 servings" -->
+    <plurals name="meals_uses">
+        <item quantity="one">%2$s · %1$d serving</item>
+        <item quantity="other">%2$s · %1$d servings</item>
+    </plurals>
+    <plurals name="meals_servings_only">
+        <item quantity="one">%1$d serving</item>
+        <item quantity="other">%1$d servings</item>
+    </plurals>
+    <!-- TalkBack for a planned meal's card: "Spinach egg bites, Monday, Nov 10, 1 to buy" -->
+    <string name="meals_card_label">%1$s, %2$s, %3$s</string>
+
+    <string name="plan_title">Plan a meal</string>
+    <string name="plan_edit_title">Edit meal</string>
+    <string name="plan_back">Back to meal prep</string>
+    <string name="plan_cook_again">Cook again</string>
+    <string name="plan_name">Meal name</string>
+    <string name="plan_name_hint">e.g. Spinach egg bites</string>
+    <string name="plan_servings">Servings</string>
+    <string name="plan_ingredients">Ingredients</string>
+    <string name="plan_no_ingredients">Pick ingredients from your pantry below, or type one in.</string>
+    <string name="plan_add_typed">Add an ingredient not in the pantry</string>
+    <string name="plan_remove">Remove %1$s</string>
+    <string name="plan_from_pantry">From your pantry</string>
+    <string name="plan_pantry_empty">Your pantry is empty, so ingredients can only be typed in.</string>
+    <string name="plan_not_tracked">Not tracked</string>
+    <!-- A pantry item to pick: its expiry and location, "Expires in 2 days · Fridge". -->
+    <string name="plan_pick_detail">%1$s · %2$s</string>
+    <!-- "Plan for Mon, Nov 10" -->
+    <string name="plan_save">Plan for %1$s</string>
+    <string name="plan_save_edit">Save</string>
+
+    <string name="meal_back">Back to meal prep</string>
+    <string name="meal_more">More actions</string>
+    <string name="meal_edit">Edit meal</string>
+    <string name="meal_unplan">Remove from plan</string>
+    <string name="meal_servings">Servings</string>
+    <string name="meal_fewer">Fewer servings</string>
+    <string name="meal_more_servings">More servings</string>
+    <string name="meal_ingredients">Ingredients</string>
+    <!-- An ingredient's status: what the pantry has, and what the meal uses. "18 ea in Fridge · uses 12 ea" -->
+    <string name="meal_have">%1$s in %2$s</string>
+    <string name="meal_have_uses">%1$s in %2$s · uses %3$s</string>
+    <string name="meal_short">%1$s in %2$s · needs %3$s</string>
+    <string name="meal_not_in_pantry">Not in pantry</string>
+    <string name="meal_not_tracked">Not tracked</string>
+    <!-- An ingredient with no amount set: the meal uses some of it. -->
+    <string name="meal_some">some</string>
+    <string name="meal_set_amount">Set amount for %1$s</string>
+    <string name="meal_amount_title">How much %1$s?</string>
+    <plurals name="meal_amount_hint">
+        <item quantity="one">For %1$d serving, in %2$s. Leave it empty for “some”: cooking won’t take any out.</item>
+        <item quantity="other">For %1$d servings, in %2$s. Leave it empty for “some”: cooking won’t take any out.</item>
+    </plurals>
+    <string name="meal_amount_clear">Clear</string>
+    <!-- Banner for an ingredient past its date: "Spinach expired yesterday" -->
+    <plurals name="meal_expired">
+        <item quantity="one">%2$s expired yesterday</item>
+        <item quantity="other">%2$s expired %1$d days ago</item>
+    </plurals>
+    <string name="meal_expired_body">Check it before cooking, or buy fresh.</string>
+    <string name="meal_add_missing">Add missing to shopping list</string>
+    <plurals name="meal_added_missing">
+        <item quantity="one">Added %1$d to the shopping list</item>
+        <item quantity="other">Added %1$d to the shopping list</item>
+    </plurals>
+    <string name="meal_cooked_it">Cooked it — take from pantry</string>
+    <string name="meal_already_cooked">Cooked</string>
+
     <string name="nav_pantry">Pantry</string>
     <string name="nav_meal_prep">Meal prep</string>
     <string name="nav_shopping">Shopping</string>
