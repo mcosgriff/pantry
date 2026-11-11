@@ -124,6 +124,7 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
         bottomBar = { PantryBottomBar(current = TopLevel.Pantry, onSelect = actions.onNavigate) },
         floatingActionButton = {
             if (!state.loading && !empty) {
+                val scanLabel = stringResource(R.string.pantry_scan)
                 ExtendedFloatingActionButton(
                     onClick = actions.onScan,
                     icon = { Icon(painterResource(R.drawable.ic_scan), contentDescription = null) },
@@ -131,7 +132,11 @@ fun PantryListContent(state: PantryListState, actions: PantryListActions, modifi
                     shape = MaterialTheme.shapes.large,
                     containerColor = PantryTheme.colors.accent,
                     contentColor = PantryTheme.colors.onAccent,
-                    modifier = Modifier.height(PantryDimens.fabHeight),
+                    // The text slot didn't reach the accessibility tree (TalkBack read an unlabelled button), so
+                    // the label is set on the button itself.
+                    modifier = Modifier
+                        .height(PantryDimens.fabHeight)
+                        .semantics { contentDescription = scanLabel },
                 )
             }
         },

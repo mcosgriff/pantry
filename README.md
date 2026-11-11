@@ -15,7 +15,8 @@ soonest expiry first (or by name, newest or lowest stock), with search across na
 filters (opened, low stock, no date, added this week), a tab per location and a banner for what expires this week. Its View opens Use soon: what has expired, what expires this
 week and next, each with one tap to throw it out, mark it used up, or freeze it (moved to the Freezer with
 a new date), and Undo. Items are
-added by hand and edited on the item details screen: location, quantity and unit, expiry date (suggested
+scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan adds one after another,
+and a barcode seen before fills in its name) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. A new install shows an empty pantry. The plan,
@@ -41,7 +42,9 @@ The screens are designed already: see [`design/`](design/README.md).
 
 ## Privacy
 
-No account, no server, no trackers, no ads. The app makes no network calls today. Product lookup by barcode
+No account, no server, no trackers, no ads. The app makes no network calls today. It asks for one
+permission, the camera, only when you open Scan; it reads barcodes from the picture on the phone and saves
+no pictures. Product lookup by barcode
 would be the first, and is waiting on a decision about what it sends ([#9](https://github.com/mcosgriff/pantry/issues/9)).
 
 ## Install
