@@ -82,6 +82,60 @@
     <string name="pantry_empty_body">Scan your groceries after a shopping run, or add items by hand. Each one goes to Dry, Fridge or Freezer.</string>
     <string name="pantry_empty_add_by_hand">Add by hand</string>
 
+    <!-- Item details (#7). -->
+    <string name="details_title">Item details</string>
+    <string name="details_title_new">Add item</string>
+    <string name="details_back">Back to pantry</string>
+    <string name="details_photo">Photo</string>
+    <string name="details_name">Name</string>
+    <!-- A 12-digit barcode, grouped as printed on the pack: "UPC 0 96619 32108 4". -->
+    <string name="details_upc">UPC %1$s</string>
+    <string name="details_location">Location</string>
+    <string name="details_quantity">Quantity</string>
+    <string name="details_decrease">Decrease quantity</string>
+    <string name="details_increase">Increase quantity</string>
+    <string name="details_unit">Unit</string>
+    <string name="details_expires">Expires</string>
+    <string name="details_pick_date">Choose a date</string>
+    <string name="details_today">today</string>
+    <plurals name="details_in_days">
+        <item quantity="one">tomorrow</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
+    <plurals name="details_days_ago">
+        <item quantity="one">yesterday</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="details_plus_3_days">+3 days</string>
+    <string name="details_plus_1_week">+1 week</string>
+    <string name="details_plus_1_month">+1 month</string>
+    <string name="details_no_date">No date</string>
+    <string name="details_opened">Opened</string>
+    <string name="details_purchased">Purchased</string>
+    <string name="details_low_stock">Low-stock alert</string>
+    <!-- "at 6 each" -->
+    <string name="details_low_stock_at">at %1$s</string>
+    <string name="details_low_stock_off">Off</string>
+    <string name="details_low_stock_hint">Warn when the quantity is at or under this amount.</string>
+    <string name="details_low_stock_clear">Turn off</string>
+    <string name="details_notes">Notes</string>
+    <string name="details_notes_hint">e.g. use for Sunday egg bites</string>
+    <string name="details_remove">Remove</string>
+    <string name="details_save">Save</string>
+    <string name="details_ok">OK</string>
+    <string name="details_cancel">Cancel</string>
+    <!-- Remove confirmation. %1$s is the item's name; the quantity and location follow. -->
+    <string name="details_remove_title">Remove %1$s?</string>
+    <string name="details_remove_body">%1$s in the %2$s. Removing can\'t be undone.</string>
+
+    <!-- Units by name, for the unit picker. -->
+    <string name="unit_name_each">each</string>
+    <string name="unit_name_pound">lb</string>
+    <string name="unit_name_ounce">oz</string>
+    <string name="unit_name_bag">bag</string>
+    <string name="unit_name_pack">pack</string>
+    <string name="unit_name_tub">tub</string>
+
     <!-- Bottom navigation. -->
     <string name="nav_pantry">Pantry</string>
     <string name="nav_meal_prep">Meal prep</string>

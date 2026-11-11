@@ -11,8 +11,10 @@ first. Everything stays on the phone.
 ## Status
 
 Early development. The Pantry list is the first screen: items in the dry pantry, fridge and freezer,
-soonest expiry first, with search, a tab per location and a banner for what expires this week. A new
-install shows an empty pantry. Items can't be added yet; that comes with the item details screen. The plan,
+soonest expiry first, with search, a tab per location and a banner for what expires this week. Items are
+added by hand and edited on the item details screen: location, quantity and unit, expiry date (suggested
+from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A new
+install shows an empty pantry. The plan,
 in order:
 
 | Step | Issue |
