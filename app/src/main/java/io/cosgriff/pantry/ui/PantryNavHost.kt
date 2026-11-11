@@ -20,12 +20,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object UseSoonRoute : NavKey
 
-/** Item details for a stored item, or a new one when [id] is `null`. */
-@Serializable data class ItemDetailsRoute(val id: Long? = null) : NavKey
+/** Item details for a stored item, or a new one when [id] is `null`, its name filled in with [name]. */
+@Serializable data class ItemDetailsRoute(val id: Long? = null, val name: String = "") : NavKey
 
 /**
  * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. Buttons for
- * screens not built yet go nowhere: Scan (#10), Sort and filter (#17),
+ * screens not built yet go nowhere: Scan (#10),
  * Meal prep (#19), Shopping (#20).
  */
 @Composable
@@ -41,7 +41,7 @@ fun PantryNavHost() {
                 PantryListScreen(
                     actions = PantryListActions(
                         onItem = { backStack.add(ItemDetailsRoute(it)) },
-                        onAddByHand = { backStack.add(ItemDetailsRoute()) },
+                        onAddByHand = { backStack.add(ItemDetailsRoute(name = it)) },
                         onSettings = { backStack.add(SettingsRoute) },
                         onViewExpiring = { backStack.add(UseSoonRoute) },
                     ),
@@ -54,7 +54,7 @@ fun PantryNavHost() {
                 SettingsScreen(onBack = back)
             }
             entry<ItemDetailsRoute> { route ->
-                ItemDetailsScreen(id = route.id, onBack = back, onDone = back)
+                ItemDetailsScreen(id = route.id, name = route.name, onBack = back, onDone = back)
             }
         },
     )

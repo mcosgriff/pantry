@@ -40,14 +40,17 @@ class ItemDetailsViewModel @Inject constructor(
 
     private var loaded = false
 
-    /** Opens item [id], or a new item when it is `null`. Only the first call counts (the screen calls it on entry). */
-    fun load(id: Long?) {
+    /**
+     * Opens item [id], or a new item named [name] when it is `null`. Only the first call counts (the screen calls
+     * it on entry).
+     */
+    fun load(id: Long?, name: String = "") {
         if (loaded) return
         loaded = true
         viewModelScope.launch {
             val today = LocalDate.now(clock)
             val locations = pantry.locations().first()
-            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation())
+            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation()).copy(name = name)
             _state.update { it.copy(today = today, draft = draft, locations = locations) }
         }
     }

@@ -112,10 +112,13 @@ data class ItemDetailsActions(
     val onRemove: () -> Unit = {},
 )
 
-/** Item details for item [id], or a new item when it is `null`. Calls [onDone] once it is saved or removed. */
+/**
+ * Item details for item [id], or a new item named [name] when it is `null`. Calls [onDone] once it is saved or
+ * removed.
+ */
 @Composable
-fun ItemDetailsScreen(id: Long?, onBack: () -> Unit, onDone: () -> Unit, viewModel: ItemDetailsViewModel = hiltViewModel()) {
-    LaunchedEffect(id) { viewModel.load(id) }
+fun ItemDetailsScreen(id: Long?, name: String, onBack: () -> Unit, onDone: () -> Unit, viewModel: ItemDetailsViewModel = hiltViewModel()) {
+    LaunchedEffect(id) { viewModel.load(id, name) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onDone() }
     ItemDetailsContent(
