@@ -164,4 +164,81 @@ class AmountsTest {
         val own = Density(BigDecimal("0.6"))
         assertEquals(own, densityOf("Test flour", own))
     }
+
+    /** Kitchen conversions people look up, checked one by one: from amount and unit, to unit, expected amount. */
+    private val common = listOf(
+        // US volume ladder.
+        Triple(m("1", Tablespoon), Teaspoon, "3"),
+        Triple(m("1", FluidOunce), Tablespoon, "2"),
+        Triple(m("1", Cup), FluidOunce, "8"),
+        Triple(m("1", Cup), Tablespoon, "16"),
+        Triple(m("1", Cup), Teaspoon, "48"),
+        Triple(m("0.25", Cup), Tablespoon, "4"),
+        Triple(m("1", Pint), Cup, "2"),
+        Triple(m("1", Quart), Pint, "2"),
+        Triple(m("1", Quart), Cup, "4"),
+        Triple(m("1", Gallon), Quart, "4"),
+        Triple(m("1", Gallon), Cup, "16"),
+        Triple(m("1", Gallon), FluidOunce, "128"),
+        // US volume to metric and back.
+        Triple(m("1", Teaspoon), Milliliter, "4.92892159375"),
+        Triple(m("1", Tablespoon), Milliliter, "14.78676478125"),
+        Triple(m("1", FluidOunce), Milliliter, "29.5735295625"),
+        Triple(m("1", Cup), Milliliter, "236.5882365"),
+        Triple(m("1", Pint), Milliliter, "473.176473"),
+        Triple(m("1", Quart), Milliliter, "946.352946"),
+        Triple(m("1", Gallon), Liter, "3.785411784"),
+        Triple(m("1", Liter), Milliliter, "1000"),
+        Triple(m("1", Liter), Cup, "4.226752837730375"),
+        Triple(m("1", Liter), FluidOunce, "33.814022701842997"),
+        Triple(m("1", Liter), Quart, "1.056688209432594"),
+        Triple(m("500", Milliliter), Cup, "2.113376418865187"),
+        // Weight.
+        Triple(m("1", Pound), Ounce, "16"),
+        Triple(m("8", Ounce), Pound, "0.5"),
+        Triple(m("1", Ounce), Gram, "28.349523125"),
+        Triple(m("1", Pound), Gram, "453.59237"),
+        Triple(m("1", Kilogram), Gram, "1000"),
+        Triple(m("1", Kilogram), Pound, "2.204622621848776"),
+        Triple(m("1", Kilogram), Ounce, "35.273961949580413"),
+        Triple(m("100", Gram), Ounce, "3.527396194958041"),
+        // Counts.
+        Triple(m("1", Dozen), Each, "12"),
+        Triple(m("18", Each), Dozen, "1.5"),
+    )
+
+    @Test
+    fun `common kitchen conversions`() {
+        for ((from, to, expected) in common) {
+            val result = from.to(to)
+            assertTrue("$from to $to should be exact, was $result", result is Conversion.Exact)
+            assertAbout(expected, exact(result).amount)
+        }
+    }
+
+    /** Volume–weight conversions through the built-in densities: ingredient, from, to, expected (approximate). */
+    private val commonByDensity = listOf(
+        Triple("Test water", m("1", Cup) to Gram, "236.5882365"),
+        Triple("Test all-purpose flour", m("1", Cup) to Gram, "120.660000615"),
+        Triple("Test all-purpose flour", m("5", Pound) to Cup, "18.796302324219079"),
+        Triple("Test granulated sugar", m("1", Cup) to Gram, "198.73411866"),
+        Triple("Test brown sugar", m("1", Cup) to Gram, "212.92941285"),
+        Triple("Test butter", m("1", Cup) to Gram, "227.12470704"),
+        Triple("Test butter", m("1", Tablespoon) to Gram, "14.19529419"),
+        Triple("Test butter", m("1", Pound) to Cup, "1.997107121948277"),
+        Triple("Test whole milk", m("1", Cup) to Ounce, "8.595766585579912"),
+        Triple("Test table salt", m("1", Teaspoon) to Gram, "6.013284344375"),
+        Triple("Test long grain rice", m("1", Cup) to Gram, "201.100001025"),
+    )
+
+    @Test
+    fun `common volume and weight conversions through the built-in densities`() {
+        for ((name, conversion, expected) in commonByDensity) {
+            val (from, to) = conversion
+            val density = checkNotNull(densityOf(name)) { "no density for $name" }
+            val result = from.to(to, density)
+            assertTrue("$name: $from to $to should be approximate, was $result", result is Conversion.Approximate)
+            assertAbout(expected, approximate(result).amount)
+        }
+    }
 }
