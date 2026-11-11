@@ -1,0 +1,8 @@
+#!/bin/sh
+# Never commit on main: all work goes on a branch and reaches main through a squash-merged pull request
+# (CLAUDE.md, Conventions). Turn this hook on once per clone: git config core.hooksPath .githooks
+branch=$(git symbolic-ref --short -q HEAD)
+if [ "$branch" = "main" ]; then
+    echo "pre-commit: no commits on main. Make a branch first: git switch -c <type>/<topic>" >&2
+    exit 1
+fi
