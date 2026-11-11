@@ -106,4 +106,23 @@ class PantryRepositoryTest {
         assertEquals("New name", repo.lastWithBarcode("123")?.name)
         assertNull(repo.lastWithBarcode("999"))
     }
+
+    @Test
+    fun `a custom location can be renamed and its shelf life changed`() = runBlocking {
+        val garage = repo.addLocation("Garage", null)
+        val renamed = garage.copy(name = "Garage fridge", shelfLife = Period.ofDays(4))
+        repo.updateLocation(renamed)
+        assertEquals(renamed, repo.locations().first().last())
+    }
+
+    @Test
+    fun `a custom location with items is not deleted, an empty one is`() = runBlocking {
+        val garage = repo.addLocation("Garage", null)
+        val id = repo.save(item("Soda", location = garage))
+        assertEquals(false, repo.deleteLocation(garage))
+        assertEquals(4, repo.locations().first().size)
+        repo.delete(id)
+        assertEquals(true, repo.deleteLocation(garage))
+        assertEquals(listOf(Location.Dry, Location.Fridge, Location.Freezer), repo.locations().first())
+    }
 }

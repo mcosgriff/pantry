@@ -24,15 +24,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -40,7 +37,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -81,6 +77,10 @@ import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
 import io.cosgriff.pantry.domain.expiryStatus
+import io.cosgriff.pantry.ui.components.BackTopBar
+import io.cosgriff.pantry.ui.components.CheckRow
+import io.cosgriff.pantry.ui.components.PantryCard
+import io.cosgriff.pantry.ui.components.ValueRow
 import io.cosgriff.pantry.ui.components.locationColors
 import io.cosgriff.pantry.ui.components.locationName
 import io.cosgriff.pantry.ui.components.quantityText
@@ -148,7 +148,14 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
             .fillMaxSize()
             .imePadding(),
         containerColor = PantryTheme.colors.ground,
-        topBar = { TopBar(isNew = draft?.isNew ?: false, onBack = actions.onBack) },
+        topBar = {
+            BackTopBar(
+                title = stringResource(if (draft?.isNew == true) R.string.details_title_new else R.string.details_title),
+                backLabel = stringResource(R.string.details_back),
+                onBack = actions.onBack,
+                modifier = Modifier.statusBarsPadding(),
+            )
+        },
         bottomBar = {
             if (draft != null) Footer(draft, onRemove = { confirmRemove = true }, onSave = actions.onSave)
         },
@@ -176,38 +183,6 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
 }
 
 @Composable
-private fun TopBar(isNew: Boolean, onBack: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = PantryDimens.space2, vertical = PantryDimens.space2),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(PantryDimens.space1),
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(painterResource(R.drawable.ic_back), stringResource(R.string.details_back))
-        }
-        Text(
-            stringResource(if (isNew) R.string.details_title_new else R.string.details_title),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.semantics { heading() },
-        )
-    }
-}
-
-@Composable
-private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val colors = PantryTheme.colors
-    Box(
-        modifier
-            .fillMaxWidth()
-            .background(colors.surface, MaterialTheme.shapes.large)
-            .border(1.dp, colors.border, MaterialTheme.shapes.large),
-    ) { content() }
-}
-
-@Composable
 private fun FieldLabel(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = PantryTheme.colors.inkMuted)
 }
@@ -216,7 +191,7 @@ private fun FieldLabel(text: String) {
 private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
     val colors = PantryTheme.colors
     val nameLabel = stringResource(R.string.details_name)
-    Card {
+    PantryCard {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
             // The photo is a placeholder until items can have one.
             Box(
@@ -370,7 +345,7 @@ private fun unitName(unit: QuantityUnit): String = stringResource(
 private fun ExpiryCard(draft: ItemDraft, today: LocalDate, actions: ItemDetailsActions) {
     val colors = PantryTheme.colors
     var picking by rememberSaveable { mutableStateOf(false) }
-    Card {
+    PantryCard {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { FieldLabel(stringResource(R.string.details_expires)) }
@@ -453,30 +428,18 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
     val colors = PantryTheme.colors
     var pickingPurchased by rememberSaveable { mutableStateOf(false) }
     var editingLowStock by rememberSaveable { mutableStateOf(false) }
-    val row = Modifier
-        .fillMaxWidth()
-        .heightIn(min = PantryDimens.buttonHeight)
-        .padding(horizontal = 14.dp)
-    Card {
+    PantryCard {
         Column {
-            Row(
-                Modifier
-                    .toggleable(value = draft.opened, role = Role.Checkbox, onValueChange = actions.onOpened)
-                    .then(row),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(stringResource(R.string.details_opened), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Checkbox(checked = draft.opened, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = colors.accent))
-            }
+            CheckRow(stringResource(R.string.details_opened), draft.opened, actions.onOpened)
             HorizontalDivider(color = colors.divider)
-            ValueRow(stringResource(R.string.details_purchased), DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(draft.purchased), row) { pickingPurchased = true }
+            ValueRow(stringResource(R.string.details_purchased), DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(draft.purchased), onClick = { pickingPurchased = true })
             HorizontalDivider(color = colors.divider)
             ValueRow(
                 stringResource(R.string.details_low_stock),
                 draft.lowStockAt?.let { stringResource(R.string.details_low_stock_at, quantityText(Quantity(it, draft.quantity.unit))) }
                     ?: stringResource(R.string.details_low_stock_off),
-                row,
-            ) { editingLowStock = true }
+                onClick = { editingLowStock = true },
+            )
             HorizontalDivider(color = colors.divider)
             Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = PantryDimens.space3), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
                 val notesLabel = stringResource(R.string.details_notes)
@@ -507,14 +470,6 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
     }
     if (editingLowStock) {
         LowStockDialog(draft.lowStockAt, onDone = { editingLowStock = false; actions.onLowStock(it) }, onDismiss = { editingLowStock = false })
-    }
-}
-
-@Composable
-private fun ValueRow(label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Row(Modifier.clickable(onClick = onClick).then(modifier), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyLarge, color = PantryTheme.colors.inkMuted)
     }
 }
 

@@ -128,6 +128,44 @@
     <string name="details_remove_title">Remove %1$s?</string>
     <string name="details_remove_body">%1$s in the %2$s. Removing can\'t be undone.</string>
 
+    <!-- Pantry settings (#8). -->
+    <string name="settings_title">Pantry settings</string>
+    <string name="settings_locations">Storage locations</string>
+    <!-- "Default shelf life: 7 days" -->
+    <string name="settings_shelf_life">Default shelf life: %1$s</string>
+    <string name="settings_shelf_life_none">none</string>
+    <plurals name="settings_shelf_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="settings_shelf_months">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="settings_shelf_years">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <string name="settings_add_location">Add location</string>
+    <string name="settings_edit_location">Edit location</string>
+    <string name="settings_location_name">Name</string>
+    <string name="settings_location_days">Default shelf life in days</string>
+    <string name="settings_location_days_hint">Leave empty for none.</string>
+    <string name="settings_location_delete">Delete</string>
+    <string name="settings_location_in_use">Move or remove the items in %1$s before deleting it.</string>
+    <string name="settings_alerts">Expiration alerts</string>
+    <string name="settings_warn_me">Warn me</string>
+    <plurals name="settings_days_before">
+        <item quantity="one">%1$d day before</item>
+        <item quantity="other">%1$d days before</item>
+    </plurals>
+    <string name="settings_scanning">Scanning</string>
+    <string name="settings_batch_scan">Batch scan by default</string>
+    <string name="settings_default_location">Default location</string>
+    <string name="settings_last_used">Last used</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_cancel">Cancel</string>
+
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>
     <string name="unit_name_pound">lb</string>

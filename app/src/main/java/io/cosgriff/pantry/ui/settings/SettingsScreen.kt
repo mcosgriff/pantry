@@ -1,0 +1,348 @@
+package io.cosgriff.pantry.ui.settings
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.DefaultLocation
+import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.PantrySettings
+import io.cosgriff.pantry.ui.components.BackTopBar
+import io.cosgriff.pantry.ui.components.CheckRow
+import io.cosgriff.pantry.ui.components.LocationTile
+import io.cosgriff.pantry.ui.components.PantryCard
+import io.cosgriff.pantry.ui.components.SectionHeading
+import io.cosgriff.pantry.ui.components.ValueRow
+import io.cosgriff.pantry.ui.components.locationName
+import io.cosgriff.pantry.ui.theme.PantryDimens
+import io.cosgriff.pantry.ui.theme.PantryTheme
+import java.time.Period
+
+/** Warning windows the "Warn me" row offers. */
+private val WARNING_CHOICES = listOf(1, 2, 3, 5, 7)
+
+data class SettingsActions(
+    val onBack: () -> Unit = {},
+    val onAddLocation: (name: String, shelfLifeDays: Int?) -> Unit = { _, _ -> },
+    val onUpdateLocation: (Location.Custom, name: String, shelfLifeDays: Int?) -> Unit = { _, _, _ -> },
+    val onDeleteLocation: (Location.Custom) -> Unit = {},
+    val onDismissInUse: () -> Unit = {},
+    val onWarningDays: (Int) -> Unit = {},
+    val onBatchScan: (Boolean) -> Unit = {},
+    val onDefaultLocation: (DefaultLocation) -> Unit = {},
+)
+
+@Composable
+fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    SettingsContent(
+        state,
+        SettingsActions(
+            onBack = onBack,
+            onAddLocation = { name, days -> viewModel.onAddLocation(name, days) },
+            onUpdateLocation = { location, name, days -> viewModel.onUpdateLocation(location, name, days) },
+            onDeleteLocation = { viewModel.onDeleteLocation(it) },
+            onDismissInUse = viewModel::onDismissInUse,
+            onWarningDays = { viewModel.onWarningDays(it) },
+            onBatchScan = { viewModel.onBatchScan(it) },
+            onDefaultLocation = { viewModel.onDefaultLocation(it) },
+        ),
+    )
+}
+
+/**
+ * `design/source/Settings.dc.html` (#8). Notifications and the daily digest, product lookup (#9) and units are
+ * not here yet: each waits on something the app doesn't do yet.
+ */
+@Composable
+fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Modifier = Modifier) {
+    val colors = PantryTheme.colors
+    var editing by rememberSaveable { mutableStateOf<Long?>(null) } // a custom location's id, or NEW
+    var choosingWarning by rememberSaveable { mutableStateOf(false) }
+    var choosingDefault by rememberSaveable { mutableStateOf(false) }
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = colors.ground,
+        topBar = {
+            BackTopBar(
+                stringResource(R.string.settings_title),
+                stringResource(R.string.details_back),
+                actions.onBack,
+                Modifier.statusBarsPadding(),
+            )
+        },
+    ) { insets ->
+        Column(
+            Modifier
+                .padding(insets)
+                .verticalScroll(rememberScrollState())
+                .padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.space1, bottom = PantryDimens.space6),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Section(stringResource(R.string.settings_locations)) {
+                state.locations.forEachIndexed { index, location ->
+                    if (index > 0) HorizontalDivider(color = colors.divider)
+                    LocationRow(location, onEdit = (location as? Location.Custom)?.let { { editing = it.id } })
+                }
+                HorizontalDivider(color = colors.divider)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = PantryDimens.buttonHeight)
+                        .clickable { editing = NEW }
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
+                    Text(
+                        stringResource(R.string.settings_add_location),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.accent,
+                        modifier = Modifier.padding(start = PantryDimens.space3),
+                    )
+                }
+            }
+            Section(stringResource(R.string.settings_alerts)) {
+                val days = state.settings.warningDays
+                ValueRow(
+                    stringResource(R.string.settings_warn_me),
+                    pluralStringResource(R.plurals.settings_days_before, days, days),
+                    onClick = { choosingWarning = true },
+                )
+            }
+            Section(stringResource(R.string.settings_scanning)) {
+                CheckRow(stringResource(R.string.settings_batch_scan), state.settings.batchScanByDefault, actions.onBatchScan)
+                HorizontalDivider(color = colors.divider)
+                ValueRow(
+                    stringResource(R.string.settings_default_location),
+                    defaultLocationName(state.settings.defaultLocation),
+                    onClick = { choosingDefault = true },
+                )
+            }
+        }
+    }
+
+    editing?.let { id ->
+        val existing = state.locations.filterIsInstance<Location.Custom>().firstOrNull { it.id == id }
+        LocationDialog(
+            existing = existing,
+            onSave = { name, days ->
+                if (existing == null) actions.onAddLocation(name, days) else actions.onUpdateLocation(existing, name, days)
+                editing = null
+            },
+            onDelete = existing?.let { { actions.onDeleteLocation(it); editing = null } },
+            onDismiss = { editing = null },
+        )
+    }
+    if (choosingWarning) {
+        val options = (WARNING_CHOICES + state.settings.warningDays).distinct().sorted()
+        ChoiceDialog(
+            title = stringResource(R.string.settings_warn_me),
+            options = options,
+            selected = state.settings.warningDays,
+            label = { pluralStringResource(R.plurals.settings_days_before, it, it) },
+            onChoose = { choosingWarning = false; actions.onWarningDays(it) },
+            onDismiss = { choosingWarning = false },
+        )
+    }
+    if (choosingDefault) {
+        ChoiceDialog(
+            title = stringResource(R.string.settings_default_location),
+            options = listOf<DefaultLocation>(DefaultLocation.LastUsed) + state.locations.map(DefaultLocation::Fixed),
+            selected = state.settings.defaultLocation,
+            label = { defaultLocationName(it) },
+            onChoose = { choosingDefault = false; actions.onDefaultLocation(it) },
+            onDismiss = { choosingDefault = false },
+        )
+    }
+    state.locationInUse?.let { location ->
+        AlertDialog(
+            onDismissRequest = actions.onDismissInUse,
+            text = { Text(stringResource(R.string.settings_location_in_use, location.name)) },
+            confirmButton = { TextButton(onClick = actions.onDismissInUse) { Text(stringResource(R.string.details_ok)) } },
+        )
+    }
+}
+
+private const val NEW = -1L
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+        SectionHeading(title)
+        PantryCard { Column { content() } }
+    }
+}
+
+@Composable
+private fun LocationRow(location: Location, onEdit: (() -> Unit)?) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 60.dp)
+            .then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
+    ) {
+        LocationTile(location, size = 32.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(locationName(location), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.settings_shelf_life, shelfLifeText(location.shelfLife)),
+                style = MaterialTheme.typography.bodySmall,
+                color = PantryTheme.colors.inkMuted,
+            )
+        }
+        if (onEdit != null) {
+            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = PantryTheme.colors.inkMuted, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun shelfLifeText(period: Period?): String = when {
+    period == null || period.isZero -> stringResource(R.string.settings_shelf_life_none)
+    period.years > 0 && period.months == 0 && period.days == 0 -> pluralStringResource(R.plurals.settings_shelf_years, period.years, period.years)
+    period.days == 0 -> period.toTotalMonths().toInt().let { pluralStringResource(R.plurals.settings_shelf_months, it, it) }
+    else -> pluralStringResource(R.plurals.settings_shelf_days, period.days, period.days)
+}
+
+@Composable
+private fun defaultLocationName(location: DefaultLocation): String = when (location) {
+    DefaultLocation.LastUsed -> stringResource(R.string.settings_last_used)
+    is DefaultLocation.Fixed -> locationName(location.location)
+}
+
+@Composable
+private fun <T> ChoiceDialog(
+    title: String,
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onChoose: (T) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                options.forEach { option ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = PantryDimens.tapMin)
+                            .selectable(selected = option == selected, role = Role.RadioButton) { onChoose(option) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = option == selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = PantryTheme.colors.accent))
+                        Text(label(option), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = PantryDimens.space3))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
+    )
+}
+
+@Composable
+private fun LocationDialog(
+    existing: Location.Custom?,
+    onSave: (name: String, shelfLifeDays: Int?) -> Unit,
+    onDelete: (() -> Unit)?,
+    onDismiss: () -> Unit,
+) {
+    var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
+    var days by rememberSaveable { mutableStateOf(existing?.shelfLife?.days?.takeIf { it > 0 }?.toString().orEmpty()) }
+    val parsedDays = days.trim().takeIf { it.isNotEmpty() }?.toIntOrNull()
+    val daysValid = days.isBlank() || (parsedDays != null && parsedDays > 0)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (existing == null) R.string.settings_add_location else R.string.settings_edit_location)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text(stringResource(R.string.settings_location_name)) })
+                OutlinedTextField(
+                    value = days,
+                    onValueChange = { days = it },
+                    singleLine = true,
+                    isError = !daysValid,
+                    label = { Text(stringResource(R.string.settings_location_days)) },
+                    supportingText = { Text(stringResource(R.string.settings_location_days_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name, parsedDays) }, enabled = name.isNotBlank() && daysValid) {
+                Text(stringResource(R.string.settings_save))
+            }
+        },
+        dismissButton = {
+            Row {
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete) {
+                        Text(stringResource(R.string.settings_location_delete), color = PantryTheme.colors.danger, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) }
+            }
+        },
+    )
+}
+
+@Preview
+@Composable
+private fun SettingsLightPreview() = PantryTheme(darkTheme = false) { SettingsContent(SettingsState(), SettingsActions()) }
+
+@Preview
+@Composable
+private fun SettingsDarkPreview() = PantryTheme(darkTheme = true) {
+    SettingsContent(
+        SettingsState(
+            settings = PantrySettings(batchScanByDefault = true),
+            locations = Location.defaults + Location.Custom("Sample garage fridge", Period.ofDays(5), id = 4),
+        ),
+        SettingsActions(),
+    )
+}
