@@ -8,7 +8,28 @@ Offline-first pantry tracker for Android. Scan groceries after a shopping run, k
 dry pantry, fridge and freezer, set quantities and expiration dates, and plan meals around what expires
 first. Everything stays on the phone.
 
-Early development: the app is a scaffold with its theme in place; no screens are built yet.
+## Status
+
+Early development. The app builds and has its theme (light and dark); no screens are built yet. The plan,
+in order:
+
+| Step | Issue |
+| --- | --- |
+| Pantry rules: items, locations, quantities, expiry | [#3](https://github.com/mcosgriff/pantry/issues/3) |
+| Saving the pantry and settings on the phone | [#4](https://github.com/mcosgriff/pantry/issues/4) |
+| Screenshot and accessibility tests | [#5](https://github.com/mcosgriff/pantry/issues/5) |
+| Pantry list | [#6](https://github.com/mcosgriff/pantry/issues/6) |
+| Add, edit and remove items | [#7](https://github.com/mcosgriff/pantry/issues/7) |
+| Pantry settings | [#8](https://github.com/mcosgriff/pantry/issues/8) |
+| Scanning barcodes | [#10](https://github.com/mcosgriff/pantry/issues/10) |
+| Product lookup by barcode (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
+
+The screens are designed already: see [`design/`](design/README.md).
+
+## Privacy
+
+No account, no server, no trackers, no ads. The app makes no network calls today. Product lookup by barcode
+would be the first, and is waiting on a decision about what it sends ([#9](https://github.com/mcosgriff/pantry/issues/9)).
 
 ## Install
 

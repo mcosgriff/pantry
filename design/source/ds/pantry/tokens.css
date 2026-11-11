@@ -1,0 +1,79 @@
+/* Pantry — generated from tokens.json */
+:root, [data-theme="light"] {
+  --ground: #f4f5f1;
+  --surface: #ffffff;
+  --surface-muted: #f0f2ec;
+  --ink: #18211c;
+  --ink-muted: #5b655f;
+  --border: #e2e5df;
+  --border-strong: #c9cec6;
+  --divider: #eef0ea;
+  --accent: #2d6a4f;
+  --accent-pressed: #1b4332;
+  --on-accent: #ffffff;
+  --dry-container: #f6e7c8;
+  --dry: #7a4e0b;
+  --fridge-container: #dcebfa;
+  --fridge: #1e4f86;
+  --freezer-container: #e4e1f7;
+  --freezer: #43358f;
+  --warning-container: #fff4e0;
+  --warning-container-strong: #f5d9a8;
+  --warning: #8f5400;
+  --on-warning-container: #5a3906;
+  --danger: #b3261e;
+  --danger-border: #e8b4af;
+  --scanner-ground: #0e1411;
+  --scanner-live: #7bd3a4;
+  --shadow-fab: 0 6px 18px rgba(24, 33, 28, 0.22);
+}
+[data-theme="dark"] {
+  --ground: #111613;
+  --surface: #1a201c;
+  --surface-muted: #252c27;
+  --ink: #e6ebe7;
+  --ink-muted: #a3ada6;
+  --border: #2e3631;
+  --border-strong: #6b756e;
+  --divider: #232a25;
+  --accent: #7bc8a0;
+  --accent-pressed: #9ad8b6;
+  --on-accent: #0b2618;
+  --dry-container: #574012;
+  --dry: #f5d08a;
+  --fridge-container: #183c5e;
+  --fridge: #b0d3f7;
+  --freezer-container: #2a2360;
+  --freezer: #cdc6f7;
+  --warning-container: #3a2a0c;
+  --warning-container-strong: #5a4214;
+  --warning: #f0b75c;
+  --on-warning-container: #ffdca0;
+  --danger: #f2a19a;
+  --danger-border: #6b2c27;
+  --scanner-ground: #0e1411;
+  --scanner-live: #7bd3a4;
+  --shadow-fab: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-sheet: 28px;
+  --radius-full: 9999px;
+  --tap-min: 44px;
+  --field-height: 48px;
+  --button-height: 52px;
+  --fab-height: 56px;
+  --nav-height: 76px;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Roboto Mono", monospace;
+}

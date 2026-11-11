@@ -40,5 +40,6 @@ All text the app shows is in `app/src/main/res/values/strings.xml`. A new langua
   [Conventional Commit](https://www.conventionalcommits.org/) (`fix:`, `feat:`, `docs:`, …);
   `release-please` builds the version and changelog from them, and `pr-title.yml` checks it.
 - `./gradlew build` must be green.
+- A change people would notice updates `README.md` in the same pull request.
 - Test data is made up: no real personal data in the repo.
 - Security problems go through a private report, not an issue: see [`SECURITY.md`](SECURITY.md).

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scan items</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/pantry/tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:var(--accent)}a:hover{color:var(--accent-pressed)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; box-sizing: border-box; background: var(--scanner-ground); font-family: var(--font-sans); color: #FFFFFF; display: flex; flex-direction: column; position: relative; overflow: hidden">
+
+  <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 520px; background: #26302A"></div>
+
+  <header style="position: relative; padding: 52px var(--space-4) 0; display: flex; align-items: center; justify-content: space-between">
+    <a href="Main.dc.html" aria-label="Close scanner" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); background: rgba(0,0,0,0.45); color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <div style="height: 36px; padding: 0 14px; border-radius: var(--radius-full); background: rgba(0,0,0,0.45); display: flex; align-items: center; gap: var(--space-2); font-size: 14px; font-weight: 600">
+      <span aria-hidden="true" style="width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--scanner-live)"></span>
+      Batch scan · 6 added
+    </div>
+    <button aria-label="Toggle flashlight" style="width: var(--tap-min); height: var(--tap-min); border-radius: var(--radius-full); border: none; background: rgba(0,0,0,0.45); color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
+    </button>
+  </header>
+
+  <div style="position: relative; height: 330px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px">
+    <div style="width: 280px; height: 150px; position: relative">
+      <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 34px; height: 34px; border-left: 4px solid #FFFFFF; border-top: 4px solid #FFFFFF; border-top-left-radius: var(--radius-lg)"></div>
+      <div aria-hidden="true" style="position: absolute; right: 0; top: 0; width: 34px; height: 34px; border-right: 4px solid #FFFFFF; border-top: 4px solid #FFFFFF; border-top-right-radius: var(--radius-lg)"></div>
+      <div aria-hidden="true" style="position: absolute; left: 0; bottom: 0; width: 34px; height: 34px; border-left: 4px solid #FFFFFF; border-bottom: 4px solid #FFFFFF; border-bottom-left-radius: var(--radius-lg)"></div>
+      <div aria-hidden="true" style="position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; border-right: 4px solid #FFFFFF; border-bottom: 4px solid #FFFFFF; border-bottom-right-radius: var(--radius-lg)"></div>
+      <div aria-hidden="true" style="position: absolute; left: 20px; right: 20px; top: 74px; height: 2px; background: var(--scanner-live); border-radius: 1px"></div>
+    </div>
+    <span style="font-size: 14px; color: #E3E8E4">Point at a barcode</span>
+  </div>
+
+  <section aria-label="Last scanned item" style="position: relative; flex: 1; background: var(--surface); color: var(--ink); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 10px var(--space-5) 28px; display: flex; flex-direction: column; gap: var(--space-4)">
+    <div aria-hidden="true" style="width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); align-self: center"></div>
+
+    <div style="display: flex; gap: 14px; align-items: flex-start">
+      <div style="width: 64px; height: 64px; border-radius: var(--radius-lg); background: var(--surface-muted); border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--ink-muted); text-align: center; flex-shrink: 0">Product photo</div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1)">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--accent)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+          Found in Open Food Facts
+        </div>
+        <h2 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.25">Organic large eggs, 24 ct</h2>
+        <span style="font-size: 13px; color: var(--ink-muted); font-family: var(--font-mono)">UPC 0 96619 32108 4</span>
+      </div>
+    </div>
+
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2)">
+      <legend style="padding: 0; font-size: 13px; font-weight: 600; color: var(--ink-muted); margin-bottom: var(--space-2)">Store in</legend>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2)">
+        <button aria-pressed="false" style="height: var(--tap-min); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500">Dry</button>
+        <button aria-pressed="true" style="height: var(--tap-min); border-radius: var(--radius-md); border: 2px solid var(--fridge); background: var(--fridge-container); color: var(--fridge); font-size: 14px; font-weight: 600">Fridge</button>
+        <button aria-pressed="false" style="height: var(--tap-min); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500">Freezer</button>
+      </div>
+    </fieldset>
+
+    <div style="display: flex; gap: var(--space-3); align-items: stretch">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 600; color: var(--ink-muted)">Quantity</span>
+        <div style="height: var(--field-height); display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 var(--space-1)">
+          <button aria-label="Decrease quantity" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">−</button>
+          <span style="font-size: 16px; font-weight: 600">24 ea</span>
+          <button aria-label="Increase quantity" style="width: var(--tap-min); height: 40px; border: none; background: transparent; font-size: 22px; color: var(--ink)">+</button>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 600; color: var(--ink-muted)">Expires</span>
+        <button style="height: var(--field-height); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-3); font-size: 15px; font-weight: 500; color: var(--ink)">
+          Nov 30
+          <span style="font-size: 12px; color: var(--ink-muted); font-weight: 500">suggested</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: auto">
+      <a href="ItemEdit.dc.html" style="flex: 1; height: var(--button-height); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); color: var(--ink); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 15px; font-weight: 600">More details</a>
+      <button style="flex: 1.6; height: var(--button-height); border-radius: var(--radius-lg); border: none; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600">Add &amp; keep scanning</button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;},&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>
