@@ -12,6 +12,9 @@ add a row to its Revision log.
 - Design canvas (mockups): https://claude.ai/artifact/5kaAAyobGePsdG3TFfPeYh
 - Design system (tokens, README, Compose mapping): https://claude.ai/artifact/Xu1pTgesVxAXhGgB4w8P7e
 
+**Local copy of the design: `design/`** (`design/source/<Board>.dc.html`, exact colors, spacing and copy).
+Start from `design/README.md`. Before building a screen, read its board.
+
 This file holds the rules and the decisions behind them. How a feature works is in its code and tests; the
 issue numbers lead to the discussion.
 
@@ -76,6 +79,11 @@ Values live in the design system and in `ui/theme/`; don't type a color, radius 
   `feat/scan-sheet`, `fix/expiry-sort`) and reaches `main` through a squash-merged pull request. If the
   checkout is on `main`, create the branch before the first edit. `.githooks/pre-commit` refuses a commit on
   `main`; turn it on once per clone with `git config core.hooksPath .githooks`.
+- **Keep `README.md` current in the same PR.** A change people would notice (a new screen or feature, a
+  permission, a network call, install steps, a requirement) updates the README's "What it does", "Status"
+  or "Install" in that PR, not later.
+- Work is tracked as GitHub issues; reference the issue number in the PR (`Closes #6`) and in code comments
+  where a decision lands.
 - Business logic goes in `:domain` with a test; ViewModels stay thin.
 - A composable used by more than one screen lives in `ui/components/`.
 - A screen is a `…Content` composable (plain state and callbacks) wrapped by a `…Screen` that reads the
