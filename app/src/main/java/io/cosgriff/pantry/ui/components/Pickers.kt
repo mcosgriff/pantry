@@ -30,7 +30,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.ui.theme.PantryDimens
@@ -77,7 +76,7 @@ fun LocationPicker(selected: Location, locations: List<Location>, onSelect: (Loc
                         .weight(1f)
                         .height(PantryDimens.tapMin)
                         .background(if (on) container else colors.surface, shape)
-                        .border(if (on) 2.dp else 1.dp, if (on) content else colors.border, shape)
+                        .border(if (on) PantryDimens.borderSelected else PantryDimens.hairline, if (on) content else colors.border, shape)
                         .selectable(selected = on, role = Role.RadioButton) { onSelect(location) },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -103,7 +102,7 @@ fun QuantityStepper(value: String, onStep: (Int) -> Unit, modifier: Modifier = M
             .fillMaxWidth()
             .height(PantryDimens.fieldHeight)
             .background(colors.surface, shape)
-            .border(1.dp, colors.border, shape)
+            .border(PantryDimens.hairline, colors.border, shape)
             .padding(horizontal = PantryDimens.space1),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -16,7 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
+import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.ui.theme.PantryTheme
 
@@ -33,7 +33,7 @@ fun PantryBottomBar(current: TopLevel, onSelect: (TopLevel) -> Unit, modifier: M
     val colors = PantryTheme.colors
     Column(modifier) {
         HorizontalDivider(color = colors.border)
-        NavigationBar(containerColor = colors.surface, tonalElevation = 0.dp) {
+        NavigationBar(containerColor = colors.surface, tonalElevation = PantryDimens.flat) {
             TopLevel.entries.forEach { place ->
                 val selected = place == current
                 NavigationBarItem(

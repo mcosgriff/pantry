@@ -21,8 +21,9 @@ from the location's shelf life, with quick picks), opened, purchase date, a low-
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
 low-stock alert), what was used up, and what you add by hand; a shopping trip checks things off and ends by
-opening the scanner to restock. A new install shows an empty pantry. The plan,
-in order:
+opening the scanner to restock. A new install shows an empty pantry. Every
+screen is screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
+labels) on each build. The plan, in order:
 
 | Step | Issue |
 | --- | --- |

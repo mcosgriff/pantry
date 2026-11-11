@@ -20,7 +20,14 @@ git config core.hooksPath .githooks
 | Command | What it runs |
 |---|---|
 | `./gradlew :domain:test` | The business rules: pure Kotlin, fast. Run it often. |
-| `./gradlew build` | Everything: unit tests and lint. Lint fails on a warning. |
+| `./gradlew build` | Everything: unit tests, screenshot and accessibility tests, lint. Lint fails on a warning. |
+| `./gradlew :app:recordRoborazziDebug` | Re-records the reference screenshots in `app/src/test/screenshots/`. Look at every image it changes before committing. |
+| `./gradlew koverHtmlReportCoverage` | Test coverage of `:domain` and `:app`, in `build/reports/kover/htmlCoverage/`. |
+
+Every screen's `…Content` composable is drawn under Robolectric in light and dark (`shoot` / `shootScreen` in
+`app/src/test/java/io/cosgriff/pantry/ui/screens/Screenshots.kt`), checked with Google's Accessibility Test
+Framework (a warning fails), and compared pixel for pixel with its reference. On a mismatch, CI uploads the
+new image and the difference as the `screenshot-differences` artifact.
 
 ## Changing a dependency
 

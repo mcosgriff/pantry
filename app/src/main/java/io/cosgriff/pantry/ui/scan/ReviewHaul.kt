@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.HaulEntry
 import io.cosgriff.pantry.domain.haulGroups
@@ -83,7 +82,7 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 18.dp)
+                            .padding(bottom = PantryDimens.spaceSection)
                             .background(colors.warningContainer, MaterialTheme.shapes.large)
                             .padding(start = PantryDimens.space4, end = PantryDimens.space2, top = PantryDimens.space1, bottom = PantryDimens.space1),
                         verticalAlignment = Alignment.CenterVertically,
@@ -109,7 +108,7 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2),
                     ) {
-                        LocationTile(location, size = 24.dp)
+                        LocationTile(location, size = PantryDimens.tileTiny)
                         Text(
                             stringResource(R.string.review_group, locationName(location), entries.size).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
@@ -120,7 +119,7 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
                 }
                 entries.forEachIndexed { i, entry ->
                     item(key = "item-${entry.index}") {
-                        HaulRow(entry, Modifier.groupedRow(i, entries.size, 18.dp, colors.surface, colors.border, colors.divider)) { editing = entry.index }
+                        HaulRow(entry, Modifier.groupedRow(i, entries.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider)) { editing = entry.index }
                     }
                 }
                 item(key = "gap-$location") { Row(Modifier.height(PantryDimens.space3)) {} }
@@ -128,12 +127,12 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
         }
         Row(
             Modifier.padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.space3, bottom = PantryDimens.space4),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
         ) {
             OutlinedButton(
                 onClick = actions.onScanMore,
                 shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, colors.borderStrong),
+                border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
                 modifier = Modifier.weight(1f).height(PantryDimens.buttonHeight),
             ) { Text(stringResource(R.string.review_scan_more), style = MaterialTheme.typography.labelLarge) }
@@ -141,7 +140,13 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
                 onClick = actions.onAddAll,
                 enabled = state.haul.isNotEmpty() && missing == 0,
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
+                // Disabled until every item has a name: still legible, as on the scan sheet.
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.accent,
+                    contentColor = colors.onAccent,
+                    disabledContainerColor = colors.surfaceMuted,
+                    disabledContentColor = colors.inkMuted,
+                ),
                 modifier = Modifier.weight(1.6f).height(PantryDimens.buttonHeight),
             ) { Text(pluralStringResource(R.plurals.review_add_all, state.haul.size, state.haul.size), style = MaterialTheme.typography.labelLarge) }
         }
@@ -170,11 +175,11 @@ private fun HaulRow(entry: HaulEntry, modifier: Modifier, onClick: () -> Unit) {
         modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = PantryDimens.space3),
+            .padding(horizontal = PantryDimens.spaceInset, vertical = PantryDimens.space3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(
                 if (unnamed) stringResource(R.string.review_needs_name) else draft.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -199,7 +204,7 @@ private fun HaulRow(entry: HaulEntry, modifier: Modifier, onClick: () -> Unit) {
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
                 .background(colors.surfaceMuted, MaterialTheme.shapes.extraSmall)
-                .padding(horizontal = 10.dp, vertical = PantryDimens.space1),
+                .padding(horizontal = PantryDimens.spaceIcon, vertical = PantryDimens.space1),
         )
     }
 }

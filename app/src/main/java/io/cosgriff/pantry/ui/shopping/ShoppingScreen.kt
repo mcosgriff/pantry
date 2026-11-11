@@ -51,7 +51,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
@@ -101,9 +100,9 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
     ) { insets ->
         LazyColumn(contentPadding = PaddingValues(top = insets.calculateTopPadding() + PantryDimens.space6, bottom = insets.calculateBottomPadding() + PantryDimens.space6)) {
             item {
-                Column(Modifier.padding(horizontal = PantryDimens.space5), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(Modifier.padding(horizontal = PantryDimens.space5), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
                             val n = state.lines.size
                             Text(pluralStringResource(R.plurals.shopping_count, n, n), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, color = colors.inkMuted)
                             Text(stringResource(R.string.shopping_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
@@ -144,7 +143,7 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
                         color = colors.inkMuted,
                         modifier = Modifier
                             .padding(horizontal = PantryDimens.space5)
-                            .padding(top = 18.dp, bottom = PantryDimens.space2)
+                            .padding(top = PantryDimens.spaceSection, bottom = PantryDimens.space2)
                             .semantics { heading() },
                     )
                 }
@@ -156,7 +155,7 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
                         onRemove = line.entry?.let { entry -> { actions.onRemove(entry) } },
                         modifier = Modifier
                             .padding(horizontal = PantryDimens.space5)
-                            .groupedRow(index, lines.size, 18.dp, colors.surface, colors.border, colors.divider),
+                            .groupedRow(index, lines.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider),
                     )
                 }
             }
@@ -189,12 +188,12 @@ private fun AddField(onAdd: (String) -> Unit) {
                 Modifier
                     .height(PantryDimens.fieldHeight)
                     .background(colors.surface, MaterialTheme.shapes.medium)
-                    .border(1.dp, colors.border, MaterialTheme.shapes.medium)
-                    .padding(start = 14.dp),
+                    .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.medium)
+                    .padding(start = PantryDimens.spaceInset),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
             ) {
-                Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.inkMuted, modifier = Modifier.size(PantryDimens.iconSmall))
                 Box(Modifier.weight(1f)) {
                     if (text.isEmpty()) Text(label, style = MaterialTheme.typography.bodyLarge, color = colors.inkMuted)
                     field()
@@ -234,7 +233,7 @@ private fun LineRow(line: ShoppingLine, inCart: Boolean, onToggle: (Boolean) -> 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked = inCart, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = colors.accent), modifier = Modifier.padding(PantryDimens.space2))
-        Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f).padding(vertical = PantryDimens.spaceIcon), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(
                 line.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -248,7 +247,7 @@ private fun LineRow(line: ShoppingLine, inCart: Boolean, onToggle: (Boolean) -> 
         }
         if (onRemove != null) {
             IconButton(onClick = onRemove) {
-                Icon(painterResource(R.drawable.ic_clear), stringResource(R.string.shopping_remove, line.name), tint = colors.inkMuted, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_clear), stringResource(R.string.shopping_remove, line.name), tint = colors.inkMuted, modifier = Modifier.size(PantryDimens.iconSmall))
             }
         }
     }
@@ -285,7 +284,7 @@ fun ShoppingTripContent(state: ShoppingState, onBack: () -> Unit, onToggle: (Sho
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
                     modifier = Modifier.fillMaxWidth().height(PantryDimens.buttonHeight),
                 ) {
-                    Icon(painterResource(R.drawable.ic_scan), contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(painterResource(R.drawable.ic_scan), contentDescription = null, modifier = Modifier.size(PantryDimens.iconMedium))
                     Text(stringResource(R.string.trip_done), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = PantryDimens.space2))
                 }
                 if (progress.left > 0) {
@@ -296,7 +295,7 @@ fun ShoppingTripContent(state: ShoppingState, onBack: () -> Unit, onToggle: (Sho
     ) { insets ->
         LazyColumn(contentPadding = PaddingValues(start = PantryDimens.space5, end = PantryDimens.space5, top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding())) {
             item {
-                Column(Modifier.padding(bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                Column(Modifier.padding(bottom = PantryDimens.spaceSection), verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
                         Text(stringResource(R.string.trip_count, progress.inCart, progress.total), style = PantryTheme.text.dateDisplay)
                         Text(stringResource(R.string.trip_in_cart), style = MaterialTheme.typography.bodyLarge, color = colors.inkMuted)
@@ -317,16 +316,16 @@ fun ShoppingTripContent(state: ShoppingState, onBack: () -> Unit, onToggle: (Sho
                     onToggle = { onToggle(line, it) },
                     onRemove = null,
                     showDetail = false,
-                    modifier = Modifier.groupedRow(index, lines.size, 18.dp, colors.surface, colors.border, colors.divider),
+                    modifier = Modifier.groupedRow(index, lines.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider),
                 )
             }
         }
     }
 }
 
-// Previews use made-up items, marked as samples.
-private val previewToday = LocalDate.of(2026, 11, 10)
-private val previewLines = shoppingList(
+// Previews and screenshot tests use made-up items, marked as samples.
+internal val previewToday = LocalDate.of(2026, 11, 10)
+internal val previewLines = shoppingList(
     listOf(
         PantryItem(id = 1, name = "Sample eggs", location = Location.Fridge, quantity = Quantity(BigDecimal("6"), QuantityUnit.Each), purchased = previewToday, lowStockAt = BigDecimal("6")),
     ),

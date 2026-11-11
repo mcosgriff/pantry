@@ -29,12 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
@@ -129,7 +129,8 @@ fun UseSoonContent(
                         color = color,
                         modifier = Modifier
                             .padding(horizontal = PantryDimens.space5)
-                            .padding(top = if (group == state.groups.keys.first()) 0.dp else 18.dp, bottom = PantryDimens.space2)
+                            .then(if (group == state.groups.keys.first()) Modifier else Modifier.padding(top = PantryDimens.spaceSection))
+                            .padding(bottom = PantryDimens.space2)
                             .semantics { heading() },
                     )
                 }
@@ -137,14 +138,14 @@ fun UseSoonContent(
                     Row(
                         Modifier
                             .padding(horizontal = PantryDimens.space5)
-                            .groupedRow(index, items.size, 18.dp, colors.surface, colors.border, colors.divider)
+                            .groupedRow(index, items.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider)
                             .clickable { actions.onItem(item.id) }
-                            .padding(start = 14.dp, end = PantryDimens.space2, top = 10.dp, bottom = 10.dp),
+                            .padding(start = PantryDimens.spaceInset, end = PantryDimens.space2, top = PantryDimens.spaceIcon, bottom = PantryDimens.spaceIcon),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
                     ) {
-                        LocationTile(item.location, size = 36.dp)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        LocationTile(item.location, size = PantryDimens.tileMedium)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
                             Text(item.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 stringResource(R.string.use_soon_detail, expiryText(expiryStatus(item.expires, state.today), item.expires), quantityText(item.quantity)),
@@ -152,23 +153,27 @@ fun UseSoonContent(
                                 color = colors.inkMuted,
                             )
                         }
-                        val action = quickAction(item, state.today)
+                        val action = stringResource(
+                            when (quickAction(item, state.today)) {
+                                QuickAction.ThrowOut -> R.string.use_soon_throw_out
+                                QuickAction.UsedUp -> R.string.use_soon_used_up
+                                QuickAction.Freeze -> R.string.use_soon_freeze
+                            },
+                        )
+                        // TalkBack hears which item each button acts on: the buttons alone all read alike.
+                        val label = stringResource(R.string.use_soon_action_on, action, item.name)
                         OutlinedButton(
                             onClick = { actions.onAction(item) },
                             shape = MaterialTheme.shapes.extraLarge,
-                            border = BorderStroke(1.dp, colors.border),
+                            border = BorderStroke(PantryDimens.hairline, colors.border),
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surface, contentColor = colors.ink),
                             contentPadding = PaddingValues(horizontal = PantryDimens.space3),
-                            modifier = Modifier.heightIn(min = PantryDimens.tapMin),
+                            modifier = Modifier
+                                .heightIn(min = PantryDimens.tapMin)
+                                .semantics { contentDescription = label },
                         ) {
                             Text(
-                                stringResource(
-                                    when (action) {
-                                        QuickAction.ThrowOut -> R.string.use_soon_throw_out
-                                        QuickAction.UsedUp -> R.string.use_soon_used_up
-                                        QuickAction.Freeze -> R.string.use_soon_freeze
-                                    },
-                                ),
+                                action,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
@@ -181,8 +186,8 @@ fun UseSoonContent(
     }
 }
 
-// Previews use made-up items, marked as samples.
-private val previewToday = LocalDate.of(2026, 11, 10)
+// Previews and the screenshot test use made-up items, marked as samples.
+internal val previewToday = LocalDate.of(2026, 11, 10)
 private fun sample(id: Long, name: String, days: Long, location: Location, opened: Boolean = false) = PantryItem(
     id = id,
     name = name,
@@ -192,7 +197,7 @@ private fun sample(id: Long, name: String, days: Long, location: Location, opene
     expires = previewToday.plusDays(days),
     opened = opened,
 )
-private val previewState = UseSoonState(
+internal val previewState = UseSoonState(
     today = previewToday,
     loading = false,
     groups = useSoon(
