@@ -73,6 +73,9 @@ class ScreensScreenshotTest(private val shade: Shade) {
     fun itemDetails() = compose.shoot("item_details", shade) { ItemDetailsContent(itemDetailsState, ItemDetailsActions()) }
 
     @Test
+    fun removeItem() = compose.shootScreen("remove_item", shade) { ItemDetailsContent(itemDetailsState, ItemDetailsActions(), removing = true) }
+
+    @Test
     fun settings() = compose.shoot("settings", shade) {
         SettingsContent(
             SettingsState(

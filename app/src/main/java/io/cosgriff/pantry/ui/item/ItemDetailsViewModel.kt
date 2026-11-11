@@ -3,6 +3,7 @@ package io.cosgriff.pantry.ui.item
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
@@ -11,6 +12,7 @@ import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
+import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.stepped
 import java.math.BigDecimal
 import java.time.Clock
@@ -36,6 +38,7 @@ class ItemDetailsViewModel @Inject constructor(
     private val pantry: PantryRepository,
     private val locations: LocationRepository,
     private val settings: SettingsRepository,
+    private val consumption: Consumption,
     private val clock: Clock,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ItemDetailsState(today = LocalDate.now(clock)))
@@ -82,11 +85,14 @@ class ItemDetailsViewModel @Inject constructor(
         }
     }
 
-    /** Removes the item. A correction, not consumption: no shopping line (`Consumption`, #48; reasons are #18). */
-    fun onRemove() {
+    /**
+     * Removes the item for [reason] (#18): `Consumption` decides what else that does. The stored item is removed,
+     * by its saved name, not the draft's unsaved edits.
+     */
+    fun onRemove(reason: RemoveReason) {
         val draft = _state.value.draft ?: return
         viewModelScope.launch {
-            if (!draft.isNew) pantry.delete(draft.id)
+            if (!draft.isNew) pantry.item(draft.id)?.let { consumption.remove(it, reason, LocalDate.now(clock)) }
             _state.update { it.copy(done = true) }
         }
     }
