@@ -79,9 +79,18 @@ class ScreensScreenshotTest(private val shade: Shade) {
     fun settings() = compose.shoot("settings", shade) {
         SettingsContent(
             SettingsState(
-                settings = PantrySettings(batchScanByDefault = true),
+                settings = PantrySettings(batchScanByDefault = true, notifyExpiringSoon = true),
                 locations = Location.defaults + Location.Custom("Sample garage fridge", Period.ofDays(5), id = 4),
             ),
+            SettingsActions(),
+        )
+    }
+
+    /** An alert is on but Android refuses notifications: the row that leads to Android's settings (#27). */
+    @Test
+    fun settingsNotificationsOff() = compose.shoot("settings_notifications_off", shade) {
+        SettingsContent(
+            SettingsState(settings = PantrySettings(notifyExpiringSoon = true, notifyExpired = true), notificationsAllowed = false),
             SettingsActions(),
         )
     }
