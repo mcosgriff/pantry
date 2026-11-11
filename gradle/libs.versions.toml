@@ -25,9 +25,9 @@ junit = "4.13.2"
 # and verifies it instead (root build.gradle.kts). Each Robolectric release names its own builds of them,
 # so these move together: on a Robolectric upgrade, take the version from its `AndroidSdk` list.
 robolectric = "4.17"
-robolectric-androidAll-sdk35 = "15-robolectric-13954326-i7"
+robolectric-androidAll-sdk35 = "17-robolectric-16653203-i7"
 # Screenshot tests on the JVM through Robolectric (#5): test only, nothing of it ships.
-roborazzi = "1.76.0"
+roborazzi = "1.77.0"
 androidx-test-junit = "1.3.0"
 # Test coverage for Codecov (CI only; nothing of it ships).
 kover = "0.9.11"
