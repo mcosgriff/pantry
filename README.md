@@ -18,7 +18,8 @@ week and next, each with one tap to throw it out, mark it used up, or freeze it 
 a new date), and Undo. Items are
 scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan collects a whole haul to review, name and add in one go,
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
-from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. A barcode
+from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Removing an item asks what happened to it: used up puts it on the shopping list,
+thrown out or added by mistake only takes it out. A barcode
 the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
@@ -42,7 +43,7 @@ labels) on each build. The plan, in order:
 | Scanning barcodes | [#10](https://github.com/mcosgriff/pantry/issues/10) |
 | Naming unknown products, store-packed labels, reviewing a haul | [#12](https://github.com/mcosgriff/pantry/issues/12), [#13](https://github.com/mcosgriff/pantry/issues/13), [#14](https://github.com/mcosgriff/pantry/issues/14) |
 | First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
-| Removing items with a reason (to be decided) | [#18](https://github.com/mcosgriff/pantry/issues/18) |
+| Removing items with a reason | [#18](https://github.com/mcosgriff/pantry/issues/18) |
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
