@@ -10,8 +10,9 @@ first. Everything stays on the phone.
 
 ## Status
 
-Early development. The app builds and has its theme (light and dark); no screens are built yet. The plan,
-in order:
+Early development. The app builds and has its theme (light and dark); no screens are built yet. Every
+screen will be screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
+labels) on each build. The plan, in order:
 
 | Step | Issue |
 | --- | --- |
