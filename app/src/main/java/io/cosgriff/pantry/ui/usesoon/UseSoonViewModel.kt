@@ -3,14 +3,11 @@ package io.cosgriff.pantry.ui.usesoon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.Consumed
+import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.PantryRepository
-import io.cosgriff.pantry.data.ShoppingRepository
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.QuickAction
-import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.UseSoonGroup
-import io.cosgriff.pantry.domain.freeze
-import io.cosgriff.pantry.domain.quickAction
 import io.cosgriff.pantry.domain.useSoon
 import java.time.Clock
 import java.time.LocalDate
@@ -22,26 +19,20 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- * A quick action just taken, with the item as it was so it can be undone, and the shopping-list line "Used up"
- * added for it (#20).
- */
-data class Done(val action: QuickAction, val before: PantryItem, val shoppingId: Long? = null)
-
 data class UseSoonState(
     val today: LocalDate,
     val loading: Boolean = true,
     val groups: Map<UseSoonGroup, List<PantryItem>> = emptyMap(),
-    val done: Done? = null,
+    val done: Consumed? = null,
 )
 
 @HiltViewModel
 class UseSoonViewModel @Inject constructor(
     private val pantry: PantryRepository,
-    private val shopping: ShoppingRepository,
+    private val consumption: Consumption,
     private val clock: Clock,
 ) : ViewModel() {
-    private val done = MutableStateFlow<Done?>(null)
+    private val done = MutableStateFlow<Consumed?>(null)
 
     val state: StateFlow<UseSoonState> = combine(pantry.items(), done) { items, last ->
         val today = LocalDate.now(clock)
@@ -49,31 +40,14 @@ class UseSoonViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UseSoonState(today = LocalDate.now(clock)))
 
     fun onAction(item: PantryItem) {
-        val today = LocalDate.now(clock)
-        val action = quickAction(item, today)
-        viewModelScope.launch {
-            var shoppingId: Long? = null
-            when (action) {
-                QuickAction.ThrowOut -> pantry.delete(item.id)
-                QuickAction.UsedUp -> {
-                    pantry.delete(item.id)
-                    // Something used up goes on the shopping list.
-                    shoppingId = shopping.add(item.name, ShoppingReason.UsedUp, today)
-                }
-                QuickAction.Freeze -> pantry.save(freeze(item, today))
-            }
-            done.value = Done(action, item, shoppingId)
-        }
+        viewModelScope.launch { done.value = consumption.quickAction(item, LocalDate.now(clock)) }
     }
 
     /** Puts the item back as it was before the last quick action. */
     fun onUndo() {
         val last = done.value ?: return
         done.value = null
-        viewModelScope.launch {
-            pantry.save(last.before)
-            last.shoppingId?.let { shopping.remove(it) }
-        }
+        viewModelScope.launch { consumption.undo(last) }
     }
 
     fun onDoneShown() {

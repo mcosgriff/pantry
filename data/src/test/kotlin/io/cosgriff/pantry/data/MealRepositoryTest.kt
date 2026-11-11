@@ -77,24 +77,6 @@ class MealRepositoryTest {
     }
 
     @Test
-    fun `cooking takes amounts out, puts what it used up on the list, and marks the plan cooked`() = runBlocking {
-        val eggs = stock("Test eggs", "18")
-        val cheese = stock("Test mozzarella", "1", QuantityUnit.Bag)
-        val id = meals.save(
-            Meal(
-                "Test egg bites",
-                12,
-                listOf(Ingredient.of(eggs).copy(amount = BigDecimal("12")), Ingredient.of(cheese).copy(amount = BigDecimal("1")), Ingredient.typed("Test salt")),
-            ),
-        )
-        meals.plan(id, today, 12)
-        meals.cooked(meals.plans().first().single(), today)
-        assertEquals(listOf("Test eggs" to "6"), pantry.items().first().map { it.name to it.quantity.amount.toPlainString() })
-        assertEquals(listOf("Test mozzarella"), shopping.lines().first().filter { it.reason == ShoppingReason.UsedUp }.map { it.name })
-        assertTrue(meals.plans().first().single().cooked)
-    }
-
-    @Test
     fun `missing ingredients go on the list for the meal, once`() = runBlocking {
         val eggs = stock("Test eggs", "4")
         val id = meals.save(
@@ -115,16 +97,5 @@ class MealRepositoryTest {
         val lines = shopping.lines().first()
         assertEquals(listOf("Test cottage cheese", "Test eggs"), lines.map { it.name })
         assertTrue(lines.all { it.reason == ShoppingReason.ForMeal && it.entry?.meal == "Test egg bites" && it.entry?.mealDay == today.plusDays(1) })
-    }
-
-    @Test
-    fun `deleting an item leaves the ingredient to match a restocked one by name`() = runBlocking {
-        val eggs = stock("Test eggs", "6")
-        val id = meals.save(Meal("Test omelette", 1, listOf(Ingredient.of(eggs).copy(amount = BigDecimal("3")))))
-        meals.plan(id, today, 1)
-        pantry.delete(eggs.id)
-        stock("Test eggs", "12")
-        meals.cooked(meals.plans().first().single(), today)
-        assertEquals(listOf("9"), pantry.items().first().map { it.quantity.amount.toPlainString() })
     }
 }

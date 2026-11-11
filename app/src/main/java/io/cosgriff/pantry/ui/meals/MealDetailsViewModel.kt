@@ -3,6 +3,7 @@ package io.cosgriff.pantry.ui.meals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.domain.IngredientCheck
@@ -37,6 +38,7 @@ data class MealDetailsState(
 class MealDetailsViewModel @Inject constructor(
     pantry: PantryRepository,
     private val meals: MealRepository,
+    private val consumption: Consumption,
     private val clock: Clock,
 ) : ViewModel() {
     private val planId = MutableStateFlow<Long?>(null)
@@ -95,7 +97,7 @@ class MealDetailsViewModel @Inject constructor(
     fun onCooked() {
         val plan = current() ?: return
         viewModelScope.launch {
-            meals.cooked(plan, LocalDate.now(clock))
+            consumption.cooked(plan, LocalDate.now(clock))
             events.update { it.copy(done = true) }
         }
     }

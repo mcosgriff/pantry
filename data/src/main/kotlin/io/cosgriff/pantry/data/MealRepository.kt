@@ -8,9 +8,7 @@ import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.QuantityUnit
-import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.checkPlan
-import io.cosgriff.pantry.domain.cook
 import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
@@ -20,8 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 
 /**
- * Meals and the days they're planned on (#19). Cooking a plan takes its amounts out of the pantry and puts what
- * it used up on the shopping list, as Use soon's "Used up" does.
+ * Meals and the days they're planned on (#19). Cooking a plan is [Consumption]'s.
  */
 @Singleton
 class MealRepository @Inject constructor(
@@ -60,19 +57,8 @@ class MealRepository @Inject constructor(
         shopping.addForMeal(names, plan.meal.name, plan.day, today)
     }
 
-    /**
-     * "Cooked it": takes [plan]'s amounts out of the pantry, removes what that uses up and puts it on the shopping
-     * list, and marks the plan cooked.
-     */
-    suspend fun cooked(plan: MealPlan, today: LocalDate) {
-        val cooked = cook(checkPlan(plan, pantry.items().first(), today))
-        cooked.updated.forEach { pantry.save(it) }
-        cooked.usedUp.forEach {
-            pantry.delete(it.id)
-            shopping.add(it.name, ShoppingReason.UsedUp, today)
-        }
-        dao.updatePlan(plan.toEntity().copy(cooked = true))
-    }
+    /** Marks [plan] cooked. Only [Consumption] calls this, as part of "Cooked it" (#48). */
+    internal suspend fun markCooked(plan: MealPlan) = dao.updatePlan(plan.toEntity().copy(cooked = true))
 }
 
 private fun MealEntity.toDomain(ingredients: List<MealIngredientEntity>) =

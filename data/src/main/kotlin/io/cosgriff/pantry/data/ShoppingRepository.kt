@@ -33,26 +33,38 @@ class ShoppingRepository @Inject constructor(
 
     fun cart(): Flow<Set<String>> = store.data.map { it[CART].orEmpty() }
 
-    /** Puts [name] on the list; returns its id, or `null` for a blank name. */
-    suspend fun add(name: String, reason: ShoppingReason, today: LocalDate): Long? {
-        require(reason != ShoppingReason.RunningLow) { "Running-low lines come from the pantry" }
-        require(reason != ShoppingReason.ForMeal) { "Use addForMeal" }
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return null
-        return dao.insert(ShoppingEntryEntity(name = trimmed, reason = reason.stored(), addedOn = today.toEpochDay()))
-    }
+    /** Puts [name] on the list by hand; returns its id, or `null` when it's blank or already on the list. */
+    suspend fun addByHand(name: String, today: LocalDate): Long? = insertNew(name, "BY_HAND", today)
+
+    /**
+     * Puts [name] on the list as used up; returns its id, or `null` when it's blank or already on the list. Only
+     * [Consumption] calls this: using something up also changes the pantry (#48).
+     */
+    internal suspend fun addUsedUp(name: String, today: LocalDate): Long? = insertNew(name, "USED_UP", today)
 
     /** Puts [names] on the list for [meal], planned on [day] (#19). A name already on the list isn't added again. */
     suspend fun addForMeal(names: List<String>, meal: String, day: LocalDate, today: LocalDate) {
-        val onList = lines().first().map { it.name.trim().lowercase() }.toMutableSet()
+        val onList = namesOnList()
         names.map { it.trim() }.filter { it.isNotEmpty() && onList.add(it.lowercase()) }.forEach {
             dao.insert(ShoppingEntryEntity(name = it, reason = "FOR_MEAL", addedOn = today.toEpochDay(), meal = meal, mealDay = day.toEpochDay()))
         }
     }
 
+    /**
+     * A name is on the list once (#48). The list shows one line per name, so a second stored entry with the same
+     * name would be hidden, and a trip couldn't take it off.
+     */
+    private suspend fun insertNew(name: String, reason: String, today: LocalDate): Long? {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty() || trimmed.lowercase() in namesOnList()) return null
+        return dao.insert(ShoppingEntryEntity(name = trimmed, reason = reason, addedOn = today.toEpochDay()))
+    }
+
+    private suspend fun namesOnList(): MutableSet<String> = lines().first().mapTo(mutableSetOf()) { it.name.key() }
+
     suspend fun remove(entry: ShoppingEntry) = dao.delete(listOf(entry.id))
 
-    suspend fun remove(id: Long) = dao.delete(listOf(id))
+    internal suspend fun remove(id: Long) = dao.delete(listOf(id))
 
     suspend fun setInCart(key: String, inCart: Boolean) = store.edit {
         val now = it[CART].orEmpty()
@@ -61,11 +73,13 @@ class ShoppingRepository @Inject constructor(
 
     /**
      * Ends the trip: stored lines that were in the cart come off the list, and the cart empties. Running-low lines
-     * leave by themselves once their items are restocked; what wasn't got stays on the list.
+     * leave by themselves once their items are restocked; what wasn't got stays on the list. Every stored entry
+     * with a bought line's name goes, so none hidden behind that line is left to reappear (#48).
      */
     suspend fun finishTrip() {
         val cart = cart().first()
-        val done = lines().first().filter { it.key in cart }.mapNotNull { it.entry?.id }
+        val bought = lines().first().filter { it.key in cart }.mapTo(mutableSetOf()) { it.name.key() }
+        val done = dao.observeAll().first().filter { it.name.key() in bought }.map { it.id }
         if (done.isNotEmpty()) dao.delete(done)
         store.edit { it.remove(CART) }
     }
@@ -75,12 +89,8 @@ class ShoppingRepository @Inject constructor(
     }
 }
 
-private fun ShoppingReason.stored() = when (this) {
-    ShoppingReason.UsedUp -> "USED_UP"
-    ShoppingReason.ByHand -> "BY_HAND"
-    ShoppingReason.ForMeal -> "FOR_MEAL"
-    ShoppingReason.RunningLow -> error("not stored")
-}
+/** How the list compares names, as `shoppingList` does. */
+private fun String.key() = trim().lowercase()
 
 private fun ShoppingEntryEntity.toDomain() = ShoppingEntry(
     id = id,
