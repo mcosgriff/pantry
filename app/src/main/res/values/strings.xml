@@ -229,7 +229,13 @@
     <string name="scan_more_details">More details</string>
     <string name="scan_add_keep">Add &amp; keep scanning</string>
     <string name="scan_add">Add</string>
-    <string name="scan_store_packed">Store-packed label: add this one by hand.</string>
+    <!-- Store-packed label (#13). %1$s is the price, in the user's currency format. -->
+    <string name="scan_store_packed_label">Store-packed label</string>
+    <string name="scan_what_is_it">What is it?</string>
+    <string name="scan_store_packed_body">Meat, cheese and deli labels change with every package, so this barcode won\'t be remembered.</string>
+    <string name="scan_label_price">Price on label %1$s</string>
+    <string name="scan_recent_store_packed">Recent store-packed items</string>
+    <string name="scan_weight">Weight</string>
     <!-- Camera permission page, before Android's own prompt. -->
     <string name="scan_permission_title">Scan barcodes with your camera</string>
     <string name="scan_permission_body">Pantry uses the camera only while this screen is open, to read barcodes. No pictures are saved or sent anywhere.</string>

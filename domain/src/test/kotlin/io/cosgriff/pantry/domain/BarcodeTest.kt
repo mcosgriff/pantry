@@ -38,4 +38,21 @@ class BarcodeTest {
         // EAN-13 prefix 20-29.
         assertEquals(ScannedCode.VariableWeight("2912345012342"), readRetailCode("2912345012342"))
     }
+
+    @Test
+    fun `store-packed UPC-A price is the five digits before the check digit, in cents`() {
+        val label = readRetailCode("204711018426") as ScannedCode.VariableWeight
+        assertEquals(1842, storePackedPriceCents(label))
+        assertEquals(0, storePackedPriceCents(readRetailCode("212345000007") as ScannedCode.VariableWeight))
+    }
+
+    @Test
+    fun `store-packed label with a wrong check digit is invalid`() {
+        assertEquals(ScannedCode.Invalid, readRetailCode("204711018427"))
+    }
+
+    @Test
+    fun `no price is read from an EAN-13 store code`() {
+        assertEquals(null, storePackedPriceCents(ScannedCode.VariableWeight("2912345012342")))
+    }
 }

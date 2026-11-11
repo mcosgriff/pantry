@@ -16,6 +16,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /**
  * The Pantry settings screen's values, in DataStore. A value never set reads as [PantrySettings]' default, and
@@ -73,6 +74,21 @@ class SettingsRepository @Inject constructor(
     /** Remembers where the last new item went, for "Last used". */
     suspend fun setLastUsedLocation(location: Location) = store.edit { it[LAST_USED_LOCATION] = location.key() }
 
+    /** Names given to store-packed items (#13), most recent first, for the scan sheet's quick picks. */
+    fun recentStorePacked(): Flow<List<String>> =
+        store.data.map { prefs -> prefs[RECENT_STORE_PACKED]?.split(NAME_SEPARATOR)?.filter(String::isNotBlank).orEmpty() }
+
+    /** Puts [name] first among the recent store-packed names, keeping [RECENT_STORE_PACKED_MAX]. */
+    suspend fun rememberStorePacked(name: String) {
+        val trimmed = name.trim().replace(NAME_SEPARATOR, " ")
+        if (trimmed.isEmpty()) return
+        store.edit { prefs ->
+            val now = prefs[RECENT_STORE_PACKED]?.split(NAME_SEPARATOR)?.filter(String::isNotBlank).orEmpty()
+            val next = (listOf(trimmed) + now.filterNot { it.equals(trimmed, ignoreCase = true) }).take(RECENT_STORE_PACKED_MAX)
+            prefs[RECENT_STORE_PACKED] = next.joinToString(NAME_SEPARATOR)
+        }
+    }
+
     suspend fun setUnitSystem(system: UnitSystem) = store.edit { it[UNIT_SYSTEM] = system.name }
 
     private companion object {
@@ -83,6 +99,9 @@ class SettingsRepository @Inject constructor(
         val DEFAULT_LOCATION = stringPreferencesKey("default_location")
         val UNIT_SYSTEM = stringPreferencesKey("unit_system")
         val LAST_USED_LOCATION = stringPreferencesKey("last_used_location")
+        val RECENT_STORE_PACKED = stringPreferencesKey("recent_store_packed")
+        const val RECENT_STORE_PACKED_MAX = 6
+        const val NAME_SEPARATOR = "\n"
 
         /** Stable key for a location in settings: the built-in name, or `custom:<id>`. */
         fun Location.key(): String = builtInKey() ?: "custom:${(this as Location.Custom).id}"

@@ -18,6 +18,15 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.foundation.BorderStroke
+import java.text.NumberFormat
+import java.math.BigDecimal
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -160,8 +169,8 @@ fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) ->
             onExpires = viewModel::onExpires,
             onAdd = viewModel::onAdd,
             onDismiss = viewModel::onDismiss,
+            onWeight = viewModel::onWeight,
             onMoreDetails = { draft -> viewModel.onDismiss(); onByHand(draft.name, draft.barcode.orEmpty()) },
-            onByHand = { viewModel.onDismiss(); onByHand("", "") },
         ),
         camera = { CameraFeed(analysis, torch) },
     )
@@ -178,8 +187,8 @@ data class ScanActions(
     val onExpires: (LocalDate?) -> Unit = {},
     val onAdd: () -> Unit = {},
     val onDismiss: () -> Unit = {},
+    val onWeight: (String) -> Unit = {},
     val onMoreDetails: (ItemDraft) -> Unit = {},
-    val onByHand: () -> Unit = {},
 )
 
 /** `design/source/Scan.dc.html`. [camera] is the live picture; previews leave it dark. */
@@ -235,7 +244,7 @@ fun ScanContent(state: ScanState, torch: Boolean, actions: ScanActions, modifier
             }
             when (val phase = state.phase) {
                 is ScanPhase.Found -> Sheet { FoundSheet(phase, state, actions) }
-                ScanPhase.StorePacked -> Sheet { StorePackedSheet(actions) }
+                is ScanPhase.StorePacked -> Sheet { StorePackedSheet(phase, state, actions) }
                 ScanPhase.Looking -> Unit
             }
         }
@@ -376,78 +385,168 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             FieldLabel(stringResource(R.string.details_quantity))
             QuantityStepper(quantityText(draft.quantity), actions.onStep)
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel(stringResource(R.string.details_expires))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .height(PantryDimens.fieldHeight)
-                    .background(colors.surface, MaterialTheme.shapes.small)
-                    .border(1.dp, colors.border, MaterialTheme.shapes.small)
-                    .clickable(onClickLabel = stringResource(R.string.details_pick_date)) { picking = true }
-                    .padding(horizontal = PantryDimens.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    draft.expires?.let { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it) } ?: stringResource(R.string.details_no_date),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-                if (!draft.expiresByHand && draft.expires != null) {
-                    Text(stringResource(R.string.scan_suggested), style = MaterialTheme.typography.labelSmall.copy(letterSpacing = MaterialTheme.typography.bodySmall.letterSpacing), color = colors.inkMuted)
+        ExpiresField(draft, onPick = { picking = true }, modifier = Modifier.weight(1f))
+    }
+    // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
+    AddRow(
+        state = state,
+        secondLabel = stringResource(if (found.known) R.string.scan_more_details else R.string.scan_skip),
+        onSecond = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
+        enabled = draft.name.isNotBlank(),
+        onAdd = actions.onAdd,
+    )
+    if (picking) {
+        DateDialog(initial = draft.expires ?: state.today, onPick = { picking = false; actions.onExpires(it) }, onDismiss = { picking = false })
+    }
+}
+
+/** The sheet's expiry date, marked "suggested" until it is set by hand; tapping it opens [onPick]. */
+@Composable
+private fun ExpiresField(draft: ItemDraft, onPick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = PantryTheme.colors
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        FieldLabel(stringResource(R.string.details_expires))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(PantryDimens.fieldHeight)
+                .background(colors.surface, MaterialTheme.shapes.small)
+                .border(1.dp, colors.border, MaterialTheme.shapes.small)
+                .clickable(onClickLabel = stringResource(R.string.details_pick_date), onClick = onPick)
+                .padding(horizontal = PantryDimens.space3),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                draft.expires?.let { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it) } ?: stringResource(R.string.details_no_date),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
+            )
+            if (!draft.expiresByHand && draft.expires != null) {
+                Text(stringResource(R.string.scan_suggested), style = MaterialTheme.typography.labelSmall.copy(letterSpacing = MaterialTheme.typography.bodySmall.letterSpacing), color = colors.inkMuted)
+            }
+        }
+    }
+}
+
+/** `design/source/ScanWeighed.dc.html` (#13): a store-packed label, named and weighed here, never remembered. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StorePackedSheet(packed: ScanPhase.StorePacked, state: ScanState, actions: ScanActions) {
+    val colors = PantryTheme.colors
+    val draft = packed.draft
+    var picking by rememberSaveable { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
+        Text(stringResource(R.string.scan_store_packed_label), style = MaterialTheme.typography.labelSmall, color = colors.warning)
+        Text(stringResource(R.string.scan_what_is_it), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.scan_store_packed_body), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(barcodeText(packed.code), style = PantryTheme.text.barcode, color = colors.inkMuted, modifier = Modifier.weight(1f))
+            packed.priceCents?.let { cents ->
+                val price = NumberFormat.getCurrencyInstance().format(BigDecimal(cents).movePointLeft(2))
+                Text(stringResource(R.string.scan_label_price, price), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+    val nameLabel = stringResource(R.string.details_name)
+    if (packed.recent.isNotEmpty()) {
+        Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+            FieldLabel(stringResource(R.string.scan_recent_store_packed))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                packed.recent.forEach { name ->
+                    val on = name == draft.name
+                    val shape = MaterialTheme.shapes.extraLarge
+                    Box(Modifier.minimumInteractiveComponentSize().selectable(selected = on, role = Role.RadioButton) { actions.onName(name) }, contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .height(36.dp)
+                                .background(if (on) colors.surfaceMuted else colors.surface, shape)
+                                .border(if (on) 2.dp else 1.dp, if (on) colors.accent else colors.border, shape)
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(name, style = MaterialTheme.typography.labelMedium, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium) }
+                    }
                 }
             }
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
-        OutlinedButton(
-            onClick = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
-            shape = MaterialTheme.shapes.medium,
-            border = BorderStroke(1.dp, colors.borderStrong),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
-            modifier = Modifier
-                .weight(1f)
-                .height(PantryDimens.buttonHeight),
-        ) { Text(stringResource(if (found.known) R.string.scan_more_details else R.string.scan_skip), style = MaterialTheme.typography.labelLarge) }
-        Button(
-            onClick = actions.onAdd,
-            enabled = draft.name.isNotBlank(),
-            shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
-            modifier = Modifier
-                .weight(1.6f)
-                .height(PantryDimens.buttonHeight),
-        ) { Text(stringResource(if (state.batch) R.string.scan_add_keep else R.string.scan_add), style = MaterialTheme.typography.labelLarge) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        FieldLabel(nameLabel)
+        SheetTextField(draft.name, actions.onName, nameLabel)
     }
+    LocationPicker(draft.location, state.locations, actions.onLocation, label = stringResource(R.string.scan_store_in))
+    Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val weightLabel = stringResource(R.string.scan_weight)
+            FieldLabel(weightLabel)
+            SheetTextField(packed.weight, actions.onWeight, weightLabel, decimal = true, suffix = stringResource(R.string.unit_name_pound))
+        }
+        ExpiresField(draft, onPick = { picking = true }, modifier = Modifier.weight(1f))
+    }
+    AddRow(
+        state = state,
+        secondLabel = stringResource(R.string.scan_more_details),
+        onSecond = { actions.onMoreDetails(draft.copy(barcode = null)) },
+        enabled = draft.name.isNotBlank() && parseWeight(packed.weight) != null,
+        onAdd = actions.onAdd,
+    )
     if (picking) {
         DateDialog(initial = draft.expires ?: state.today, onPick = { picking = false; actions.onExpires(it) }, onDismiss = { picking = false })
     }
 }
 
 @Composable
-private fun StorePackedSheet(actions: ScanActions) {
+private fun SheetTextField(value: String, onChange: (String) -> Unit, label: String, decimal: Boolean = false, suffix: String? = null) {
     val colors = PantryTheme.colors
-    Text(stringResource(R.string.scan_store_packed), style = MaterialTheme.typography.bodyLarge)
+    BasicTextField(
+        value = value,
+        onValueChange = onChange,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.ink),
+        cursorBrush = SolidColor(colors.accent),
+        keyboardOptions = if (decimal) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions.Default,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = label },
+        decorationBox = { field ->
+            Row(
+                Modifier
+                    .height(PantryDimens.fieldHeight)
+                    .background(colors.surface, MaterialTheme.shapes.small)
+                    .border(1.dp, colors.border, MaterialTheme.shapes.small)
+                    .padding(horizontal = PantryDimens.space3),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.weight(1f)) { field() }
+                suffix?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = colors.inkMuted) }
+            }
+        },
+    )
+}
+
+/** The sheet's two buttons: [secondLabel] on the left, Add (& keep scanning) on the right. */
+@Composable
+private fun AddRow(state: ScanState, secondLabel: String, onSecond: () -> Unit, enabled: Boolean, onAdd: () -> Unit) {
+    val colors = PantryTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedButton(
-            onClick = actions.onDismiss,
+            onClick = onSecond,
             shape = MaterialTheme.shapes.medium,
             border = BorderStroke(1.dp, colors.borderStrong),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
             modifier = Modifier
                 .weight(1f)
                 .height(PantryDimens.buttonHeight),
-        ) { Text(stringResource(R.string.details_cancel), style = MaterialTheme.typography.labelLarge) }
+        ) { Text(secondLabel, style = MaterialTheme.typography.labelLarge) }
         Button(
-            onClick = actions.onByHand,
+            onClick = onAdd,
+            enabled = enabled,
             shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
             modifier = Modifier
                 .weight(1.6f)
                 .height(PantryDimens.buttonHeight),
-        ) { Text(stringResource(R.string.pantry_empty_add_by_hand), style = MaterialTheme.typography.labelLarge) }
+        ) { Text(stringResource(if (state.batch) R.string.scan_add_keep else R.string.scan_add), style = MaterialTheme.typography.labelLarge) }
     }
 }
 
@@ -567,3 +666,24 @@ private fun ScanUnknownDarkPreview() = PantryTheme(darkTheme = true) { ScanConte
 @Preview
 @Composable
 private fun CameraPermissionPreview() = PantryTheme(darkTheme = false) { CameraPermissionContent(refused = false, onAllow = {}, onByHand = {}, onBack = {}) }
+
+@Preview
+@Composable
+private fun ScanStorePackedPreview() = PantryTheme(darkTheme = false) {
+    ScanContent(
+        ScanState(
+            today = previewToday,
+            batch = true,
+            added = 7,
+            phase = ScanPhase.StorePacked(
+                code = "204711018426",
+                priceCents = 1842,
+                draft = ItemDraft.new(previewToday, Location.Freezer).copy(name = "Sample chicken thighs"),
+                weight = "3.2",
+                recent = listOf("Sample chicken thighs", "Sample ground beef", "Sample salmon"),
+            ),
+        ),
+        torch = false,
+        actions = ScanActions(),
+    )
+}

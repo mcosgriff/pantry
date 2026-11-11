@@ -32,3 +32,14 @@ internal fun hasValidCheckDigit(digits: String): Boolean {
     val sum = body.mapIndexed { i, c -> (c - '0') * if (i % 2 == 0) 3 else 1 }.sum()
     return (10 - sum % 10) % 10 == digits.last() - '0'
 }
+
+/**
+ * A store-packed label's price in cents (#13), or `null` where the code doesn't carry one in a form the app reads.
+ *
+ * A UPC-A starting with 2 is laid out `2 IIIII PPPPP C`: a five-digit item number the store assigns, the price
+ * in cents, and the check digit ("2 04711 01842 6" is $18.42). Some stores put a price check digit in place of
+ * the first price digit; that reads as at most a few dollars too much, and the label in hand says the price too.
+ * EAN-13 store codes (20–29) differ by country, so no price is read from them.
+ */
+fun storePackedPriceCents(code: ScannedCode.VariableWeight): Int? =
+    if (code.code.length == 12) code.code.substring(6, 11).toInt() else null

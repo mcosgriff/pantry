@@ -107,4 +107,14 @@ class SettingsRepositoryTest {
         pantry.deleteLocation(garage)
         assertEquals(Location.Dry, settings.newItemLocation())
     }
+
+    @Test
+    fun `recent store-packed names, newest first, no repeats, at most six`() = runBlocking {
+        assertEquals(emptyList<String>(), settings.recentStorePacked().first())
+        listOf("Ground beef", "Salmon", "Chicken thighs", "ground beef").forEach { settings.rememberStorePacked(it) }
+        assertEquals(listOf("ground beef", "Chicken thighs", "Salmon"), settings.recentStorePacked().first())
+        (1..8).forEach { settings.rememberStorePacked("Test cut $it") }
+        assertEquals(6, settings.recentStorePacked().first().size)
+        assertEquals("Test cut 8", settings.recentStorePacked().first().first())
+    }
 }
