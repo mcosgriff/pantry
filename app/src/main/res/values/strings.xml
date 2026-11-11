@@ -2,4 +2,88 @@
 <resources>
     <string name="app_name">Pantry</string>
     <string name="home_place">Home pantry</string>
+
+    <!-- Locations: name and the letter on its tile. Fridge is R (refrigerator) so it differs from Freezer. -->
+    <string name="location_dry">Dry</string>
+    <string name="location_fridge">Fridge</string>
+    <string name="location_freezer">Freezer</string>
+    <string name="location_dry_letter">D</string>
+    <string name="location_fridge_letter">R</string>
+    <string name="location_freezer_letter">F</string>
+
+    <!-- Quantity pill: amount and unit, e.g. "18 ea", "2 tubs". %1$s is the formatted amount. -->
+    <plurals name="unit_each">
+        <item quantity="one">%1$s ea</item>
+        <item quantity="other">%1$s ea</item>
+    </plurals>
+    <plurals name="unit_pound">
+        <item quantity="one">%1$s lb</item>
+        <item quantity="other">%1$s lb</item>
+    </plurals>
+    <plurals name="unit_ounce">
+        <item quantity="one">%1$s oz</item>
+        <item quantity="other">%1$s oz</item>
+    </plurals>
+    <plurals name="unit_bag">
+        <item quantity="one">%1$s bag</item>
+        <item quantity="other">%1$s bags</item>
+    </plurals>
+    <plurals name="unit_pack">
+        <item quantity="one">%1$s pack</item>
+        <item quantity="other">%1$s packs</item>
+    </plurals>
+    <plurals name="unit_tub">
+        <item quantity="one">%1$s tub</item>
+        <item quantity="other">%1$s tubs</item>
+    </plurals>
+
+    <!-- Expiry line under an item's name. -->
+    <string name="expiry_today">Expires today</string>
+    <plurals name="expiry_in_days">
+        <item quantity="one">Expires tomorrow</item>
+        <item quantity="other">Expires in %1$d days</item>
+    </plurals>
+    <plurals name="expiry_days_ago">
+        <item quantity="one">Expired yesterday</item>
+        <item quantity="other">Expired %1$d days ago</item>
+    </plurals>
+    <string name="expiry_no_date">No date</string>
+    <!-- "Expires in 2 days · Fridge" -->
+    <string name="expiry_with_location">%1$s · %2$s</string>
+
+    <!-- Pantry list (#6). -->
+    <string name="pantry_title">Pantry</string>
+    <string name="pantry_sort_filter">Sort and filter</string>
+    <string name="pantry_settings">Pantry settings</string>
+    <string name="pantry_search_label">Search pantry</string>
+    <plurals name="pantry_search_hint">
+        <item quantity="one">Search %1$d item</item>
+        <item quantity="other">Search %1$d items</item>
+    </plurals>
+    <string name="pantry_locations">Storage location</string>
+    <!-- Location tab: name and count, "Fridge 12". -->
+    <string name="pantry_tab">%1$s %2$d</string>
+    <string name="pantry_tab_all">All</string>
+    <plurals name="pantry_expiring_this_week">
+        <item quantity="one">%1$d item expires this week</item>
+        <item quantity="other">%1$d items expire this week</item>
+    </plurals>
+    <plurals name="pantry_already_expired">
+        <item quantity="one">%1$d already expired</item>
+        <item quantity="other">%1$d already expired</item>
+    </plurals>
+    <string name="pantry_view_expiring">View</string>
+    <string name="pantry_expiring_first">Expiring first</string>
+    <string name="pantry_no_matches">Nothing matches</string>
+    <string name="pantry_scan">Scan items</string>
+
+    <!-- Empty pantry (#15). -->
+    <string name="pantry_empty_title">Your pantry is empty</string>
+    <string name="pantry_empty_body">Scan your groceries after a shopping run, or add items by hand. Each one goes to Dry, Fridge or Freezer.</string>
+    <string name="pantry_empty_add_by_hand">Add by hand</string>
+
+    <!-- Bottom navigation. -->
+    <string name="nav_pantry">Pantry</string>
+    <string name="nav_meal_prep">Meal prep</string>
+    <string name="nav_shopping">Shopping</string>
 </resources>

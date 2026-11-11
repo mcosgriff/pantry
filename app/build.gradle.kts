@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kover)
 }
@@ -89,11 +91,17 @@ kotlin {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":data"))
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

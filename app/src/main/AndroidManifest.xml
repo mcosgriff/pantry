@@ -6,6 +6,7 @@
         No Android auto-backup: the pantry stays on this phone until the app has its own export.
     -->
     <application
+        android:name=".PantryApp"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

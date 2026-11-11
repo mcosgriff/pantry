@@ -1,7 +1,11 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.room) apply false
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.kover)
 }
@@ -14,7 +18,7 @@ subprojects {
 }
 
 // Test coverage (Codecov, #5): `./gradlew koverXmlReportCoverage` runs the unit tests of :domain and :app
-// (debug) and merges them into build/reports/kover/reportCoverage.xml, which CI sends to Codecov. Add :data
+// here, with a `coverage` variant in its build file, to measure it too.
 // here, and a `coverage` variant in its build file, once it exists.
 dependencies {
     kover(project(":domain"))
@@ -62,7 +66,7 @@ abstract class RobolectricOffline : CommandLineArgumentProvider {
     )
 }
 
-project(":app") {
+configure(listOf(project(":app"), project(":data"))) {
     // One configuration per jar: in one, Gradle would keep only the highest of the versions of the one module.
     val androidAll = mapOf(
         "Sdk35" to rootProject.libs.robolectric.androidAll.sdk35,

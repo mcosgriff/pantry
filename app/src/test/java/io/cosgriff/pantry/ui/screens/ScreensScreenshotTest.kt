@@ -1,7 +1,11 @@
 package io.cosgriff.pantry.ui.screens
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import io.cosgriff.pantry.PantryHomeContent
+import io.cosgriff.pantry.ui.pantry.PantryListActions
+import io.cosgriff.pantry.ui.pantry.PantryListContent
+import io.cosgriff.pantry.ui.pantry.PantryListState
+import io.cosgriff.pantry.ui.pantry.previewState
+import io.cosgriff.pantry.ui.pantry.previewToday
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,7 +26,12 @@ class ScreensScreenshotTest(private val shade: Shade) {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun home() = compose.shoot("home", shade) { PantryHomeContent() }
+    fun pantryList() = compose.shoot("pantry_list", shade) { PantryListContent(previewState, PantryListActions()) }
+
+    @Test
+    fun pantryEmpty() = compose.shoot("pantry_empty", shade) {
+        PantryListContent(PantryListState(today = previewToday, loading = false), PantryListActions())
+    }
 
     companion object {
         @JvmStatic

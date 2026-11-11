@@ -40,9 +40,13 @@ there is no baseline: fix a warning, or suppress that one case in `app/lint.xml`
 
 - `:domain` — pure Kotlin, **no Android imports**. All business rules (expiry, quantities, units) live here
   and get unit tests.
-- `:app` — Compose UI, ViewModels, theme.
+- `:data` — Room 3 database (`PantryDatabase`, schemas exported to `data/schemas`, committed) and DataStore
+  settings, behind `PantryRepository` and `SettingsRepository`; Hilt's `DataModule`. Tests run on the JVM
+  with Robolectric, whose Android jar Gradle resolves (root `build.gradle.kts`). A schema change needs a new
+  version, its committed JSON and a migration; `MigrationTest` opens every exported version (#4).
+- `:app` — Compose UI, ViewModels, theme. Hilt (`PantryApp`).
 
-Add `:data` (Room 3, DataStore) when the pantry is stored, and `:baselineprofile` once the screens settle.
+Add `:baselineprofile` once the screens settle.
 
 ## Decisions — don't change without asking
 

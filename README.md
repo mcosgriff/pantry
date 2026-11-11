@@ -10,8 +10,10 @@ first. Everything stays on the phone.
 
 ## Status
 
-Early development. The app builds and has its theme (light and dark); no screens are built yet. Every
-screen will be screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
+Early development. The Pantry list is the first screen: items in the dry pantry, fridge and freezer,
+soonest expiry first, with search, a tab per location and a banner for what expires this week. A new
+install shows an empty pantry. Items can't be added yet; that comes with the item details screen. Every
+screen is screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
 labels) on each build. The plan, in order:
 
 | Step | Issue |
