@@ -73,7 +73,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -205,13 +204,13 @@ fun ScanContent(state: ScanState, torch: Boolean, actions: ScanActions, modifier
                     if (state.batch) {
                         Row(
                             Modifier
-                                .height(36.dp)
+                                .height(PantryDimens.chipHeight)
                                 .background(colors.scannerScrim, MaterialTheme.shapes.extraLarge)
-                                .padding(horizontal = 14.dp),
+                                .padding(horizontal = PantryDimens.spaceInset),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(PantryDimens.space2),
                         ) {
-                            Box(Modifier.size(8.dp).background(colors.scannerLive, MaterialTheme.shapes.extraLarge))
+                            Box(Modifier.size(PantryDimens.liveDot).background(colors.scannerLive, MaterialTheme.shapes.extraLarge))
                             Text(
                                 pluralStringResource(R.plurals.scan_batch_count, state.added, state.added),
                                 style = MaterialTheme.typography.labelMedium,
@@ -228,7 +227,7 @@ fun ScanContent(state: ScanState, torch: Boolean, actions: ScanActions, modifier
                     .fillMaxWidth()
                     .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceSection, Alignment.CenterVertically),
             ) {
                 ScanFrame()
                 Text(stringResource(R.string.scan_point), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal, color = colors.scannerOn)
@@ -252,7 +251,7 @@ private fun RoundButton(icon: Int, label: String, onClick: () -> Unit, on: Boole
             contentColor = if (on) colors.scannerGround else colors.scannerOn,
         ),
     ) {
-        Icon(painterResource(icon), label, modifier = Modifier.size(22.dp))
+        Icon(painterResource(icon), label, modifier = Modifier.size(PantryDimens.iconScanner))
     }
 }
 
@@ -260,10 +259,10 @@ private fun RoundButton(icon: Int, label: String, onClick: () -> Unit, on: Boole
 @Composable
 private fun ScanFrame() {
     val colors = PantryTheme.colors
-    Canvas(Modifier.size(width = 280.dp, height = 150.dp)) {
-        val w = 4.dp.toPx()
-        val arm = 34.dp.toPx()
-        val r = 14.dp.toPx()
+    Canvas(Modifier.size(width = PantryDimens.scanFrameWidth, height = PantryDimens.scanFrameHeight)) {
+        val w = PantryDimens.scanFrameStroke.toPx()
+        val arm = PantryDimens.scanFrameArm.toPx()
+        val r = PantryDimens.scanFrameRadius.toPx()
         val corners = listOf(Offset(0f, 0f), Offset(size.width - arm, 0f), Offset(0f, size.height - arm), Offset(size.width - arm, size.height - arm))
         corners.forEachIndexed { i, o ->
             // Each corner is a quarter of a rounded square, drawn by clipping a full one.
@@ -280,8 +279,8 @@ private fun ScanFrame() {
             )
             drawContext.canvas.restore()
         }
-        val inset = 20.dp.toPx()
-        drawLine(colors.scannerLive, Offset(inset, size.height / 2), Offset(size.width - inset, size.height / 2), 2.dp.toPx())
+        val inset = PantryDimens.scanLineInset.toPx()
+        drawLine(colors.scannerLive, Offset(inset, size.height / 2), Offset(size.width - inset, size.height / 2), PantryDimens.scanLine.toPx())
     }
 }
 
@@ -295,13 +294,13 @@ private fun Sheet(content: @Composable () -> Unit) {
             .navigationBarsPadding()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(start = PantryDimens.space5, end = PantryDimens.space5, top = 10.dp, bottom = PantryDimens.space5),
+            .padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.spaceIcon, bottom = PantryDimens.space5),
         verticalArrangement = Arrangement.spacedBy(PantryDimens.space4),
     ) {
         Box(
             Modifier
                 .align(Alignment.CenterHorizontally)
-                .size(width = 40.dp, height = 4.dp)
+                .size(width = PantryDimens.sheetHandleWidth, height = PantryDimens.sheetHandleHeight)
                 .background(colors.borderStrong, MaterialTheme.shapes.extraSmall),
         )
         content()
@@ -333,20 +332,20 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
         )
     }
     if (found.known) {
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceInset)) {
             // The photo waits for product lookup (#9).
             Box(
                 Modifier
-                    .size(64.dp)
+                    .size(PantryDimens.productPhoto)
                     .background(colors.surfaceMuted, MaterialTheme.shapes.medium)
-                    .border(1.dp, colors.borderStrong, MaterialTheme.shapes.medium),
+                    .border(PantryDimens.hairline, colors.borderStrong, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(stringResource(R.string.scan_product_photo), style = MaterialTheme.typography.labelSmall, color = colors.inkMuted)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(14.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
+                    Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(PantryDimens.iconTiny))
                     Text(stringResource(R.string.scan_known), style = MaterialTheme.typography.labelSmall, color = colors.accent)
                 }
                 nameField(Modifier)
@@ -361,29 +360,29 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             Text(stringResource(R.string.scan_name_once_body), style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
             draft.barcode?.let { Text(barcodeText(it), style = PantryTheme.text.barcode, color = colors.inkMuted) }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(nameLabel)
             nameField(
                 Modifier
-                    .border(1.dp, colors.border, MaterialTheme.shapes.small)
+                    .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.small)
                     .padding(horizontal = PantryDimens.space3),
             )
         }
     }
     LocationPicker(draft.location, state.locations, actions.onLocation, label = stringResource(R.string.scan_store_in))
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
             QuantityStepper(quantityText(draft.quantity), actions.onStep)
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_expires))
             Row(
                 Modifier
                     .fillMaxWidth()
                     .height(PantryDimens.fieldHeight)
                     .background(colors.surface, MaterialTheme.shapes.small)
-                    .border(1.dp, colors.border, MaterialTheme.shapes.small)
+                    .border(PantryDimens.hairline, colors.border, MaterialTheme.shapes.small)
                     .clickable(onClickLabel = stringResource(R.string.details_pick_date)) { picking = true }
                     .padding(horizontal = PantryDimens.space3),
                 verticalAlignment = Alignment.CenterVertically,
@@ -400,12 +399,12 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             }
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon)) {
         // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
         OutlinedButton(
             onClick = { if (found.known) actions.onMoreDetails(draft) else actions.onDismiss() },
             shape = MaterialTheme.shapes.medium,
-            border = BorderStroke(1.dp, colors.borderStrong),
+            border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
             modifier = Modifier
                 .weight(1f)
@@ -415,7 +414,13 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
             onClick = actions.onAdd,
             enabled = draft.name.isNotBlank(),
             shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
+            // Disabled until named: still legible (the default 38% ink isn't), with no accent to call it ready.
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.accent,
+                contentColor = colors.onAccent,
+                disabledContainerColor = colors.surfaceMuted,
+                disabledContentColor = colors.inkMuted,
+            ),
             modifier = Modifier
                 .weight(1.6f)
                 .height(PantryDimens.buttonHeight),
@@ -430,11 +435,11 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
 private fun StorePackedSheet(actions: ScanActions) {
     val colors = PantryTheme.colors
     Text(stringResource(R.string.scan_store_packed), style = MaterialTheme.typography.bodyLarge)
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon)) {
         OutlinedButton(
             onClick = actions.onDismiss,
             shape = MaterialTheme.shapes.medium,
-            border = BorderStroke(1.dp, colors.borderStrong),
+            border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
             modifier = Modifier
                 .weight(1f)
@@ -505,8 +510,8 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
                 .padding(horizontal = PantryDimens.space6),
             verticalArrangement = Arrangement.spacedBy(PantryDimens.space5, Alignment.CenterVertically),
         ) {
-            Box(Modifier.size(96.dp).background(colors.surfaceMuted, MaterialTheme.shapes.large), contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.ic_scan), null, tint = colors.accent, modifier = Modifier.size(48.dp))
+            Box(Modifier.size(PantryDimens.heroBox).background(colors.surfaceMuted, MaterialTheme.shapes.large), contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.ic_scan), null, tint = colors.accent, modifier = Modifier.size(PantryDimens.iconHero))
             }
             Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
                 Text(stringResource(R.string.scan_permission_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
@@ -515,7 +520,7 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
             Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
                 listOf(R.string.scan_permission_point_batch, R.string.scan_permission_point_remember, R.string.scan_permission_point_settings).forEach {
                     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
-                        Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(20.dp))
+                        Icon(painterResource(R.drawable.ic_check), null, tint = colors.accent, modifier = Modifier.size(PantryDimens.iconMedium))
                         Text(stringResource(it), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
@@ -523,7 +528,7 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
         }
         Column(
             Modifier.padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.space4, bottom = PantryDimens.space5),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceIcon),
         ) {
             Button(
                 onClick = onAllow,
@@ -534,7 +539,7 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
             OutlinedButton(
                 onClick = onByHand,
                 shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, colors.borderStrong),
+                border = BorderStroke(PantryDimens.hairline, colors.borderStrong),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.ink),
                 modifier = Modifier.fillMaxWidth().height(PantryDimens.buttonHeight),
             ) { Text(stringResource(R.string.scan_permission_by_hand), style = MaterialTheme.typography.labelLarge) }
@@ -543,10 +548,10 @@ fun CameraPermissionContent(refused: Boolean, onAllow: () -> Unit, onByHand: () 
     }
 }
 
-// Previews use made-up products, marked as samples. The camera stays dark in a preview.
+// Previews and screenshot tests use made-up products, marked as samples. The camera stays dark in them.
 private val previewToday = LocalDate.of(2026, 11, 10)
 
-private fun previewFound(known: Boolean) = ScanState(
+internal fun previewFound(known: Boolean) = ScanState(
     today = previewToday,
     batch = true,
     added = 6,

@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.ui.theme.PantryTheme
@@ -54,7 +54,7 @@ fun locationColors(location: Location): Pair<Color, Color> {
  * sits in names the location too. The tile itself is decorative to TalkBack.
  */
 @Composable
-fun LocationTile(location: Location, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+fun LocationTile(location: Location, modifier: Modifier = Modifier, size: Dp = PantryDimens.tileSize) {
     val (container, content) = locationColors(location)
     Box(
         modifier = modifier

@@ -39,7 +39,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
@@ -116,7 +115,7 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                 .padding(insets)
                 .verticalScroll(rememberScrollState())
                 .padding(start = PantryDimens.space5, end = PantryDimens.space5, top = PantryDimens.space1, bottom = PantryDimens.space6),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceSection),
         ) {
             Section(stringResource(R.string.settings_locations)) {
                 state.locations.forEachIndexed { index, location ->
@@ -129,10 +128,10 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                         .fillMaxWidth()
                         .heightIn(min = PantryDimens.buttonHeight)
                         .clickable { editing = NEW }
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = PantryDimens.spaceInset),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
+                    Icon(painterResource(R.drawable.ic_add), contentDescription = null, tint = colors.accent, modifier = Modifier.size(PantryDimens.iconMedium))
                     Text(
                         stringResource(R.string.settings_add_location),
                         style = MaterialTheme.typography.titleMedium,
@@ -218,14 +217,14 @@ private fun LocationRow(location: Location, onEdit: (() -> Unit)?) {
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 60.dp)
+            .heightIn(min = PantryDimens.rowTall)
             .then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = PantryDimens.spaceInset, vertical = PantryDimens.spaceIcon),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3),
     ) {
-        LocationTile(location, size = 32.dp)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        LocationTile(location, size = PantryDimens.tileSmall)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.space0)) {
             Text(locationName(location), style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(R.string.settings_shelf_life, shelfLifeText(location.shelfLife)),
@@ -234,7 +233,7 @@ private fun LocationRow(location: Location, onEdit: (() -> Unit)?) {
             )
         }
         if (onEdit != null) {
-            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = PantryTheme.colors.inkMuted, modifier = Modifier.size(18.dp))
+            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = PantryTheme.colors.inkMuted, modifier = Modifier.size(PantryDimens.iconSmall))
         }
     }
 }
