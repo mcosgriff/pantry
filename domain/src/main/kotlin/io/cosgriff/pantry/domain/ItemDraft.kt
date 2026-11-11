@@ -14,7 +14,7 @@ import java.time.LocalDate
 data class ItemDraft(
     val name: String,
     val location: Location,
-    val quantity: Quantity,
+    val quantity: Amount,
     val purchased: LocalDate,
     val expires: LocalDate?,
     val expiresByHand: Boolean,
@@ -22,6 +22,7 @@ data class ItemDraft(
     val opened: Boolean = false,
     val lowStockAt: BigDecimal? = null,
     val notes: String = "",
+    val density: Density? = null,
     val id: Long = 0,
 ) {
     val isNew: Boolean get() = id == 0L
@@ -48,6 +49,7 @@ data class ItemDraft(
             opened = opened,
             lowStockAt = lowStockAt,
             notes = notes.trim(),
+            density = density,
         )
     }
 
@@ -55,7 +57,7 @@ data class ItemDraft(
         fun new(today: LocalDate, location: Location = Location.Dry, barcode: String? = null) = ItemDraft(
             name = "",
             location = location,
-            quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+            quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
             purchased = today,
             expires = suggestedExpiry(today, location),
             expiresByHand = false,
@@ -74,6 +76,7 @@ data class ItemDraft(
             opened = item.opened,
             lowStockAt = item.lowStockAt,
             notes = item.notes,
+            density = item.density,
         )
     }
 }
@@ -94,5 +97,5 @@ enum class QuickPick {
     }
 }
 
-/** The quantity stepper: [delta] more or fewer, never below zero. */
-fun Quantity.stepped(delta: Int): Quantity = copy(amount = (amount + BigDecimal(delta)).max(BigDecimal.ZERO))
+/** The quantity stepper: [delta] more or fewer, never below zero, in the same unit or packages. */
+fun Amount.stepped(delta: Int): Amount = withNumber((number + BigDecimal(delta)).max(BigDecimal.ZERO))

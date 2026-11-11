@@ -9,8 +9,8 @@ import io.cosgriff.pantry.data.db.LocationEntity
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
+import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.number
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.Period
@@ -52,12 +52,21 @@ class PantryRepository @Inject constructor(
     suspend fun knownProduct(barcode: String): KnownProduct? {
         val row = known.get(barcode) ?: return null
         val location = row.locationId?.let { id -> locations.all().firstOrNull { it.id == id }?.toDomain() }
-        return KnownProduct(row.barcode, row.name, location, QuantityUnit.valueOf(row.unit))
+        return KnownProduct(row.barcode, row.name, location, amountUnit(row.unit, row.contentsAmount, row.contentsUnit))
     }
 
-    /** Remembers [product]'s name, location and unit for its barcode, replacing what was remembered. */
+    /** Remembers [product]'s name, location and unit (with any contents size) for its barcode, replacing what was remembered. */
     suspend fun rememberProduct(product: KnownProduct) {
-        known.upsert(KnownProductEntity(product.barcode, product.name, product.location?.let { locationId(it) }, product.unit.name))
+        known.upsert(
+            KnownProductEntity(
+                barcode = product.barcode,
+                name = product.name,
+                locationId = product.location?.let { locationId(it) },
+                unit = product.unit.storedName,
+                contentsAmount = product.unit.storedContentsAmount,
+                contentsUnit = product.unit.storedContentsUnit,
+            ),
+        )
     }
 
     /** Saves [item]: a new one when its id is 0, otherwise the one with its id. Returns the id. */
@@ -123,12 +132,13 @@ internal fun ItemEntity.toDomain(location: Location) = PantryItem(
     name = name,
     barcode = barcode,
     location = location,
-    quantity = Quantity(BigDecimal(amount), QuantityUnit.valueOf(unit)),
+    quantity = amountUnit(unit, contentsAmount, contentsUnit).of(BigDecimal(amount)),
     purchased = LocalDate.ofEpochDay(purchased),
     expires = expires?.let(LocalDate::ofEpochDay),
     opened = opened,
     lowStockAt = lowStockAt?.let(::BigDecimal),
     notes = notes,
+    density = density?.let(::density),
 )
 
 internal fun PantryItem.toEntity(locationId: Long) = ItemEntity(
@@ -136,8 +146,11 @@ internal fun PantryItem.toEntity(locationId: Long) = ItemEntity(
     name = name,
     barcode = barcode,
     locationId = locationId,
-    amount = quantity.amount.toPlainString(),
-    unit = quantity.unit.name,
+    amount = quantity.number.toPlainString(),
+    unit = quantity.countedIn.storedName,
+    contentsAmount = quantity.countedIn.storedContentsAmount,
+    contentsUnit = quantity.countedIn.storedContentsUnit,
+    density = density?.stored(),
     purchased = purchased.toEpochDay(),
     expires = expires?.toEpochDay(),
     opened = opened,

@@ -5,14 +5,17 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.Meal
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickAction
 import io.cosgriff.pantry.domain.ShoppingReason
+import io.cosgriff.pantry.domain.number
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -52,12 +55,12 @@ class ConsumptionTest {
     private suspend fun stock(
         name: String,
         amount: String = "1",
-        unit: QuantityUnit = QuantityUnit.Each,
+        unit: AmountUnit = AmountUnit.Measured(MeasureUnit.Each),
         location: Location = Location.Fridge,
         opened: Boolean = false,
         expires: LocalDate? = null,
     ): PantryItem {
-        val id = pantry.save(PantryItem(name = name, location = location, quantity = Quantity(BigDecimal(amount), unit), purchased = today, opened = opened, expires = expires))
+        val id = pantry.save(PantryItem(name = name, location = location, quantity = unit.of(BigDecimal(amount)), purchased = today, opened = opened, expires = expires))
         return checkNotNull(pantry.item(id))
     }
 
@@ -117,7 +120,7 @@ class ConsumptionTest {
     @Test
     fun `cooking takes amounts out, puts what it used up on the list, and marks the plan cooked`() = runBlocking {
         val eggs = stock("Test eggs", "18")
-        val cheese = stock("Test mozzarella", "1", QuantityUnit.Bag)
+        val cheese = stock("Test mozzarella", "1", AmountUnit.Packages(Package.Bag))
         val id = meals.save(
             Meal(
                 "Test egg bites",
@@ -127,14 +130,14 @@ class ConsumptionTest {
         )
         meals.plan(id, today, 12)
         consumption.cooked(meals.plans().first().single(), today)
-        assertEquals(listOf("Test eggs" to "6"), pantry.items().first().map { it.name to it.quantity.amount.toPlainString() })
+        assertEquals(listOf("Test eggs" to "6"), pantry.items().first().map { it.name to it.quantity.number.toPlainString() })
         assertEquals(listOf("Test mozzarella" to ShoppingReason.UsedUp), list())
         assertTrue(meals.plans().first().single().cooked)
     }
 
     @Test
     fun `cooking something already on the list doesn't add it twice`() = runBlocking {
-        val cheese = stock("Test mozzarella", "1", QuantityUnit.Bag)
+        val cheese = stock("Test mozzarella", "1", AmountUnit.Packages(Package.Bag))
         shopping.addByHand("Test mozzarella", today)
         val id = meals.save(Meal("Test pizza", 2, listOf(Ingredient.of(cheese).copy(amount = BigDecimal("1")))))
         meals.plan(id, today, 2)
@@ -150,12 +153,12 @@ class ConsumptionTest {
         pantry.delete(eggs.id)
         stock("Test eggs", "12")
         consumption.cooked(meals.plans().first().single(), today)
-        assertEquals(listOf("9"), pantry.items().first().map { it.quantity.amount.toPlainString() })
+        assertEquals(listOf("9"), pantry.items().first().map { it.quantity.number.toPlainString() })
     }
 
     @Test
     fun `used up on an item that was running low puts it on the list as used up`() = runBlocking {
-        val id = pantry.save(PantryItem(name = "Test butter", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, opened = true, lowStockAt = BigDecimal("1")))
+        val id = pantry.save(PantryItem(name = "Test butter", location = Location.Fridge, quantity = Measure(BigDecimal("1"), MeasureUnit.Each), purchased = today, opened = true, lowStockAt = BigDecimal("1")))
         assertEquals(listOf("Test butter" to ShoppingReason.RunningLow), list())
         consumption.takeQuickAction(checkNotNull(pantry.item(id)), today)
         assertEquals(listOf("Test butter" to ShoppingReason.UsedUp), list())

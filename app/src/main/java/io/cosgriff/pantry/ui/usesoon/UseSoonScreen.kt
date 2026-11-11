@@ -39,9 +39,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickAction
 import io.cosgriff.pantry.domain.UseSoonGroup
 import io.cosgriff.pantry.domain.expiryStatus
@@ -192,7 +192,7 @@ private fun sample(id: Long, name: String, days: Long, location: Location, opene
     id = id,
     name = name,
     location = location,
-    quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+    quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
     purchased = previewToday,
     expires = previewToday.plusDays(days),
     opened = opened,

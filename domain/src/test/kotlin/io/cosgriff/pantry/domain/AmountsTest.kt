@@ -241,4 +241,15 @@ class AmountsTest {
             assertAbout(expected, approximate(result).amount)
         }
     }
+
+    @Test
+    fun `an amount splits into its number and what it counts, and back`() {
+        val bags = Packaged(BigDecimal("2"), Package.Bag, Measure(BigDecimal("5"), Pound))
+        assertEquals(BigDecimal("2"), bags.number)
+        assertEquals(AmountUnit.Packages(Package.Bag, Measure(BigDecimal("5"), Pound)), bags.countedIn)
+        assertEquals(bags, bags.countedIn.of(bags.number))
+        val cups = Measure(BigDecimal("1.5"), Cup)
+        assertEquals(AmountUnit.Measured(Cup), cups.countedIn)
+        assertEquals(Measure(BigDecimal("3"), Cup), cups.withNumber(BigDecimal("3")))
+    }
 }

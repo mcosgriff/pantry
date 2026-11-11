@@ -13,7 +13,7 @@ class ItemDraftTest {
     fun `a new draft is one each in Dry, bought today, with no date`() {
         val draft = ItemDraft.new(today)
         assertEquals(Location.Dry, draft.location)
-        assertEquals(Quantity(BigDecimal.ONE, QuantityUnit.Each), draft.quantity)
+        assertEquals(Measure(BigDecimal.ONE, MeasureUnit.Each), draft.quantity)
         assertEquals(today, draft.purchased)
         assertNull(draft.expires)
     }
@@ -42,7 +42,7 @@ class ItemDraftTest {
             id = 5,
             name = "Milk",
             location = Location.Fridge,
-            quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+            quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
             purchased = today,
             expires = today.plusDays(2),
         )
@@ -65,10 +65,10 @@ class ItemDraftTest {
 
     @Test
     fun `stepper adds and removes one, never below zero`() {
-        val q = Quantity(BigDecimal("0.6"), QuantityUnit.Bag)
-        assertEquals(BigDecimal("1.6"), q.stepped(1).amount)
-        assertEquals(BigDecimal.ZERO, q.stepped(-1).amount.stripTrailingZeros())
-        assertEquals(BigDecimal("17"), Quantity(BigDecimal("18"), QuantityUnit.Each).stepped(-1).amount)
+        val q = Packaged(BigDecimal("0.6"), Package.Bag)
+        assertEquals(BigDecimal("1.6"), q.stepped(1).number)
+        assertEquals(BigDecimal.ZERO, q.stepped(-1).number.stripTrailingZeros())
+        assertEquals(BigDecimal("17"), Measure(BigDecimal("18"), MeasureUnit.Each).stepped(-1).number)
     }
 
     @Test
@@ -87,13 +87,20 @@ class ItemDraftTest {
             name = "Ground beef",
             barcode = "123",
             location = Location.Freezer,
-            quantity = Quantity(BigDecimal("1.24"), QuantityUnit.Pound),
+            quantity = Measure(BigDecimal("1.24"), MeasureUnit.Pound),
             purchased = today,
             expires = today.plusMonths(3),
             opened = true,
             lowStockAt = BigDecimal("0.5"),
             notes = "Test",
+            density = Density(BigDecimal("0.96")),
         )
         assertEquals(stored, ItemDraft.of(stored).toItem())
+    }
+
+    @Test
+    fun `stepping packages keeps what one holds`() {
+        val bags = Packaged(BigDecimal("2"), Package.Bag, Measure(BigDecimal("5"), MeasureUnit.Pound))
+        assertEquals(Packaged(BigDecimal("3"), Package.Bag, Measure(BigDecimal("5"), MeasureUnit.Pound)), bags.stepped(1))
     }
 }

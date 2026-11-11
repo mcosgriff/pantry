@@ -4,11 +4,15 @@ import android.content.Context
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.Density
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
+import io.cosgriff.pantry.domain.Packaged
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.Period
@@ -37,7 +41,7 @@ class PantryRepositoryTest {
     private fun item(name: String, location: Location = Location.Fridge, expires: LocalDate? = null) = PantryItem(
         name = name,
         location = location,
-        quantity = Quantity(BigDecimal("1.24"), QuantityUnit.Pound),
+        quantity = Measure(BigDecimal("1.24"), MeasureUnit.Pound),
         purchased = today,
         expires = expires,
     )
@@ -56,7 +60,7 @@ class PantryRepositoryTest {
             name = "Ground beef",
             barcode = "0096619321084",
             location = Location.Freezer,
-            quantity = Quantity(BigDecimal("1.240"), QuantityUnit.Pound),
+            quantity = Measure(BigDecimal("1.240"), MeasureUnit.Pound),
             purchased = today,
             expires = today.plusMonths(3),
             opened = true,
@@ -65,6 +69,22 @@ class PantryRepositoryTest {
         )
         val id = repo.save(saved)
         assertEquals(saved.copy(id = id), repo.item(id))
+    }
+
+    @Test
+    fun `every amount shape round-trips, with and without a density`() = runBlocking {
+        val fiveLb = Measure(BigDecimal("5"), MeasureUnit.Pound)
+        val amounts = MeasureUnit.entries.map { Measure(BigDecimal("1.5"), it) } +
+            Package.entries.map { Packaged(BigDecimal("2"), it) } +
+            Package.entries.map { Packaged(BigDecimal("0.75"), it, Measure(BigDecimal("12.5"), MeasureUnit.FluidOunce)) } +
+            Packaged(BigDecimal("2"), Package.Bag, fiveLb)
+        for (amount in amounts) {
+            for (density in listOf(null, Density(BigDecimal("0.51")))) {
+                val saved = item("Test flour").copy(quantity = amount, density = density)
+                val id = repo.save(saved)
+                assertEquals(saved.copy(id = id), repo.item(id))
+            }
+        }
     }
 
     @Test
@@ -130,17 +150,26 @@ class PantryRepositoryTest {
     @Test
     fun `a named barcode is remembered and replaced`() = runBlocking {
         assertNull(repo.knownProduct("096619321087"))
-        repo.rememberProduct(KnownProduct("096619321087", "Test water", Location.Dry, QuantityUnit.Pack))
-        assertEquals(KnownProduct("096619321087", "Test water", Location.Dry, QuantityUnit.Pack), repo.knownProduct("096619321087"))
-        repo.rememberProduct(KnownProduct("096619321087", "Test lime water", Location.Fridge, QuantityUnit.Each))
+        repo.rememberProduct(KnownProduct("096619321087", "Test water", Location.Dry, AmountUnit.Packages(Package.Pack)))
+        assertEquals(KnownProduct("096619321087", "Test water", Location.Dry, AmountUnit.Packages(Package.Pack)), repo.knownProduct("096619321087"))
+        repo.rememberProduct(KnownProduct("096619321087", "Test lime water", Location.Fridge, AmountUnit.Measured(MeasureUnit.Each)))
         assertEquals("Test lime water", repo.knownProduct("096619321087")?.name)
         assertEquals(Location.Fridge, repo.knownProduct("096619321087")?.location)
     }
 
     @Test
+    fun `a known product remembers a package's contents size`() = runBlocking {
+        val bag = AmountUnit.Packages(Package.Bag, Measure(BigDecimal("2.5"), MeasureUnit.Kilogram))
+        repo.rememberProduct(KnownProduct("123", "Test rice", Location.Dry, bag))
+        assertEquals(bag, repo.knownProduct("123")?.unit)
+        repo.rememberProduct(KnownProduct("123", "Test rice", Location.Dry, AmountUnit.Measured(MeasureUnit.Cup)))
+        assertEquals(AmountUnit.Measured(MeasureUnit.Cup), repo.knownProduct("123")?.unit)
+    }
+
+    @Test
     fun `a known product forgets a deleted location`() = runBlocking {
         val garage = repo.addLocation("Garage", null)
-        repo.rememberProduct(KnownProduct("123", "Test soda", garage, QuantityUnit.Each))
+        repo.rememberProduct(KnownProduct("123", "Test soda", garage, AmountUnit.Measured(MeasureUnit.Each)))
         repo.deleteLocation(garage)
         assertNull(repo.knownProduct("123")?.location)
         assertEquals("Test soda", repo.knownProduct("123")?.name)

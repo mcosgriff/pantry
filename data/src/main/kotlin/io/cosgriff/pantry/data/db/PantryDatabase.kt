@@ -18,12 +18,13 @@ import androidx.sqlite.execSQL
         MealIngredientEntity::class,
         MealPlanEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // known_products (#12)
         AutoMigration(from = 2, to = 3), // shopping_entries (#20)
         AutoMigration(from = 3, to = 4), // meals, meal_ingredients, meal_plans; shopping_entries.meal, .mealDay (#19)
+        AutoMigration(from = 4, to = 5), // contents and density columns of one amount shape (#56)
     ],
 )
 abstract class PantryDatabase : RoomDatabase() {

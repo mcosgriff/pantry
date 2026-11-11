@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.QuickPick
+import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.stepped
 import java.math.BigDecimal
 import java.time.Clock
@@ -61,7 +63,7 @@ class ItemDetailsViewModel @Inject constructor(
     fun onName(name: String) = edit { it.copy(name = name) }
     fun onLocation(location: Location) = edit { it.withLocation(location) }
     fun onStep(delta: Int) = edit { it.copy(quantity = it.quantity.stepped(delta)) }
-    fun onUnit(unit: QuantityUnit) = edit { it.copy(quantity = it.quantity.copy(unit = unit)) }
+    fun onUnit(unit: AmountUnit) = edit { it.copy(quantity = unit.of(it.quantity.number)) }
     fun onExpires(date: LocalDate?) = edit { it.withExpires(date) }
     fun onQuickPick(pick: QuickPick) = edit { it.withExpires(pick.from(_state.value.today)) }
     fun onOpened(opened: Boolean) = edit { it.copy(opened = opened) }
@@ -74,7 +76,7 @@ class ItemDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             pantry.save(item)
             // A named barcode fills in the next scan of it (#12).
-            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.countedIn)) }
             if (item.id == 0L) settings.setLastUsedLocation(item.location)
             _state.update { it.copy(done = true) }
         }

@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -46,14 +46,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.MealPlan
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.expiryStatus
 import io.cosgriff.pantry.domain.weekOf
 import io.cosgriff.pantry.ui.components.PantryBottomBar
@@ -288,13 +289,13 @@ private fun MealCard(meal: WeekMeal, selected: LocalDate, onClick: () -> Unit) {
 // Previews and the screenshot test use made-up items and meals, marked as samples.
 internal val previewToday: LocalDate = LocalDate.of(2026, 11, 10)
 
-private fun sample(id: Long, name: String, days: Long, amount: String, unit: QuantityUnit = QuantityUnit.Each) =
-    PantryItem(id = id, name = name, location = Location.Fridge, quantity = Quantity(BigDecimal(amount), unit), purchased = previewToday, expires = previewToday.plusDays(days))
+private fun sample(id: Long, name: String, days: Long, amount: String, unit: AmountUnit = AmountUnit.Measured(MeasureUnit.Each)) =
+    PantryItem(id = id, name = name, location = Location.Fridge, quantity = unit.of(BigDecimal(amount)), purchased = previewToday, expires = previewToday.plusDays(days))
 
 internal val previewEggs = sample(1, "Sample eggs", 2, "18")
-internal val previewSpinach = sample(2, "Sample spinach", -1, "1", QuantityUnit.Bag)
-internal val previewChicken = sample(3, "Sample rotisserie chicken", 3, "1", QuantityUnit.Pack)
-internal val previewYogurt = sample(4, "Sample Greek yogurt", 5, "2", QuantityUnit.Tub)
+internal val previewSpinach = sample(2, "Sample spinach", -1, "1", AmountUnit.Packages(Package.Bag))
+internal val previewChicken = sample(3, "Sample rotisserie chicken", 3, "1", AmountUnit.Packages(Package.Pack))
+internal val previewYogurt = sample(4, "Sample Greek yogurt", 5, "2", AmountUnit.Packages(Package.Tub))
 
 internal val previewEggBites = MealPlan(
     Meal(
@@ -303,7 +304,7 @@ internal val previewEggBites = MealPlan(
         listOf(
             Ingredient.of(previewEggs).copy(amount = BigDecimal("12")),
             Ingredient.of(previewSpinach),
-            Ingredient("Sample cottage cheese", fromPantry = true, itemId = 9, unit = QuantityUnit.Tub, amount = BigDecimal.ONE),
+            Ingredient("Sample cottage cheese", fromPantry = true, itemId = 9, unit = AmountUnit.Packages(Package.Tub), amount = BigDecimal.ONE),
             Ingredient.typed("Sample salt and pepper"),
         ),
         id = 1,

@@ -7,7 +7,6 @@ import io.cosgriff.pantry.data.db.MealPlanEntity
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.MealPlan
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.checkPlan
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -69,7 +68,7 @@ private fun MealIngredientEntity.toDomain() = Ingredient(
     fromPantry = fromPantry,
     itemId = itemId,
     barcode = barcode,
-    unit = unit?.let(QuantityUnit::valueOf),
+    unit = unit?.let { amountUnit(it, contentsAmount, contentsUnit) },
     amount = amount?.let(::BigDecimal),
 )
 
@@ -80,8 +79,10 @@ private fun Ingredient.toEntity() = MealIngredientEntity(
     fromPantry = fromPantry,
     itemId = itemId,
     barcode = barcode,
-    unit = unit?.name,
+    unit = unit?.storedName,
     amount = amount?.toPlainString(),
+    contentsAmount = unit?.storedContentsAmount,
+    contentsUnit = unit?.storedContentsUnit,
 )
 
 private fun MealPlan.toEntity() = MealPlanEntity(id = id, mealId = meal.id, day = day.toEpochDay(), servings = servings, cooked = cooked)

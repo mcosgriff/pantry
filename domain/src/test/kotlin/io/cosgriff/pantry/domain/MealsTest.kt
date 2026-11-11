@@ -11,19 +11,19 @@ import org.junit.Test
 class MealsTest {
     private val today = LocalDate.of(2026, 11, 10) // a Tuesday
 
-    private fun item(id: Long, name: String, amount: String, unit: QuantityUnit = QuantityUnit.Each, expires: LocalDate? = null, barcode: String? = null) =
-        PantryItem(id = id, name = name, location = Location.Fridge, quantity = Quantity(BigDecimal(amount), unit), purchased = today, expires = expires, barcode = barcode)
+    private fun item(id: Long, name: String, amount: String, unit: AmountUnit = AmountUnit.Measured(MeasureUnit.Each), expires: LocalDate? = null, barcode: String? = null) =
+        PantryItem(id = id, name = name, location = Location.Fridge, quantity = unit.of(BigDecimal(amount)), purchased = today, expires = expires, barcode = barcode)
 
     private val eggs = item(1, "Test eggs", "18")
-    private val spinach = item(2, "Test spinach", "1", QuantityUnit.Bag, expires = today.minusDays(1))
-    private val cheese = item(3, "Test mozzarella", "1", QuantityUnit.Bag)
+    private val spinach = item(2, "Test spinach", "1", AmountUnit.Packages(Package.Bag), expires = today.minusDays(1))
+    private val cheese = item(3, "Test mozzarella", "1", AmountUnit.Packages(Package.Bag))
 
     private fun meal(vararg ingredients: Ingredient, servings: Int = 12) = Meal("Test egg bites", servings, ingredients.toList(), id = 7)
 
     @Test
     fun `an ingredient picked from the pantry keeps its item's id, barcode and unit`() {
         val picked = Ingredient.of(eggs.copy(barcode = "096619321087"))
-        assertEquals(Ingredient("Test eggs", fromPantry = true, itemId = 1, barcode = "096619321087", unit = QuantityUnit.Each), picked)
+        assertEquals(Ingredient("Test eggs", fromPantry = true, itemId = 1, barcode = "096619321087", unit = AmountUnit.Measured(MeasureUnit.Each)), picked)
         assertEquals(Ingredient("Test salt"), Ingredient.typed("  Test salt "))
     }
 
@@ -48,7 +48,7 @@ class MealsTest {
             meal(
                 Ingredient.of(eggs).copy(amount = BigDecimal("12")),
                 Ingredient.of(spinach),
-                Ingredient("Test cottage cheese", fromPantry = true, itemId = 99, unit = QuantityUnit.Tub),
+                Ingredient("Test cottage cheese", fromPantry = true, itemId = 99, unit = AmountUnit.Packages(Package.Tub)),
                 Ingredient.typed("Test salt"),
                 Ingredient.of(cheese).copy(amount = BigDecimal("2")),
             ),
@@ -69,7 +69,7 @@ class MealsTest {
 
     @Test
     fun `an item that's gone is matched again by barcode, then by name, freshest unexpired first`() {
-        val picked = Ingredient("Test eggs", fromPantry = true, itemId = 1, barcode = "096619321087", unit = QuantityUnit.Each)
+        val picked = Ingredient("Test eggs", fromPantry = true, itemId = 1, barcode = "096619321087", unit = AmountUnit.Measured(MeasureUnit.Each))
         val old = item(10, "Test eggs", "2", expires = today.minusDays(2))
         val fresh = item(11, "TEST EGGS", "12", expires = today.plusDays(9))
         val sooner = item(12, "test eggs", "6", expires = today.plusDays(4))
@@ -82,12 +82,12 @@ class MealsTest {
     @Test
     fun `an item with nothing left counts as missing`() {
         val plan = MealPlan(meal(Ingredient.of(eggs)), today)
-        assertEquals(IngredientStatus.Missing, checkPlan(plan, listOf(eggs.copy(quantity = Quantity(BigDecimal.ZERO, QuantityUnit.Each))), today).single().status)
+        assertEquals(IngredientStatus.Missing, checkPlan(plan, listOf(eggs.copy(quantity = Measure(BigDecimal.ZERO, MeasureUnit.Each))), today).single().status)
     }
 
     @Test
     fun `missing and short ingredients are to buy`() {
-        val plan = MealPlan(meal(Ingredient.of(eggs).copy(amount = BigDecimal("24")), Ingredient.of(spinach), Ingredient.typed("Test salt"), Ingredient("Test scallions", true, 50, null, QuantityUnit.Each)), today)
+        val plan = MealPlan(meal(Ingredient.of(eggs).copy(amount = BigDecimal("24")), Ingredient.of(spinach), Ingredient.typed("Test salt"), Ingredient("Test scallions", true, 50, null, AmountUnit.Measured(MeasureUnit.Each))), today)
         assertEquals(listOf(true, false, false, true), checkPlan(plan, listOf(eggs, spinach), today).map { it.toBuy })
     }
 
@@ -104,13 +104,13 @@ class MealsTest {
             today,
         )
         val cooked = cook(checkPlan(plan, listOf(eggs, spinach, cheese), today))
-        assertEquals(listOf(eggs.copy(quantity = Quantity(BigDecimal("4"), QuantityUnit.Each))), cooked.updated)
+        assertEquals(listOf(eggs.copy(quantity = Measure(BigDecimal("4"), MeasureUnit.Each))), cooked.updated)
         assertEquals(listOf(cheese), cooked.usedUp)
     }
 
     @Test
     fun `cooking skips an amount in another unit than the item now has`() {
-        val plan = MealPlan(meal(Ingredient("Test eggs", true, 1, null, QuantityUnit.Pack, BigDecimal("1"))), today)
+        val plan = MealPlan(meal(Ingredient("Test eggs", true, 1, null, AmountUnit.Packages(Package.Pack), BigDecimal("1"))), today)
         val cooked = cook(checkPlan(plan, listOf(eggs), today))
         assertTrue(cooked.updated.isEmpty() && cooked.usedUp.isEmpty())
     }

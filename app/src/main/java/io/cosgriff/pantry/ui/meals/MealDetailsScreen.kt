@@ -57,11 +57,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.IngredientCheck
 import io.cosgriff.pantry.domain.IngredientStatus
 import io.cosgriff.pantry.domain.MealPlan
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.ui.components.PantryCard
 import io.cosgriff.pantry.ui.components.QuantityStepper
@@ -230,7 +229,7 @@ private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
         is IngredientStatus.Short, IngredientStatus.Missing -> Triple(colors.borderStrong, colors.warning, true)
         IngredientStatus.NotTracked -> Triple(Color.Transparent, colors.inkMuted, false)
     }
-    val needed = check.needed?.let { amount -> check.ingredient.unit?.let { quantityText(Quantity(amount, it)) } }
+    val needed = check.needed?.let { amount -> check.ingredient.unit?.let { quantityText(it.of(amount)) } }
     val label = stringResource(R.string.meal_set_amount, check.ingredient.name)
     Row(
         Modifier
@@ -305,7 +304,7 @@ private fun Footer(cooked: Boolean, canAdd: Boolean, actions: MealDetailsActions
 
 /** How much of [name] the plan uses, in [unit]; empty for "some". */
 @Composable
-private fun AmountDialog(name: String, current: BigDecimal?, unit: QuantityUnit, servings: Int, onDone: (BigDecimal?) -> Unit, onDismiss: () -> Unit) {
+private fun AmountDialog(name: String, current: BigDecimal?, unit: AmountUnit, servings: Int, onDone: (BigDecimal?) -> Unit, onDismiss: () -> Unit) {
     val format = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 } }
     var text by rememberSaveable { mutableStateOf(current?.let(format::format).orEmpty()) }
     val parsed = parsePositive(text, format)
