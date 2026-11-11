@@ -9,6 +9,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import io.cosgriff.pantry.ui.components.TopLevel
 import io.cosgriff.pantry.ui.item.ItemDetailsScreen
+import io.cosgriff.pantry.ui.meals.MealDetailsScreen
+import io.cosgriff.pantry.ui.meals.MealPrepScreen
+import io.cosgriff.pantry.ui.meals.PlanMealScreen
 import io.cosgriff.pantry.ui.pantry.PantryListActions
 import io.cosgriff.pantry.ui.pantry.PantryListScreen
 import io.cosgriff.pantry.ui.scan.ScanScreen
@@ -16,6 +19,7 @@ import io.cosgriff.pantry.ui.settings.SettingsScreen
 import io.cosgriff.pantry.ui.shopping.ShoppingScreen
 import io.cosgriff.pantry.ui.shopping.ShoppingTripScreen
 import io.cosgriff.pantry.ui.usesoon.UseSoonScreen
+import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
 @Serializable data object PantryListRoute : NavKey
@@ -33,9 +37,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object ShoppingTripRoute : NavKey
 
+@Serializable data object MealPrepRoute : NavKey
+
+/** Plans a meal on [day] (epoch day), or edits saved meal [mealId]. */
+@Serializable data class PlanMealRoute(val day: Long, val mealId: Long? = null) : NavKey
+
+@Serializable data class MealDetailsRoute(val planId: Long) : NavKey
+
 /**
- * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. Buttons for
- * screens not built yet go nowhere: Meal prep (#19). The bottom bar's places each start a fresh back stack.
+ * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. The bottom bar's
+ * places each start a fresh back stack.
  */
 @Composable
 fun PantryNavHost() {
@@ -45,9 +56,9 @@ fun PantryNavHost() {
         val root = when (place) {
             TopLevel.Pantry -> PantryListRoute
             TopLevel.Shopping -> ShoppingRoute
-            TopLevel.MealPrep -> null
+            TopLevel.MealPrep -> MealPrepRoute
         }
-        if (root != null && backStack.firstOrNull() != root) {
+        if (backStack.firstOrNull() != root) {
             backStack.clear()
             backStack.add(root)
         }
@@ -91,6 +102,20 @@ fun PantryNavHost() {
                         backStack.add(ScanRoute)
                     },
                 )
+            }
+            entry<MealPrepRoute> {
+                MealPrepScreen(
+                    onPlan = { backStack.add(PlanMealRoute(it.toEpochDay())) },
+                    onMeal = { backStack.add(MealDetailsRoute(it.id)) },
+                    onSeeAllSoon = { backStack.add(UseSoonRoute) },
+                    onNavigate = navigate,
+                )
+            }
+            entry<PlanMealRoute> { route ->
+                PlanMealScreen(day = LocalDate.ofEpochDay(route.day), mealId = route.mealId, onBack = back, onDone = back)
+            }
+            entry<MealDetailsRoute> { route ->
+                MealDetailsScreen(planId = route.planId, onBack = back, onEdit = { plan -> backStack.add(PlanMealRoute(plan.day.toEpochDay(), plan.meal.id)) })
             }
             entry<UseSoonRoute> {
                 UseSoonScreen(onBack = back, onItem = { backStack.add(ItemDetailsRoute(it)) })

@@ -13,6 +13,7 @@ import dagger.hilt.components.SingletonComponent
 import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.KnownProductDao
 import io.cosgriff.pantry.data.db.LocationDao
+import io.cosgriff.pantry.data.db.MealDao
 import io.cosgriff.pantry.data.db.PantryDatabase
 import io.cosgriff.pantry.data.db.ShoppingDao
 import javax.inject.Singleton
@@ -34,6 +35,9 @@ object DataModule {
 
     @Provides
     fun shoppingDao(db: PantryDatabase): ShoppingDao = db.shopping()
+
+    @Provides
+    fun mealDao(db: PantryDatabase): MealDao = db.meals()
 
     @Provides @Singleton
     fun settingsStore(@ApplicationContext context: Context): DataStore<Preferences> =

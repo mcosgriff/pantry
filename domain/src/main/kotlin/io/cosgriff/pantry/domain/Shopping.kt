@@ -2,14 +2,25 @@ package io.cosgriff.pantry.domain
 
 import java.time.LocalDate
 
-/** Why something is on the shopping list (#20), in the list's group order. */
-enum class ShoppingReason { RunningLow, UsedUp, ByHand }
+/** Why something is on the shopping list (#20), in the list's group order. [ForMeal]: missing for a planned meal (#19). */
+enum class ShoppingReason { RunningLow, ForMeal, UsedUp, ByHand }
 
-/** A line the user put on the list, or one added for them when they used something up. */
-data class ShoppingEntry(val id: Long, val name: String, val reason: ShoppingReason, val addedOn: LocalDate) {
+/**
+ * A line the user put on the list, or one added for them when they used something up or planned a meal that
+ * needs it. A [ShoppingReason.ForMeal] line names its [meal] and the [mealDay] it's planned for.
+ */
+data class ShoppingEntry(
+    val id: Long,
+    val name: String,
+    val reason: ShoppingReason,
+    val addedOn: LocalDate,
+    val meal: String? = null,
+    val mealDay: LocalDate? = null,
+) {
     init {
         require(reason != ShoppingReason.RunningLow) { "Running-low lines come from the pantry, not the list" }
         require(name.isNotBlank()) { "Name must not be blank" }
+        require((reason == ShoppingReason.ForMeal) == (meal != null && mealDay != null)) { "Only a for-meal line names its meal and day" }
     }
 }
 
@@ -21,7 +32,8 @@ data class ShoppingLine(val key: String, val name: String, val reason: ShoppingR
 
 /**
  * The list: items at or under their low-stock alert (worked out from the pantry, so a restocked item leaves the
- * list by itself), then what was used up, then what was added by hand, each group by name. A name already on the
+ * list by itself), then what this week's meals need, then what was used up, then what was added by hand, each
+ * group by name. A name already on the
  * list from an earlier group isn't repeated.
  */
 fun shoppingList(items: List<PantryItem>, entries: List<ShoppingEntry>): List<ShoppingLine> {

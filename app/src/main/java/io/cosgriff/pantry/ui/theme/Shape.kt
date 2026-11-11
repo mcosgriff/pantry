@@ -58,6 +58,14 @@ object PantryDimens {
     val sheetHandleHeight = 4.dp
     val chipHeight = 36.dp // location tabs; the banner's badge
     val tileSize = 40.dp // a location's letter tile
+
+    // Meal prep (#19).
+    val dayChipHeight = 56.dp // a day in the week strip
+    val plannedDot = 5.dp // under a day with a meal planned
+    val statusDot = 10.dp // an ingredient's pantry status
+    val soonChipMinWidth = 112.dp // a Use soon chip
+    val mealDayColumn = 44.dp // the day beside a planned meal
+    val servingsStepperWidth = 150.dp
     val tileTiny = 24.dp // the letter tile beside a haul's location heading
     val tileSmall = 32.dp // the letter tile in a settings row
     val tileMedium = 36.dp // the letter tile in a Use soon row

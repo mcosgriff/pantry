@@ -88,6 +88,7 @@ import io.cosgriff.pantry.ui.components.ValueRow
 import io.cosgriff.pantry.ui.components.locationColors
 import io.cosgriff.pantry.ui.components.locationName
 import io.cosgriff.pantry.ui.components.quantityText
+import io.cosgriff.pantry.ui.components.unitName
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.math.BigDecimal
@@ -270,18 +271,6 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
         }
     }
 }
-
-@Composable
-private fun unitName(unit: QuantityUnit): String = stringResource(
-    when (unit) {
-        QuantityUnit.Each -> R.string.unit_name_each
-        QuantityUnit.Pound -> R.string.unit_name_pound
-        QuantityUnit.Ounce -> R.string.unit_name_ounce
-        QuantityUnit.Bag -> R.string.unit_name_bag
-        QuantityUnit.Pack -> R.string.unit_name_pack
-        QuantityUnit.Tub -> R.string.unit_name_tub
-    },
-)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

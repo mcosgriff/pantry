@@ -20,8 +20,12 @@ and a barcode you have named once fills in its name, location and unit on the ne
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
-low-stock alert), what was used up, and what you add by hand; a shopping trip checks things off and ends by
-opening the scanner to restock. A new install shows an empty pantry. Every
+low-stock alert), what this week's meals still need, what was used up, and what you add by hand; a shopping
+trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
+from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
+track), and each meal shows what it has, what has expired and what is missing. "Add missing to shopping list"
+and "Cooked it", which takes the amounts out of the pantry, finish the loop; a cooked meal is kept to plan
+again in one tap. A new install shows an empty pantry. Every
 screen is screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
 labels) on each build. The plan, in order:
 
@@ -37,7 +41,7 @@ labels) on each build. The plan, in order:
 | Naming unknown products, store-packed labels, reviewing a haul | [#12](https://github.com/mcosgriff/pantry/issues/12), [#13](https://github.com/mcosgriff/pantry/issues/13), [#14](https://github.com/mcosgriff/pantry/issues/14) |
 | First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
 | Removing items with a reason (to be decided) | [#18](https://github.com/mcosgriff/pantry/issues/18) |
-| Meal prep (to be decided) | [#19](https://github.com/mcosgriff/pantry/issues/19) |
+| Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
 
