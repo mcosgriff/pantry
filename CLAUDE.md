@@ -97,7 +97,8 @@ Values live in the design system and in `ui/theme/`; don't type a color, radius 
 - A composable used by more than one screen lives in `ui/components/`.
 - A screen is a `…Content` composable (plain state and callbacks) wrapped by a `…Screen` that reads the
   ViewModel, so it can be previewed and screenshot-tested. A `…Content` that needs today takes it as a
-  parameter, never `LocalDate.now()`.
+  parameter, never `LocalDate.now()`. Only ViewModels and the expiry digest (`notify/ExpiryDigest.kt`, #27,
+  #52) read the clock, through the injected `java.time.Clock`.
 - **Every screen gets a screenshot test** in `ScreensScreenshotTest` (`compose.shoot(...)`, or `shootScreen`
   for a sheet or dialog), light and dark. It also runs the Accessibility Test Framework, where a warning
   fails; suppress a deliberate finding for that one kind of element, with a comment saying why.

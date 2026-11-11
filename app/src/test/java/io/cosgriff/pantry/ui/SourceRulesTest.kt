@@ -51,8 +51,9 @@ class SourceRulesTest {
             Regex("""\bLocalContext\.current\.getString\b"""), app,
         ),
         Rule(
-            "A …Content composable takes today as a parameter; only a ViewModel reads the clock",
-            Regex("""\b(LocalDate|LocalDateTime|Instant)\.now\("""), app, allowedIn = setOf("ViewModel.kt"),
+            "A …Content composable takes today as a parameter; only a ViewModel or the expiry digest reads the clock",
+            Regex("""\b(LocalDate|LocalDateTime|ZonedDateTime|Instant)\.now\("""), app,
+            allowedIn = setOf("ViewModel.kt", "notify/ExpiryDigest.kt"),
         ),
         Rule(
             "Barcodes are read with zxing-cpp, never ML Kit: it uploads usage logs to Google",

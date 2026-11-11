@@ -51,10 +51,15 @@ import kotlinx.serialization.Serializable
 /**
  * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. The bottom bar's
  * places each start a fresh back stack. A link shared to Pantry ([sharedLink]) opens Meal prep's import.
+ * [openUseSoon] starts on Use soon, as the daily digest's notification does (#27), with the pantry list behind it.
  */
 @Composable
-fun PantryNavHost(sharedLink: String? = null) {
-    val backStack = if (sharedLink == null) rememberNavBackStack(PantryListRoute) else rememberNavBackStack(MealPrepRoute, ImportRecipeRoute(sharedLink))
+fun PantryNavHost(sharedLink: String? = null, openUseSoon: Boolean = false) {
+    val backStack = when {
+        sharedLink != null -> rememberNavBackStack(MealPrepRoute, ImportRecipeRoute(sharedLink))
+        openUseSoon -> rememberNavBackStack(PantryListRoute, UseSoonRoute)
+        else -> rememberNavBackStack(PantryListRoute)
+    }
     val back: () -> Unit = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
     val navigate: (TopLevel) -> Unit = { place ->
         val root = when (place) {
