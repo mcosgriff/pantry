@@ -11,18 +11,21 @@ import io.cosgriff.pantry.ui.item.ItemDetailsScreen
 import io.cosgriff.pantry.ui.pantry.PantryListActions
 import io.cosgriff.pantry.ui.pantry.PantryListScreen
 import io.cosgriff.pantry.ui.settings.SettingsScreen
+import io.cosgriff.pantry.ui.usesoon.UseSoonScreen
 import kotlinx.serialization.Serializable
 
 @Serializable data object PantryListRoute : NavKey
 
 @Serializable data object SettingsRoute : NavKey
 
+@Serializable data object UseSoonRoute : NavKey
+
 /** Item details for a stored item, or a new one when [id] is `null`. */
 @Serializable data class ItemDetailsRoute(val id: Long? = null) : NavKey
 
 /**
  * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. Buttons for
- * screens not built yet go nowhere: Scan (#10), Use soon (#16), Sort and filter (#17),
+ * screens not built yet go nowhere: Scan (#10), Sort and filter (#17),
  * Meal prep (#19), Shopping (#20).
  */
 @Composable
@@ -40,8 +43,12 @@ fun PantryNavHost() {
                         onItem = { backStack.add(ItemDetailsRoute(it)) },
                         onAddByHand = { backStack.add(ItemDetailsRoute()) },
                         onSettings = { backStack.add(SettingsRoute) },
+                        onViewExpiring = { backStack.add(UseSoonRoute) },
                     ),
                 )
+            }
+            entry<UseSoonRoute> {
+                UseSoonScreen(onBack = back, onItem = { backStack.add(ItemDetailsRoute(it)) })
             }
             entry<SettingsRoute> {
                 SettingsScreen(onBack = back)

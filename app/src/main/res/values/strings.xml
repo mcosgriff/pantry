@@ -166,6 +166,21 @@
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
 
+    <!-- Use soon (#16). Group headings carry their count: "This week · 4". -->
+    <string name="use_soon_title">Use soon</string>
+    <string name="use_soon_expired">Expired · %1$d</string>
+    <string name="use_soon_this_week">This week · %1$d</string>
+    <string name="use_soon_next_week">Next week · %1$d</string>
+    <!-- Row detail: expiry and quantity, "Expires in 2 days · 18 ea". -->
+    <string name="use_soon_detail">%1$s · %2$s</string>
+    <string name="use_soon_throw_out">Throw out</string>
+    <string name="use_soon_used_up">Used up</string>
+    <string name="use_soon_freeze">Freeze</string>
+    <string name="use_soon_removed">Removed %1$s</string>
+    <string name="use_soon_frozen">Moved %1$s to the Freezer</string>
+    <string name="use_soon_undo">Undo</string>
+    <string name="use_soon_nothing">Nothing expires in the next two weeks.</string>
+
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>
     <string name="unit_name_pound">lb</string>
