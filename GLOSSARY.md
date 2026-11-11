@@ -6,6 +6,12 @@ Words the code, issues and screens use for one thing each. Decisions behind them
 - **Location:** where an item is kept: the built-in Dry, Fridge and Freezer, or one the user adds.
 - **Meal:** a recipe the household cooks: a name, servings and ingredients. Kept after it's cooked.
 - **Ingredient:** one line of a meal, from the pantry (it matches an item) or typed in (not tracked).
+- **Recipe import:** a meal read from a recipe page's schema.org data, from a link the user shares or pastes
+  (`docs/adr/0003`).
+- **Ingredient line:** one line of an imported recipe as written ("1 (15 oz) can black beans, drained"), read
+  into amount, unit and name.
+- **Import rule:** a decision the user made on an import, kept for the next: what a unit word means, or which
+  pantry item (or not tracked) an ingredient name is.
 - **Meal plan:** a meal on a day, for a number of servings, which scales the ingredients.
 - **Consumption:** what using up, throwing out, freezing or cooking does to the pantry and the shopping list
   (#48).

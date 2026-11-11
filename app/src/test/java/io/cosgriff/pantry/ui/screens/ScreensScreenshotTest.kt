@@ -7,7 +7,12 @@ import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.ui.item.ItemDetailsActions
 import io.cosgriff.pantry.ui.item.ItemDetailsContent
 import io.cosgriff.pantry.ui.item.previewState as itemDetailsState
+import io.cosgriff.pantry.ui.meals.ImportRecipeActions
+import io.cosgriff.pantry.ui.meals.ImportRecipeContent
 import io.cosgriff.pantry.ui.meals.MealDetailsActions
+import io.cosgriff.pantry.ui.meals.previewImportLink
+import io.cosgriff.pantry.ui.meals.previewImportNoRecipe
+import io.cosgriff.pantry.ui.meals.previewImportReview
 import io.cosgriff.pantry.ui.meals.MealDetailsContent
 import io.cosgriff.pantry.ui.meals.MealPrepActions
 import io.cosgriff.pantry.ui.meals.MealPrepContent
@@ -134,6 +139,15 @@ class ScreensScreenshotTest(private val shade: Shade) {
 
     @Test
     fun mealDetails() = compose.shoot("meal_details", shade) { MealDetailsContent(previewMealDetails, MealDetailsActions()) }
+
+    @Test
+    fun importLink() = compose.shoot("import_link", shade) { ImportRecipeContent(previewImportLink, ImportRecipeActions()) }
+
+    @Test
+    fun importNoRecipe() = compose.shoot("import_no_recipe", shade) { ImportRecipeContent(previewImportNoRecipe, ImportRecipeActions()) }
+
+    @Test
+    fun importReview() = compose.shoot("import_review", shade) { ImportRecipeContent(previewImportReview, ImportRecipeActions()) }
 
     companion object {
         @JvmStatic

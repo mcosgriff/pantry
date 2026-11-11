@@ -56,9 +56,10 @@ Add `:baselineprofile` once the screens settle.
   Privacy (`.github/scripts/exodus-scan.sh`): a tracker fails, and so does a permission not in
   `.github/privacy/permissions.txt` (or one listed that the APK no longer asks for). A new permission means
   updating that list and explaining it in the app.
-- **Network: one call only,** product lookup by barcode in Open Food Facts (`docs/adr/0001`, #9). It sends
-  only the barcode, is off until the user says yes, and never sends store-packed codes. Any other network
-  call needs its own ADR first.
+- **Network: two calls only.** Product lookup by barcode in Open Food Facts (`docs/adr/0001`, #9): it sends
+  only the barcode, is off until the user says yes, and never sends store-packed codes. Reading a recipe page
+  (`docs/adr/0003`, #43): only the `https` link the user shared or pasted, once, when they tap Read recipe;
+  only its schema.org Recipe JSON-LD is read, no images. Any other network call needs its own ADR first.
 - **Barcodes are read with zxing-cpp, not ML Kit.** ML Kit uploads usage logs to Google. Check any Google or
   Firebase library's dependency tree before adding it.
 - **No Android auto-backup** (`allowBackup=false`, `fullBackupContent=false`, data extraction rules exclude

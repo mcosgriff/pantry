@@ -74,6 +74,10 @@ object PantryDimens {
     val emptyArtWidth = 160.dp
     val emptyArtHeight = 128.dp
 
+    // Importing a recipe (#43).
+    val amountFieldWidth = 76.dp // an ingredient line's amount ("2 1/2")
+    val unitButtonMinWidth = 64.dp
+
     // Material asks for 48dp targets; the design's 44px is its floor, so the larger wins.
     val tapMin = 48.dp
     val fieldHeight = 48.dp

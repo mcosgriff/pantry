@@ -10,8 +10,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.cosgriff.pantry.data.DataStoreImportRules
+import io.cosgriff.pantry.data.ImportRulesStore
+import io.cosgriff.pantry.data.JsonLdRecipeReader
 import io.cosgriff.pantry.data.OpenFoodFacts
 import io.cosgriff.pantry.data.ProductLookup
+import io.cosgriff.pantry.data.RecipeReader
 import io.cosgriff.pantry.data.UrlConnectionGet
 import io.cosgriff.pantry.data.db.ItemDao
 import io.cosgriff.pantry.data.db.KnownProductDao
@@ -44,9 +48,22 @@ object DataModule {
      * Open Food Facts asks of apps; no personal contact.
      */
     @Provides @Singleton
-    fun productLookup(@ApplicationContext context: Context): ProductLookup {
+    fun productLookup(@ApplicationContext context: Context): ProductLookup = OpenFoodFacts(UrlConnectionGet(), userAgent = userAgent(context))
+
+    /**
+     * Reading a recipe page the user chose (#43, `docs/adr/0003`): the same `User-Agent`, a longer timeout for a
+     * page, and at most 4 MB of it.
+     */
+    @Provides @Singleton
+    fun recipeReader(@ApplicationContext context: Context): RecipeReader =
+        JsonLdRecipeReader(UrlConnectionGet(timeoutMillis = 10_000, accept = "text/html", maxChars = 4_000_000), userAgent(context))
+
+    @Provides
+    fun importRules(rules: DataStoreImportRules): ImportRulesStore = rules
+
+    private fun userAgent(context: Context): String {
         val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
-        return OpenFoodFacts(UrlConnectionGet(), userAgent = "Pantry/$version (https://github.com/mcosgriff/pantry)")
+        return "Pantry/$version (https://github.com/mcosgriff/pantry)"
     }
 
     @Provides
