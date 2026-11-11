@@ -14,6 +14,9 @@ import io.cosgriff.pantry.ui.pantry.previewToday
 import io.cosgriff.pantry.ui.settings.SettingsActions
 import io.cosgriff.pantry.ui.settings.SettingsContent
 import io.cosgriff.pantry.ui.settings.SettingsState
+import io.cosgriff.pantry.ui.usesoon.UseSoonActions
+import io.cosgriff.pantry.ui.usesoon.UseSoonContent
+import io.cosgriff.pantry.ui.usesoon.previewState as useSoonState
 import java.time.Period
 import org.junit.Rule
 import org.junit.Test
@@ -55,6 +58,9 @@ class ScreensScreenshotTest(private val shade: Shade) {
             SettingsActions(),
         )
     }
+
+    @Test
+    fun useSoon() = compose.shoot("use_soon", shade) { UseSoonContent(useSoonState, UseSoonActions()) }
 
     companion object {
         @JvmStatic

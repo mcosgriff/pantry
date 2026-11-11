@@ -75,6 +75,34 @@
     <string name="pantry_view_expiring">View</string>
     <string name="pantry_expiring_first">Expiring first</string>
     <string name="pantry_no_matches">Nothing matches</string>
+    <string name="pantry_clear_search">Clear search</string>
+    <!-- List heading for each sort order. -->
+    <string name="pantry_sorted_name">Name A–Z</string>
+    <string name="pantry_sorted_recent">Recently added</string>
+    <string name="pantry_sorted_low_stock">Lowest stock first</string>
+
+    <!-- Search with no results (#17). -->
+    <string name="search_empty_title">No “%1$s” in your pantry</string>
+    <string name="search_empty_body">Searched names, notes and barcodes in every location.</string>
+    <string name="search_empty_add">Add to pantry by hand</string>
+
+    <!-- Sort and filter sheet (#17). -->
+    <string name="sort_title">Sort and filter</string>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_expires_soonest">Expires soonest</string>
+    <string name="sort_name">Name A–Z</string>
+    <string name="sort_recent">Recently added</string>
+    <string name="sort_low_stock">Lowest stock first</string>
+    <string name="sort_show_only">Show only</string>
+    <string name="filter_opened">Opened</string>
+    <string name="filter_low_stock">Low stock</string>
+    <string name="filter_no_date">No expiry date</string>
+    <string name="filter_added_this_week">Added this week</string>
+    <string name="sort_reset">Reset</string>
+    <plurals name="sort_show">
+        <item quantity="one">Show %1$d item</item>
+        <item quantity="other">Show %1$d items</item>
+    </plurals>
     <string name="pantry_scan">Scan items</string>
 
     <!-- Empty pantry (#15). -->
@@ -165,6 +193,23 @@
     <string name="settings_last_used">Last used</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
+
+    <!-- Use soon (#16). Group headings carry their count: "This week · 4". -->
+    <string name="use_soon_title">Use soon</string>
+    <string name="use_soon_expired">Expired · %1$d</string>
+    <string name="use_soon_this_week">This week · %1$d</string>
+    <string name="use_soon_next_week">Next week · %1$d</string>
+    <!-- Row detail: expiry and quantity, "Expires in 2 days · 18 ea". -->
+    <string name="use_soon_detail">%1$s · %2$s</string>
+    <string name="use_soon_throw_out">Throw out</string>
+    <string name="use_soon_used_up">Used up</string>
+    <string name="use_soon_freeze">Freeze</string>
+    <!-- What TalkBack reads for a row's button: "Used up: Sample eggs". -->
+    <string name="use_soon_action_on">%1$s: %2$s</string>
+    <string name="use_soon_removed">Removed %1$s</string>
+    <string name="use_soon_frozen">Moved %1$s to the Freezer</string>
+    <string name="use_soon_undo">Undo</string>
+    <string name="use_soon_nothing">Nothing expires in the next two weeks.</string>
 
     <!-- Units by name, for the unit picker. -->
     <string name="unit_name_each">each</string>

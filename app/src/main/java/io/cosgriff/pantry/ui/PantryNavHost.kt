@@ -11,18 +11,21 @@ import io.cosgriff.pantry.ui.item.ItemDetailsScreen
 import io.cosgriff.pantry.ui.pantry.PantryListActions
 import io.cosgriff.pantry.ui.pantry.PantryListScreen
 import io.cosgriff.pantry.ui.settings.SettingsScreen
+import io.cosgriff.pantry.ui.usesoon.UseSoonScreen
 import kotlinx.serialization.Serializable
 
 @Serializable data object PantryListRoute : NavKey
 
 @Serializable data object SettingsRoute : NavKey
 
-/** Item details for a stored item, or a new one when [id] is `null`. */
-@Serializable data class ItemDetailsRoute(val id: Long? = null) : NavKey
+@Serializable data object UseSoonRoute : NavKey
+
+/** Item details for a stored item, or a new one when [id] is `null`, its name filled in with [name]. */
+@Serializable data class ItemDetailsRoute(val id: Long? = null, val name: String = "") : NavKey
 
 /**
  * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. Buttons for
- * screens not built yet go nowhere: Scan (#10), Use soon (#16), Sort and filter (#17),
+ * screens not built yet go nowhere: Scan (#10),
  * Meal prep (#19), Shopping (#20).
  */
 @Composable
@@ -38,16 +41,20 @@ fun PantryNavHost() {
                 PantryListScreen(
                     actions = PantryListActions(
                         onItem = { backStack.add(ItemDetailsRoute(it)) },
-                        onAddByHand = { backStack.add(ItemDetailsRoute()) },
+                        onAddByHand = { backStack.add(ItemDetailsRoute(name = it)) },
                         onSettings = { backStack.add(SettingsRoute) },
+                        onViewExpiring = { backStack.add(UseSoonRoute) },
                     ),
                 )
+            }
+            entry<UseSoonRoute> {
+                UseSoonScreen(onBack = back, onItem = { backStack.add(ItemDetailsRoute(it)) })
             }
             entry<SettingsRoute> {
                 SettingsScreen(onBack = back)
             }
             entry<ItemDetailsRoute> { route ->
-                ItemDetailsScreen(id = route.id, onBack = back, onDone = back)
+                ItemDetailsScreen(id = route.id, name = route.name, onBack = back, onDone = back)
             }
         },
     )

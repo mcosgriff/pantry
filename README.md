@@ -11,7 +11,10 @@ first. Everything stays on the phone.
 ## Status
 
 Early development. The Pantry list is the first screen: items in the dry pantry, fridge and freezer,
-soonest expiry first, with search, a tab per location and a banner for what expires this week. Items are
+soonest expiry first (or by name, newest or lowest stock), with search across names, notes and barcodes,
+filters (opened, low stock, no date, added this week), a tab per location and a banner for what expires this week. Its View opens Use soon: what has expired, what expires this
+week and next, each with one tap to throw it out, mark it used up, or freeze it (moved to the Freezer with
+a new date), and Undo. Items are
 added by hand and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
