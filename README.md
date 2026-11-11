@@ -22,8 +22,8 @@ from the location's shelf life, with quick picks), opened, purchase date, a low-
 the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. The Shopping tab lists what is running low (at or under its
-low-stock alert), what this week's meals still need, what was used up, and what you add by hand; a shopping
-trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
+low-stock alert), what this week's meals still need, what was used up, and what you add by hand, each name
+once; a shopping trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
 track), and each meal shows what it has, what has expired and what is missing. "Add missing to shopping list"
 and "Cooked it", which takes the amounts out of the pantry, finish the loop; a cooked meal is kept to plan

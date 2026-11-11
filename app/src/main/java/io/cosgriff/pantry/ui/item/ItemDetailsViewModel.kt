@@ -80,6 +80,7 @@ class ItemDetailsViewModel @Inject constructor(
         }
     }
 
+    /** Removes the item. A correction, not consumption: no shopping line (`Consumption`, #48; reasons are #18). */
     fun onRemove() {
         val draft = _state.value.draft ?: return
         viewModelScope.launch {

@@ -5,11 +5,11 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.data.db.ShoppingEntryEntity
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.Quantity
 import io.cosgriff.pantry.domain.QuantityUnit
-import io.cosgriff.pantry.domain.ShoppingReason
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -46,20 +46,55 @@ class ShoppingRepositoryTest {
     @Test
     fun `list joins running-low items and stored lines`() = runBlocking {
         pantry.save(PantryItem(name = "Test eggs", location = Location.Fridge, quantity = Quantity(BigDecimal("6"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("6")))
-        shopping.add("Test scallions", ShoppingReason.ByHand, today)
-        shopping.add("Test yogurt", ShoppingReason.UsedUp, today)
+        shopping.addByHand("Test scallions", today)
+        shopping.addUsedUp("Test yogurt", today)
         assertEquals(listOf("Test eggs", "Test yogurt", "Test scallions"), shopping.lines().first().map { it.name })
     }
 
     @Test
     fun `finishing a trip takes off what was in the cart and keeps the rest`() = runBlocking {
-        shopping.add("Test scallions", ShoppingReason.ByHand, today)
-        shopping.add("Test cottage cheese", ShoppingReason.ByHand, today)
+        shopping.addByHand("Test scallions", today)
+        shopping.addByHand("Test cottage cheese", today)
         val scallions = shopping.lines().first().first { it.name == "Test scallions" }
         shopping.setInCart(scallions.key, true)
         assertEquals(setOf(scallions.key), shopping.cart().first())
         shopping.finishTrip()
         assertEquals(listOf("Test cottage cheese"), shopping.lines().first().map { it.name })
         assertEquals(emptySet<String>(), shopping.cart().first())
+    }
+
+    @Test
+    fun `a name already on the list isn't added again, whatever its reason`() = runBlocking {
+        pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
+        assertEquals(null, shopping.addUsedUp(" test MILK ", today))
+        val first = shopping.addByHand("Test bread", today)
+        assertEquals(null, shopping.addUsedUp("Test bread", today))
+        assertEquals(null, shopping.addByHand("test bread", today))
+        assertEquals(listOf("Test milk", "Test bread"), shopping.lines().first().map { it.name })
+        assertEquals(first, shopping.lines().first().last().entry?.id)
+    }
+
+    @Test
+    fun `finishing a trip leaves no hidden duplicate behind`() = runBlocking {
+        // Entries stored before names were deduplicated on insert: the list shows one "Test milk", the database
+        // holds two.
+        db.shopping().insert(ShoppingEntryEntity(name = "Test milk", reason = "USED_UP", addedOn = today.toEpochDay()))
+        db.shopping().insert(ShoppingEntryEntity(name = "test milk", reason = "BY_HAND", addedOn = today.toEpochDay()))
+        val milk = shopping.lines().first().single()
+        shopping.setInCart(milk.key, true)
+        shopping.finishTrip()
+        assertEquals(emptyList<String>(), shopping.lines().first().map { it.name })
+    }
+
+    @Test
+    fun `finishing a trip clears a used-up entry hidden behind a running-low line`() = runBlocking {
+        val id = pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
+        db.shopping().insert(ShoppingEntryEntity(name = "Test milk", reason = "USED_UP", addedOn = today.toEpochDay()))
+        val milk = shopping.lines().first().single()
+        shopping.setInCart(milk.key, true)
+        shopping.finishTrip()
+        // Restocked after the trip: the running-low line leaves, and the hidden entry mustn't take its place.
+        pantry.save(checkNotNull(pantry.item(id)).copy(quantity = Quantity(BigDecimal("4"), QuantityUnit.Each)))
+        assertEquals(emptyList<String>(), shopping.lines().first().map { it.name })
     }
 }

@@ -6,7 +6,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.ShoppingRepository
 import io.cosgriff.pantry.domain.ShoppingEntry
 import io.cosgriff.pantry.domain.ShoppingLine
-import io.cosgriff.pantry.domain.ShoppingReason
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -32,7 +31,7 @@ class ShoppingViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ShoppingState())
 
     fun onAdd(name: String) {
-        viewModelScope.launch { shopping.add(name, ShoppingReason.ByHand, LocalDate.now(clock)) }
+        viewModelScope.launch { shopping.addByHand(name, LocalDate.now(clock)) }
     }
 
     fun onRemove(entry: ShoppingEntry) {

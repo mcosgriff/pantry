@@ -8,7 +8,6 @@ import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.data.ShoppingRepository
 import io.cosgriff.pantry.domain.ItemFilter
 import io.cosgriff.pantry.domain.Location
-import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.SortOrder
 import io.cosgriff.pantry.domain.countByLocation
 import io.cosgriff.pantry.domain.expirySummary
@@ -74,7 +73,7 @@ class PantryListViewModel @Inject constructor(
 
     /** Puts the search's text on the shopping list (#20) and clears the search. */
     fun onAddToShopping(name: String) {
-        viewModelScope.launch { shopping.add(name, ShoppingReason.ByHand, LocalDate.now(clock)) }
+        viewModelScope.launch { shopping.addByHand(name, LocalDate.now(clock)) }
         query.value = ""
     }
 
