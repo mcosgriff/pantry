@@ -12,13 +12,13 @@ import org.junit.Test
 class RecipeImportTest {
     private val today = LocalDate.of(2026, 11, 10)
 
-    private fun item(id: Long, name: String, unit: QuantityUnit = QuantityUnit.Each, days: Long? = 5) =
-        PantryItem(name, Location.Dry, Quantity(BigDecimal.ONE, unit), today, expires = days?.let(today::plusDays), id = id)
+    private fun item(id: Long, name: String, unit: AmountUnit = AmountUnit.Measured(MeasureUnit.Each), days: Long? = 5) =
+        PantryItem(name, Location.Dry, unit.of(BigDecimal.ONE), today, expires = days?.let(today::plusDays), id = id)
 
-    private val beans = item(1, "Black beans", QuantityUnit.Pack)
-    private val flour = item(2, "Flour", QuantityUnit.Pound)
+    private val beans = item(1, "Black beans", AmountUnit.Packages(Package.Pack))
+    private val flour = item(2, "Flour", AmountUnit.Measured(MeasureUnit.Pound))
     private val eggs = item(3, "Large eggs")
-    private val beef = item(4, "Ground beef", QuantityUnit.Pound)
+    private val beef = item(4, "Ground beef", AmountUnit.Measured(MeasureUnit.Pound))
     private val pantry = listOf(beans, flour, eggs, beef)
 
     @Test
@@ -79,8 +79,8 @@ class RecipeImportTest {
 
     @Test
     fun `of two items with the same name, the soonest to expire wins, an expired one last`() {
-        val old = item(10, "Flour", QuantityUnit.Pound, days = -2)
-        val soon = item(11, "Flour", QuantityUnit.Pound, days = 1)
+        val old = item(10, "Flour", AmountUnit.Measured(MeasureUnit.Pound), days = -2)
+        val soon = item(11, "Flour", AmountUnit.Measured(MeasureUnit.Pound), days = 1)
         assertEquals(LineMatch.Item(soon), suggestMatch("flour", listOf(old, flour, soon), ImportRules(), today))
     }
 
@@ -99,37 +99,54 @@ class RecipeImportTest {
     }
 
     @Test
-    fun `a pantry match takes the item's unit, with the amount when it converts exactly`() {
+    fun `a pantry match takes the item's unit when the amount converts exactly, else keeps its own`() {
         val inBeef = importedIngredient("ground beef", "16", "oz", LineUnit.Of(MeasureUnit.Ounce), null, LineMatch.Item(beef))
         assertEquals(Ingredient.of(beef), inBeef.copy(amount = null))
         assertEquals(0, BigDecimal.ONE.compareTo(inBeef.amount))
-        // 2 cups of flour counted in lb: no exact conversion, so "some".
-        assertNull(importedIngredient("flour", "2", "cups", LineUnit.Of(MeasureUnit.Cup), null, LineMatch.Item(flour)).amount)
-        // A can of beans against an item counted in packs: different packages, so "some".
-        assertNull(importedIngredient("black beans", "1", "can", LineUnit.In(Package.Can), null, LineMatch.Item(beans)).amount)
+        // 2 cups of flour counted in lb: no exact conversion, so the line's own 2 cups, compared at meal prep.
+        val inFlour = importedIngredient("flour", "2", "cups", LineUnit.Of(MeasureUnit.Cup), null, LineMatch.Item(flour))
+        assertEquals(flour.id, inFlour.itemId)
+        assertEquals(AmountUnit.Measured(MeasureUnit.Cup), inFlour.unit)
+        assertEquals(0, BigDecimal(2).compareTo(inFlour.amount))
+        // A can of beans against an item counted in packs: the line's own can.
+        val inBeans = importedIngredient("black beans", "1", "can", LineUnit.In(Package.Can), null, LineMatch.Item(beans))
+        assertEquals(AmountUnit.Packages(Package.Can), inBeans.unit)
+        assertEquals(0, BigDecimal.ONE.compareTo(inBeans.amount))
         assertEquals(0, BigDecimal(3).compareTo(importedIngredient("eggs", "3", null, LineUnit.Of(MeasureUnit.Each), null, LineMatch.Item(eggs)).amount))
         assertEquals(eggs.id, importedIngredient("eggs", "3", null, LineUnit.Of(MeasureUnit.Each), null, LineMatch.Item(eggs)).itemId)
+        // An amount with no unit Pantry knows: the item, "some".
+        assertEquals(Ingredient.of(flour), importedIngredient("flour", "2", "scoops", null, null, LineMatch.Item(flour)))
     }
 
     @Test
-    fun `a line not tracked keeps its amount if a meal can hold it, else is named as written`() {
+    fun `a line not tracked keeps its amount and unit, or is named as written`() {
         assertEquals(
-            Ingredient("chicken thighs", unit = QuantityUnit.Pound, amount = BigDecimal(2)),
+            Ingredient("chicken thighs", unit = AmountUnit.Measured(MeasureUnit.Pound), amount = BigDecimal(2)),
             importedIngredient("chicken thighs", "2", "lbs", LineUnit.Of(MeasureUnit.Pound), null, LineMatch.None),
         )
-        assertEquals(Ingredient.typed("2 1/2 cups flour"), importedIngredient("flour", "2 1/2", "cups", LineUnit.Of(MeasureUnit.Cup), null, LineMatch.NotTracked()))
+        assertEquals(
+            Ingredient("flour", unit = AmountUnit.Measured(MeasureUnit.Cup), amount = BigDecimal("2.5")),
+            importedIngredient("flour", "2 1/2", "cups", LineUnit.Of(MeasureUnit.Cup), null, LineMatch.NotTracked()),
+        )
+        val can = Measure(BigDecimal(15), MeasureUnit.Ounce)
+        assertEquals(
+            Ingredient("black beans", unit = AmountUnit.Packages(Package.Can, can), amount = BigDecimal.ONE),
+            importedIngredient("black beans", "1", "can", LineUnit.In(Package.Can), can, LineMatch.NotTracked()),
+        )
         assertEquals(Ingredient.typed("Salt and pepper"), importedIngredient("Salt and pepper", null, null, null, null, LineMatch.NotTracked()))
         assertEquals(Ingredient.typed("2 cloves garlic"), importedIngredient("garlic", "2", "cloves", null, null, LineMatch.None))
     }
 
     @Test
     fun `amounts convert into a meal's unit only exactly`() {
-        assertEquals(0, BigDecimal("0.5").compareTo(amountIn(BigDecimal(8), LineUnit.Of(MeasureUnit.Ounce), null, QuantityUnit.Pound)))
-        assertEquals(0, BigDecimal("0.938").compareTo(amountIn(BigDecimal(1), LineUnit.In(Package.Can), Measure(BigDecimal(15), MeasureUnit.Ounce), QuantityUnit.Pound)))
-        assertEquals(0, BigDecimal(2).compareTo(amountIn(BigDecimal(2), LineUnit.In(Package.Bag), null, QuantityUnit.Bag)))
-        assertEquals(0, BigDecimal(12).compareTo(amountIn(BigDecimal(1), LineUnit.Of(MeasureUnit.Dozen), null, QuantityUnit.Each)))
-        assertNull(amountIn(BigDecimal(1), LineUnit.Of(MeasureUnit.Cup), null, QuantityUnit.Ounce))
-        assertNull(amountIn(BigDecimal(1), null, null, QuantityUnit.Each))
+        val pound = AmountUnit.Measured(MeasureUnit.Pound)
+        assertEquals(0, BigDecimal("0.5").compareTo(amountIn(BigDecimal(8), LineUnit.Of(MeasureUnit.Ounce), null, pound)))
+        assertEquals(0, BigDecimal("0.938").compareTo(amountIn(BigDecimal(1), LineUnit.In(Package.Can), Measure(BigDecimal(15), MeasureUnit.Ounce), pound)))
+        assertEquals(0, BigDecimal(2).compareTo(amountIn(BigDecimal(2), LineUnit.In(Package.Bag), null, AmountUnit.Packages(Package.Bag))))
+        assertEquals(0, BigDecimal(12).compareTo(amountIn(BigDecimal(1), LineUnit.Of(MeasureUnit.Dozen), null, AmountUnit.Measured(MeasureUnit.Each))))
+        assertNull(amountIn(BigDecimal(1), LineUnit.Of(MeasureUnit.Cup), null, AmountUnit.Measured(MeasureUnit.Ounce)))
+        assertNull(amountIn(BigDecimal(1), LineUnit.In(Package.Can), null, AmountUnit.Packages(Package.Pack)))
+        assertNull(amountIn(BigDecimal(1), null, null, AmountUnit.Measured(MeasureUnit.Each)))
     }
 
     @Test
