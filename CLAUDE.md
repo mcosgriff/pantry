@@ -44,6 +44,9 @@ there is no baseline: fix a warning, or suppress that one case in `app/lint.xml`
   settings, behind `PantryRepository` and `SettingsRepository`; Hilt's `DataModule`. Tests run on the JVM
   with Robolectric, whose Android jar Gradle resolves (root `build.gradle.kts`). A schema change needs a new
   version, its committed JSON and a migration; `MigrationTest` opens every exported version (#4).
+  Flows of several steps are deep modules here, each flow's writes in one `db.withWriteTransaction`: `Consumption`
+  (using up, throwing out, freezing, cooking, #48) and `ItemIntake` (scanned code or typed name to saved
+  items, the `docs/adr/0001` lookup rule included, #49).
 - `:app` — Compose UI, ViewModels, theme. Hilt (`PantryApp`).
 
 Add `:baselineprofile` once the screens settle.
@@ -97,8 +100,10 @@ Values live in the design system and in `ui/theme/`; don't type a color, radius 
 - A composable used by more than one screen lives in `ui/components/`.
 - A screen is a `…Content` composable (plain state and callbacks) wrapped by a `…Screen` that reads the
   ViewModel, so it can be previewed and screenshot-tested. A `…Content` that needs today takes it as a
-  parameter, never `LocalDate.now()`. Only ViewModels and the expiry digest (`notify/ExpiryDigest.kt`, #27,
-  #52) read the clock, through the injected `java.time.Clock`.
+  parameter, never `LocalDate.now()`. Only ViewModels, the expiry digest (`notify/ExpiryDigest.kt`) and the
+  deep modules in `:data` (`Consumption`, `ItemIntake`) read the clock, through the injected `java.time.Clock`;
+  `:domain` functions take `today` as a parameter, and a deep module's tests fix time through one `Clock` (#27,
+  #52).
 - **Every screen gets a screenshot test** in `ScreensScreenshotTest` (`compose.shoot(...)`, or `shootScreen`
   for a sheet or dialog), light and dark. It also runs the Accessibility Test Framework, where a warning
   fails; suppress a deliberate finding for that one kind of element, with a comment saying why.

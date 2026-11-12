@@ -9,6 +9,11 @@ Words the code, issues and screens use for one thing each. Decisions behind them
 - **Deleted location:** a location the user removed (only an empty one can be). What refers to it falls back,
   per use: a default location to "Last used", a new item to the last used location then Dry, a known product
   to no location, the pantry list's tab to All. `DeletedLocation` in :domain holds the whole policy (#51).
+- **Item intake:** from a scanned code or a typed name to items saved in the pantry: the starting draft, whether
+  it may be looked up in Open Food Facts, and saving one item or a whole haul (#49). `ItemIntake` in :data.
+- **Haul:** batch scan's items, not yet in the pantry until they are added together (#14).
+- **Known product:** a barcode the user has named, so the next scan of it fills in the name, location and unit
+  (#12). A store-packed item never becomes one.
 - **Meal:** a recipe the household cooks: a name, servings and ingredients. Kept after it's cooked.
 - **Ingredient:** one line of a meal, from the pantry (it matches an item) or typed in (not tracked).
 - **Recipe import:** a meal read from a recipe page's schema.org data, from a link the user shares or pastes

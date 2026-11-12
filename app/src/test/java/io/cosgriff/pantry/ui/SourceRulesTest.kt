@@ -19,6 +19,8 @@ class SourceRulesTest {
     )
 
     private val app = listOf("src/main/java")
+    private val data = "../data/src/main/kotlin"
+    private val domain = "../domain/src/main/kotlin"
     private val theme = "ui/theme/"
 
     private val rules = listOf(
@@ -51,9 +53,10 @@ class SourceRulesTest {
             Regex("""\bLocalContext\.current\.getString\b"""), app,
         ),
         Rule(
-            "A …Content composable takes today as a parameter; only a ViewModel or the expiry digest reads the clock",
-            Regex("""\b(LocalDate|LocalDateTime|ZonedDateTime|Instant)\.now\("""), app,
-            allowedIn = setOf("ViewModel.kt", "notify/ExpiryDigest.kt"),
+            "Only a ViewModel, the expiry digest or a deep module (Consumption, ItemIntake) reads the clock, " +
+                "through the injected Clock; …Content composables and :domain take today as a parameter (#52)",
+            Regex("""\b(LocalDate|LocalDateTime|ZonedDateTime|Instant)\.now\("""), app + data + domain,
+            allowedIn = setOf("ViewModel.kt", "notify/ExpiryDigest.kt", "data/Consumption.kt", "data/ItemIntake.kt"),
         ),
         Rule(
             "Barcodes are read with zxing-cpp, never ML Kit: it uploads usage logs to Google",

@@ -48,6 +48,12 @@ class LocationsTest {
     }
 
     @Test
+    fun `a scanned product - its known product's location, else where a new item starts`() {
+        assertEquals(garage, DeletedLocation.scannedProduct(known = garage, newItem = Location.Fridge))
+        assertEquals(Location.Fridge, DeletedLocation.scannedProduct(known = null, newItem = Location.Fridge))
+    }
+
+    @Test
     fun `the pantry list - a deleted tab falls back to All, a renamed one stays chosen`() {
         assertEquals(Location.Fridge, DeletedLocation.chosenTab(Location.Fridge, all))
         assertNull(DeletedLocation.chosenTab(garage, Location.defaults))

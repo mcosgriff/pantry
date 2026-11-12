@@ -3,29 +3,19 @@ package io.cosgriff.pantry.ui.scan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.cosgriff.pantry.data.ItemIntake
 import io.cosgriff.pantry.data.LocationRepository
-import io.cosgriff.pantry.data.PantryRepository
-import io.cosgriff.pantry.data.ProductLookup
+import io.cosgriff.pantry.data.LookupPermission
+import io.cosgriff.pantry.data.Scanned
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ItemDraft
-import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
-import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.LookupResult
-import io.cosgriff.pantry.domain.Measure
-import io.cosgriff.pantry.domain.MeasureUnit
-import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.ScannedCode
-import io.cosgriff.pantry.domain.countedIn
-import io.cosgriff.pantry.domain.haulItems
-import io.cosgriff.pantry.domain.number
+import io.cosgriff.pantry.domain.needingName
 import io.cosgriff.pantry.domain.readRetailCode
 import io.cosgriff.pantry.domain.stepped
-import io.cosgriff.pantry.domain.storePackedPriceCents
-import java.math.BigDecimal
-import java.text.NumberFormat
-import java.text.ParsePosition
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -35,16 +25,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/** A weight typed in the user's locale ("1,5" in German), if it is a positive number. */
-fun parseWeight(text: String): BigDecimal? {
-    val trimmed = text.trim()
-    if (trimmed.isEmpty()) return null
-    val position = ParsePosition(0)
-    val number = NumberFormat.getNumberInstance().parse(trimmed, position) ?: return null
-    if (position.index != trimmed.length) return null
-    return BigDecimal(number.toString()).takeIf { it.signum() > 0 }
-}
 
 /** What the scanner is doing. */
 sealed interface ScanPhase {
@@ -100,13 +80,16 @@ data class ScanState(
     val finished: Boolean = false,
 )
 
+/**
+ * The scanner's phase and sheet state. What a scanned code starts as, whether it may be looked up and what adding
+ * saves are `ItemIntake`'s (#49).
+ */
 @HiltViewModel
 class ScanViewModel @Inject constructor(
-    private val pantry: PantryRepository,
+    private val intake: ItemIntake,
     private val locations: LocationRepository,
     private val settings: SettingsRepository,
-    private val products: ProductLookup,
-    private val clock: Clock,
+    clock: Clock,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ScanState(today = LocalDate.now(clock)))
     val state: StateFlow<ScanState> = _state.asStateFlow()
@@ -130,39 +113,20 @@ class ScanViewModel @Inject constructor(
         if (code == ScannedCode.Invalid) return
         paused = true
         viewModelScope.launch {
-            when (code) {
-                is ScannedCode.VariableWeight -> {
-                    val today = LocalDate.now(clock)
-                    // Never looked up or remembered: the code changes with every package.
-                    val draft = ItemDraft.new(today, Location.Freezer).copy(quantity = Measure(BigDecimal.ZERO, MeasureUnit.Pound))
-                    val recent = settings.recentStorePacked().first()
-                    _state.update {
-                        it.copy(today = today, phase = ScanPhase.StorePacked(code.code, storePackedPriceCents(code), draft, recent = recent))
-                    }
+            when (val scanned = intake.scan(code)) {
+                is Scanned.StorePacked -> _state.update {
+                    it.copy(today = scanned.today, phase = ScanPhase.StorePacked(scanned.code, scanned.priceCents, scanned.draft, recent = scanned.recent))
                 }
-                is ScannedCode.Product -> {
-                    val today = LocalDate.now(clock)
-                    // A name the user gave this barcode (#12); before that table, the last item with it.
-                    val known = pantry.knownProduct(code.code)
-                        ?: pantry.lastWithBarcode(code.code)?.let { KnownProduct(code.code, it.name, it.location, it.quantity.countedIn) }
-                    val location = known?.location ?: settings.newItemLocation()
-                    val draft = ItemDraft.new(today, location, barcode = code.code).let { d ->
-                        if (known == null) d else d.copy(name = known.name, quantity = known.unit.of(d.quantity.number))
+                is Scanned.Product -> {
+                    val lookup = when (scanned.lookup) {
+                        LookupPermission.Yes -> Lookup.Running
+                        LookupPermission.Ask -> Lookup.Ask
+                        LookupPermission.No -> Lookup.None
                     }
-                    // Only a barcode the pantry doesn't know is looked up, and only once the user has said yes.
-                    val lookup = if (known != null) {
-                        Lookup.None
-                    } else {
-                        when (settings.settings().first().productLookup) {
-                            LookupChoice.On -> Lookup.Running
-                            LookupChoice.Ask -> Lookup.Ask
-                            LookupChoice.Off -> Lookup.None
-                        }
-                    }
-                    _state.update { it.copy(today = today, phase = ScanPhase.Found(draft, known = known != null, lookup = lookup)) }
-                    if (lookup == Lookup.Running) lookUp(code.code)
+                    _state.update { it.copy(today = scanned.today, phase = ScanPhase.Found(scanned.draft, known = scanned.known, lookup = lookup)) }
+                    if (lookup == Lookup.Running) scanned.draft.barcode?.let { showLookup(it, intake.lookUp(it)) }
                 }
-                ScannedCode.Invalid -> Unit
+                null -> paused = false
             }
         }
     }
@@ -170,36 +134,29 @@ class ScanViewModel @Inject constructor(
     /** The sheet's answer to "Look it up in Open Food Facts?": kept in settings, and acted on for this barcode. */
     fun onLookupAnswer(yes: Boolean) {
         val found = _state.value.phase as? ScanPhase.Found ?: return
-        viewModelScope.launch { settings.setProductLookup(yes) }
-        val barcode = found.draft.barcode
-        if (yes && barcode != null) {
-            setLookup(barcode, Lookup.Running)
-            viewModelScope.launch { lookUp(barcode) }
-        } else {
-            setLookup(barcode, Lookup.None)
-        }
+        val barcode = found.draft.barcode ?: return
+        setLookup(barcode, if (yes) Lookup.Running else Lookup.None)
+        viewModelScope.launch { showLookup(barcode, intake.answerLookup(barcode, yes)) }
     }
 
-    /** Looks [barcode] up, and fills in the name unless the user has typed one meanwhile. */
-    private suspend fun lookUp(barcode: String) {
-        val result = when (val r = products.lookUp(barcode)) {
-            is LookupResult.Found -> Lookup.Found(r.info)
+    /** Shows what looking [barcode] up found, if the sheet is still on it; `null` means it wasn't looked up. */
+    private fun showLookup(barcode: String, result: LookupResult?) = _state.update { s ->
+        if (result == null) return@update s.withLookup(barcode, Lookup.None)
+        val phase = s.phase as? ScanPhase.Found ?: return@update s
+        val draft = intake.withLookup(phase.draft, barcode, result) ?: return@update s
+        val lookup = when (result) {
+            is LookupResult.Found -> Lookup.Found(result.info)
             LookupResult.NotFound -> Lookup.NotFound
             LookupResult.Failed -> Lookup.Failed
         }
-        _state.update { s ->
-            val phase = s.phase as? ScanPhase.Found ?: return@update s
-            // The sheet may have moved on to another barcode while this one was out.
-            if (phase.draft.barcode != barcode) return@update s
-            val name = (result as? Lookup.Found)?.info?.suggestedName
-            val draft = if (name != null && phase.draft.name.isBlank()) phase.draft.copy(name = name) else phase.draft
-            s.copy(phase = phase.copy(draft = draft, lookup = result))
-        }
+        s.copy(phase = phase.copy(draft = draft, lookup = lookup))
     }
 
-    private fun setLookup(barcode: String?, lookup: Lookup) = _state.update { s ->
-        val phase = s.phase as? ScanPhase.Found ?: return@update s
-        if (phase.draft.barcode != barcode) s else s.copy(phase = phase.copy(lookup = lookup))
+    private fun setLookup(barcode: String, lookup: Lookup) = _state.update { it.withLookup(barcode, lookup) }
+
+    private fun ScanState.withLookup(barcode: String, lookup: Lookup): ScanState {
+        val phase = phase as? ScanPhase.Found ?: return this
+        return if (phase.draft.barcode != barcode) this else copy(phase = phase.copy(lookup = lookup))
     }
 
     private fun edit(change: (ItemDraft) -> ItemDraft) = _state.update { s ->
@@ -229,7 +186,7 @@ class ScanViewModel @Inject constructor(
         val phase = _state.value.phase
         val draft = when (phase) {
             is ScanPhase.Found -> phase.draft
-            is ScanPhase.StorePacked -> parseWeight(phase.weight)?.let { pounds -> phase.draft.copy(quantity = Measure(pounds, MeasureUnit.Pound)) }
+            is ScanPhase.StorePacked -> intake.weighed(phase.draft, phase.weight)
             ScanPhase.Looking -> null
         } ?: return
         if (_state.value.batch) {
@@ -237,21 +194,10 @@ class ScanViewModel @Inject constructor(
             paused = false
             return
         }
-        val item = draft.toItem() ?: return
+        if (draft.name.isBlank()) return
         viewModelScope.launch {
-            save(item, storePacked = phase is ScanPhase.StorePacked)
-            _state.update { it.copy(phase = ScanPhase.Looking, finished = true) }
+            if (intake.save(draft)) _state.update { it.copy(phase = ScanPhase.Looking, finished = true) }
         }
-    }
-
-    private suspend fun save(item: PantryItem, storePacked: Boolean) {
-        pantry.save(item)
-        if (storePacked) {
-            settings.rememberStorePacked(item.name)
-        } else {
-            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.countedIn)) }
-        }
-        settings.setLastUsedLocation(item.location)
     }
 
     /** Opens Review haul; the camera stops reading meanwhile. */
@@ -275,11 +221,10 @@ class ScanViewModel @Inject constructor(
     /** Adds the whole haul once every item has a name, then closes the screen. */
     fun onAddAll() {
         val haul = _state.value.haul
-        val items = haulItems(haul) ?: return
+        if (needingName(haul) > 0) return
         viewModelScope.launch {
-            // Every scanned product has its barcode; only a store-packed item has none.
-            items.forEach { save(it, storePacked = it.barcode == null) }
-            _state.update { it.copy(haul = emptyList(), finished = true) }
+            // One transaction: the whole haul is added, or none of it.
+            if (intake.save(haul)) _state.update { it.copy(haul = emptyList(), finished = true) }
         }
     }
 
