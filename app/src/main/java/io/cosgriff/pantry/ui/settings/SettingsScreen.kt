@@ -60,6 +60,7 @@ import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.PantrySettings
 import io.cosgriff.pantry.notify.mayNotify
 import io.cosgriff.pantry.ui.components.BackTopBar
@@ -93,6 +94,7 @@ data class SettingsActions(
     val onBatchScan: (Boolean) -> Unit = {},
     val onProductLookup: (Boolean) -> Unit = {},
     val onDefaultLocation: (DefaultLocation) -> Unit = {},
+    val onMeasurements: (MeasureSystem) -> Unit = {},
     val onContributing: (ContributeChoice) -> Unit = {},
     val onSignOut: () -> Unit = {},
 )
@@ -132,6 +134,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             onBatchScan = { viewModel.onBatchScan(it) },
             onProductLookup = { viewModel.onProductLookup(it) },
             onDefaultLocation = { viewModel.onDefaultLocation(it) },
+            onMeasurements = { viewModel.onMeasurements(it) },
             onContributing = { viewModel.onContributing(it) },
             onSignOut = { viewModel.onSignOut() },
         ),
@@ -141,8 +144,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
 /**
  * `design/source/Settings.dc.html` (#8), with product lookup (#9; the board `OffSettings.dc.html`'s first switch) and
  * contributing to Open Food Facts (#42; that board's Contributing section).
- * The board's one Notifications switch is two here, expiring soon and already expired (#27). Units are not here
- * yet: they wait on something the app doesn't do yet.
+ * The board's one Notifications switch is two here, expiring soon and already expired (#27). The board's Units
+ * row is Measurements (#57): US customary or metric.
  */
 @Composable
 fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Modifier = Modifier) {
@@ -150,6 +153,7 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
     var editing by rememberSaveable { mutableStateOf<Long?>(null) } // a custom location's id, or NEW
     var choosingWarning by rememberSaveable { mutableStateOf(false) }
     var choosingDefault by rememberSaveable { mutableStateOf(false) }
+    var choosingMeasurements by rememberSaveable { mutableStateOf(false) }
     var signingOut by rememberSaveable { mutableStateOf(false) }
     var choosingTime by rememberSaveable { mutableStateOf(false) }
     Scaffold(
@@ -233,6 +237,12 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                     defaultLocationName(state.settings.defaultLocation),
                     onClick = { choosingDefault = true },
                 )
+                HorizontalDivider(color = colors.divider)
+                ValueRow(
+                    stringResource(R.string.settings_measurements),
+                    measurementsName(state.settings.measurements),
+                    onClick = { choosingMeasurements = true },
+                )
             }
             Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
                 Section(stringResource(R.string.settings_lookup)) {
@@ -306,6 +316,16 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
             label = { defaultLocationName(it) },
             onChoose = { choosingDefault = false; actions.onDefaultLocation(it) },
             onDismiss = { choosingDefault = false },
+        )
+    }
+    if (choosingMeasurements) {
+        ChoiceDialog(
+            title = stringResource(R.string.settings_measurements),
+            options = MeasureSystem.entries,
+            selected = state.settings.measurements,
+            label = { measurementsName(it) },
+            onChoose = { choosingMeasurements = false; actions.onMeasurements(it) },
+            onDismiss = { choosingMeasurements = false },
         )
     }
     if (signingOut) {
@@ -421,6 +441,14 @@ private fun shelfLifeText(period: Period?): String = when {
     period.days == 0 -> period.toTotalMonths().toInt().let { pluralStringResource(R.plurals.settings_shelf_months, it, it) }
     else -> pluralStringResource(R.plurals.settings_shelf_days, period.days, period.days)
 }
+
+@Composable
+private fun measurementsName(system: MeasureSystem): String = stringResource(
+    when (system) {
+        MeasureSystem.UsCustomary -> R.string.settings_measurements_us
+        MeasureSystem.Metric -> R.string.settings_measurements_metric
+    },
+)
 
 @Composable
 private fun defaultLocationName(location: DefaultLocation): String = when (location) {

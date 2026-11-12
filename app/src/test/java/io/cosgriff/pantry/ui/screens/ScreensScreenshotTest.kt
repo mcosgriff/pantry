@@ -1,9 +1,18 @@
 package io.cosgriff.pantry.ui.screens
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.MeasureSystem
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantrySettings
+import io.cosgriff.pantry.ui.components.UnitDialog
+import io.cosgriff.pantry.ui.components.UnitPickerBody
+import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.item.ItemDetailsActions
 import io.cosgriff.pantry.ui.item.ItemDetailsContent
 import io.cosgriff.pantry.ui.item.previewState as itemDetailsState
@@ -52,6 +61,7 @@ import io.cosgriff.pantry.ui.shopping.previewLines
 import io.cosgriff.pantry.ui.usesoon.UseSoonActions
 import io.cosgriff.pantry.ui.usesoon.UseSoonContent
 import io.cosgriff.pantry.ui.usesoon.previewState as useSoonState
+import java.math.BigDecimal
 import java.time.Period
 import org.junit.Rule
 import org.junit.Test
@@ -82,6 +92,31 @@ class ScreensScreenshotTest(private val shade: Shade) {
 
     @Test
     fun itemDetails() = compose.shoot("item_details", shade) { ItemDetailsContent(itemDetailsState, ItemDetailsActions()) }
+
+    /** The unit picker (#57) with no package picked: the dialog as it opens on a measured amount. */
+    @Test
+    fun unitPicker() = compose.shootScreen("unit_picker", shade) {
+        UnitDialog(AmountUnit.Measured(MeasureUnit.Pound), MeasureSystem.UsCustomary, onPick = {}, onDismiss = {})
+    }
+
+    /**
+     * The unit picker's body on a bag that holds 5 lb, drawn on the page: its text field never lets a dialog
+     * settle under Robolectric.
+     */
+    @Test
+    fun unitPickerContents() = compose.shoot("unit_picker_contents", shade) {
+        UnitPickerBody(
+            system = MeasureSystem.Metric,
+            selected = AmountUnit.Packages(Package.Bag),
+            onSelect = {},
+            contentsOf = AmountUnit.Packages(Package.Bag),
+            contentsText = "5",
+            onContentsText = {},
+            contentsUnit = MeasureUnit.Pound,
+            onContentsUnit = {},
+            modifier = Modifier.padding(PantryDimens.space6),
+        )
+    }
 
     @Test
     fun removeItem() = compose.shootScreen("remove_item", shade) { ItemDetailsContent(itemDetailsState, ItemDetailsActions(), removing = true) }

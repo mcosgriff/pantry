@@ -5,6 +5,7 @@ import io.cosgriff.pantry.data.db.MealEntity
 import io.cosgriff.pantry.data.db.MealIngredientEntity
 import io.cosgriff.pantry.data.db.MealPlanEntity
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.CheckedPlan
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.IngredientCheck
@@ -88,11 +89,11 @@ class MealRepository @Inject constructor(
     }
 
     /**
-     * Sets ingredient [index]'s amount, typed for [plan]'s servings ([amount] `null`: "some"). The meal keeps it for
-     * its own servings (`withAmount`), so planning it again scales from there.
+     * Sets ingredient [index]'s amount, typed for [plan]'s servings ([amount] `null`: "some"), in [unit] when given
+     * (any unit, #57). The meal keeps it for its own servings (`withAmount`), so planning it again scales from there.
      */
-    suspend fun setAmount(plan: MealPlan, index: Int, amount: BigDecimal?) {
-        save(plan.withAmount(index, amount))
+    suspend fun setAmount(plan: MealPlan, index: Int, amount: BigDecimal?, unit: AmountUnit? = null) {
+        save(plan.withAmount(index, amount, unit))
     }
 
     /** Takes [plan] off its day. The meal stays saved, to be planned again. */

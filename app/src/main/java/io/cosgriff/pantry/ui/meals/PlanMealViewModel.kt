@@ -5,9 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.MealDraft
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.PantryItem
+import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.number
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -32,19 +37,22 @@ data class PlanMealState(
     val saved: List<Meal> = emptyList(),
     /** Set once the meal is planned or saved: the screen closes. */
     val done: Boolean = false,
+    /** The measurement system whose units the unit picker lists first (#57). */
+    val measurements: MeasureSystem = MeasureSystem.UsCustomary,
 )
 
 @HiltViewModel
 class PlanMealViewModel @Inject constructor(
     pantry: PantryRepository,
     private val meals: MealRepository,
+    settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val form = MutableStateFlow(PlanMealState(today = LocalDate.now(clock)))
     private var loaded = false
 
-    val state: StateFlow<PlanMealState> = combine(form, pantry.items(), meals.meals()) { f, items, saved ->
-        f.copy(pantry = items.sortedWith(PantryItem.BySoonestExpiry), saved = if (f.editing) emptyList() else saved)
+    val state: StateFlow<PlanMealState> = combine(form, pantry.items(), meals.meals(), settings.settings()) { f, items, saved, prefs ->
+        f.copy(pantry = items.sortedWith(PantryItem.BySoonestExpiry), saved = if (f.editing) emptyList() else saved, measurements = prefs.measurements)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), form.value)
 
     /** Plans a meal on [day], or edits saved meal [mealId]. Only the first call counts (the screen calls it on entry). */
@@ -73,6 +81,9 @@ class PlanMealViewModel @Inject constructor(
     fun onToggle(item: PantryItem) = edit { it.toggled(item) }
 
     fun onAddTyped(name: String) = edit { it.withTyped(name) }
+
+    /** Ingredient [index]'s amount for the meal's servings, in any unit (#57); `null` for "some". */
+    fun onAmount(index: Int, amount: Amount?) = edit { it.withAmount(index, amount?.number, amount?.countedIn) }
 
     fun onRemove(index: Int) = edit { it.without(index) }
 

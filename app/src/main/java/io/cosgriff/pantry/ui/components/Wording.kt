@@ -14,6 +14,7 @@ import io.cosgriff.pantry.domain.Measure
 import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.Packaged
+import io.cosgriff.pantry.domain.Shown
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -38,6 +39,17 @@ private fun counted(number: BigDecimal, @PluralsRes plural: Int): String {
     // Plural rules take a whole count. A fraction takes the "other" form, as CLDR has it for English ("0.6 bags").
     val count = if (isWhole(number)) number.toInt() else 2
     return pluralStringResource(plural, count, amount)
+}
+
+/**
+ * A converted figure (#57): "9 oz", or "≈ 9 oz" when it went through a density and so is an estimate. Which
+ * figures are approximate is the domain's rule (`Shown.approximate`).
+ */
+@Composable
+@ReadOnlyComposable
+fun shownText(shown: Shown): String {
+    val text = quantityText(shown.measure)
+    return if (shown.approximate) stringResource(R.string.amount_approximate, text) else text
 }
 
 /** A unit by name ("each", "lb", "bag", "bag × 5 lb"), as the unit picker lists them. */

@@ -62,16 +62,19 @@ internal object PlanAmounts {
 /**
  * [meal] with ingredient [index]'s amount set to [amount], typed for this plan's servings ([amount] `null`, zero or
  * negative: "some"). The meal keeps it for its own servings ([PlanAmounts]), so planning it again scales from there
- * and [MealPlan.needed] reads back what was typed. An ingredient with no unit can't take an amount; an index out of
- * range changes nothing.
+ * and [MealPlan.needed] reads back what was typed. [unit], when given with an amount, is the unit it is typed in,
+ * which may differ from the item's (#57); the ingredient then counts in it, and [PlanAmounts]' rounding follows it.
+ * An ingredient with no unit can't take an amount unless given one; an index out of range changes nothing.
  */
-fun MealPlan.withAmount(index: Int, amount: BigDecimal?): Meal {
+fun MealPlan.withAmount(index: Int, amount: BigDecimal?, unit: AmountUnit? = null): Meal {
     val ingredient = meal.ingredients.getOrNull(index) ?: return meal
+    val counted = unit ?: ingredient.unit
     val forMeal = amount
-        ?.takeIf { it.signum() > 0 && ingredient.unit != null }
+        ?.takeIf { it.signum() > 0 && counted != null }
         ?.let { PlanAmounts.atMeal(it, meal.servings, servings) }
         ?.takeIf { it.signum() > 0 }
-    return meal.copy(ingredients = meal.ingredients.mapIndexed { i, g -> if (i == index) g.copy(amount = forMeal) else g })
+    val changed = ingredient.copy(unit = if (forMeal != null) counted else ingredient.unit, amount = forMeal)
+    return meal.copy(ingredients = meal.ingredients.mapIndexed { i, g -> if (i == index) changed else g })
 }
 
 /**
@@ -100,6 +103,19 @@ data class MealDraft(
 
     /** Adds [name] as a typed-in ingredient; a blank name adds nothing. */
     fun withTyped(name: String): MealDraft = if (name.isBlank()) this else copy(ingredients = ingredients + Ingredient.typed(name))
+
+    /**
+     * Ingredient [index]'s amount for the meal's own servings, in [unit] when given (any unit, #57), else its own;
+     * `null`, zero or negative: "some". Kept as [MealPlan.withAmount] keeps it. An ingredient with no unit can't take
+     * an amount unless given one.
+     */
+    fun withAmount(index: Int, amount: BigDecimal?, unit: AmountUnit? = null): MealDraft {
+        val ingredient = ingredients.getOrNull(index) ?: return this
+        val counted = unit ?: ingredient.unit
+        val kept = amount?.takeIf { it.signum() > 0 && counted != null }?.let { PlanAmounts.atMeal(it, servings, servings) }
+        val changed = ingredient.copy(unit = if (kept != null) counted else ingredient.unit, amount = kept)
+        return copy(ingredients = ingredients.mapIndexed { i, g -> if (i == index) changed else g })
+    }
 
     fun without(index: Int): MealDraft = copy(ingredients = ingredients.filterIndexed { i, _ -> i != index })
 

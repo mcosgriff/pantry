@@ -143,7 +143,7 @@ fun checkPlan(plan: MealPlan, items: List<PantryItem>, today: LocalDate): List<I
     }
 
 /** The density that converts between [ingredient]'s volume and [item]'s mass: the item's own, else the table's. */
-private fun densityFor(ingredient: Ingredient, item: PantryItem): Density? =
+internal fun densityFor(ingredient: Ingredient, item: PantryItem): Density? =
     densityOf(item.name, item.density) ?: densityOf(ingredient.name)
 
 /**

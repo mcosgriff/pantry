@@ -33,8 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -74,12 +72,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.Density
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.MeasureUnit
-import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.QuickPick
 import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.RemoveReason
@@ -93,17 +92,17 @@ import io.cosgriff.pantry.ui.components.FieldLabel
 import io.cosgriff.pantry.ui.components.LocationPicker
 import io.cosgriff.pantry.ui.components.PantryCard
 import io.cosgriff.pantry.ui.components.QuantityStepper
+import io.cosgriff.pantry.ui.components.UnitField
 import io.cosgriff.pantry.ui.components.ValueRow
+import io.cosgriff.pantry.ui.components.amountFormat
 import io.cosgriff.pantry.ui.components.barcodeText
 import io.cosgriff.pantry.ui.components.locationColors
 import io.cosgriff.pantry.ui.components.locationName
+import io.cosgriff.pantry.ui.components.parseDecimal
 import io.cosgriff.pantry.ui.components.quantityText
-import io.cosgriff.pantry.ui.components.unitName
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.math.BigDecimal
-import java.text.NumberFormat
-import java.text.ParsePosition
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -122,6 +121,7 @@ data class ItemDetailsActions(
     val onOpened: (Boolean) -> Unit = {},
     val onPurchased: (LocalDate) -> Unit = {},
     val onLowStock: (BigDecimal?) -> Unit = {},
+    val onDensity: (Density?) -> Unit = {},
     val onNotes: (String) -> Unit = {},
     val onSave: () -> Unit = {},
     val onRemove: (RemoveReason) -> Unit = {},
@@ -156,6 +156,7 @@ fun ItemDetailsScreen(
             onOpened = viewModel::onOpened,
             onPurchased = viewModel::onPurchased,
             onLowStock = viewModel::onLowStock,
+            onDensity = viewModel::onDensity,
             onNotes = viewModel::onNotes,
             onSave = viewModel::onSave,
             onRemove = viewModel::onRemove,
@@ -198,7 +199,7 @@ fun ItemDetailsContent(state: ItemDetailsState, actions: ItemDetailsActions, mod
             ) {
                 NameCard(draft, actions.onName)
                 LocationPicker(draft.location, state.locations, actions.onLocation)
-                QuantityRow(draft.quantity, actions.onStep, actions.onUnit)
+                QuantityRow(draft.quantity, state.measurements, actions.onStep, actions.onUnit)
                 ExpiryCard(draft, state.today, actions)
                 MoreCard(draft, actions)
                 Spacer(Modifier.height(PantryDimens.space3))
@@ -249,48 +250,17 @@ private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
     }
 }
 
-/** The units the picker offers until it lists them all (#57): the ones Pantry has always had. */
-private val PICKER_UNITS = listOf(
-    AmountUnit.Measured(MeasureUnit.Each),
-    AmountUnit.Measured(MeasureUnit.Pound),
-    AmountUnit.Measured(MeasureUnit.Ounce),
-    AmountUnit.Packages(Package.Bag),
-    AmountUnit.Packages(Package.Pack),
-    AmountUnit.Packages(Package.Tub),
-)
-
 @Composable
-private fun QuantityRow(quantity: Amount, onStep: (Int) -> Unit, onUnit: (AmountUnit) -> Unit) {
-    val colors = PantryTheme.colors
-    val shape = MaterialTheme.shapes.small
-    val field = Modifier
-        .fillMaxWidth()
-        .height(PantryDimens.fieldHeight)
-        .background(colors.surface, shape)
-        .border(PantryDimens.hairline, colors.border, shape)
+private fun QuantityRow(quantity: Amount, system: MeasureSystem, onStep: (Int) -> Unit, onUnit: (AmountUnit) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
         Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
-            QuantityStepper(NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 }.format(quantity.number), onStep)
+            QuantityStepper(amountFormat().format(quantity.number), onStep)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
-            FieldLabel(stringResource(R.string.details_unit))
-            var open by remember { mutableStateOf(false) }
-            Box {
-                Box(
-                    field
-                        .clickable(role = Role.DropdownList) { open = true }
-                        .padding(horizontal = PantryDimens.space3),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Text(unitName(quantity.countedIn), style = MaterialTheme.typography.bodyLarge)
-                }
-                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    PICKER_UNITS.forEach { unit ->
-                        DropdownMenuItem(text = { Text(unitName(unit)) }, onClick = { open = false; onUnit(unit) })
-                    }
-                }
-            }
+            val label = stringResource(R.string.details_unit)
+            FieldLabel(label)
+            UnitField(quantity.countedIn, system, onUnit, label = label)
         }
     }
 }
@@ -383,6 +353,7 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
     val colors = PantryTheme.colors
     var pickingPurchased by rememberSaveable { mutableStateOf(false) }
     var editingLowStock by rememberSaveable { mutableStateOf(false) }
+    var editingDensity by rememberSaveable { mutableStateOf(false) }
     PantryCard {
         Column {
             CheckRow(stringResource(R.string.details_opened), draft.opened, actions.onOpened)
@@ -394,6 +365,13 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
                 draft.lowStockAt?.let { stringResource(R.string.details_low_stock_at, quantityText(draft.quantity.withNumber(it))) }
                     ?: stringResource(R.string.details_low_stock_off),
                 onClick = { editingLowStock = true },
+            )
+            HorizontalDivider(color = colors.divider)
+            ValueRow(
+                stringResource(R.string.details_density),
+                draft.density?.let { stringResource(R.string.details_density_value, amountFormat().format(it.gramsPerMilliliter)) }
+                    ?: stringResource(R.string.details_density_typical),
+                onClick = { editingDensity = true },
             )
             HorizontalDivider(color = colors.divider)
             Column(Modifier.padding(start = PantryDimens.spaceInset, end = PantryDimens.spaceInset, top = PantryDimens.spaceIcon, bottom = PantryDimens.space3), verticalArrangement = Arrangement.spacedBy(PantryDimens.space1)) {
@@ -426,13 +404,48 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
     if (editingLowStock) {
         LowStockDialog(draft.lowStockAt, onDone = { editingLowStock = false; actions.onLowStock(it) }, onDismiss = { editingLowStock = false })
     }
+    if (editingDensity) {
+        DensityDialog(draft.density, onDone = { editingDensity = false; actions.onDensity(it) }, onDismiss = { editingDensity = false })
+    }
+}
+
+/**
+ * The item's own density (#57): grams per millilitre, which converts between its weight and a recipe's volume and
+ * wins over the typical figure. Empty, or "Use typical", clears it; it must be more than zero.
+ */
+@Composable
+private fun DensityDialog(current: Density?, onDone: (Density?) -> Unit, onDismiss: () -> Unit) {
+    val format = remember { amountFormat() }
+    var text by rememberSaveable { mutableStateOf(current?.gramsPerMilliliter?.let(format::format).orEmpty()) }
+    val parsed = parseDecimal(text, format)?.takeIf { it.signum() > 0 }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.details_density)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                Text(stringResource(R.string.details_density_hint), style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.details_density_label)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = text.isNotBlank() && parsed == null,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onDone(parsed?.let(::Density)) }, enabled = text.isBlank() || parsed != null) { Text(stringResource(R.string.details_ok)) }
+        },
+        dismissButton = { TextButton(onClick = { onDone(null) }) { Text(stringResource(R.string.details_density_clear)) } },
+    )
 }
 
 @Composable
 private fun LowStockDialog(current: BigDecimal?, onDone: (BigDecimal?) -> Unit, onDismiss: () -> Unit) {
-    val format = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 } }
+    val format = remember { amountFormat() }
     var text by rememberSaveable { mutableStateOf(current?.let(format::format).orEmpty()) }
-    val parsed = parseAmount(text, format)
+    val parsed = parseDecimal(text, format)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.details_low_stock)) },
@@ -455,16 +468,6 @@ private fun LowStockDialog(current: BigDecimal?, onDone: (BigDecimal?) -> Unit, 
             TextButton(onClick = { onDone(null) }) { Text(stringResource(R.string.details_low_stock_clear)) }
         },
     )
-}
-
-/** A non-negative amount typed in the user's locale ("1,5" in German), or `null` if it isn't one. */
-private fun parseAmount(text: String, format: NumberFormat): BigDecimal? {
-    val trimmed = text.trim()
-    if (trimmed.isEmpty()) return null
-    val position = ParsePosition(0)
-    val number = format.parse(trimmed, position) ?: return null
-    if (position.index != trimmed.length) return null
-    return BigDecimal(number.toString()).takeIf { it.signum() >= 0 }
 }
 
 @Composable

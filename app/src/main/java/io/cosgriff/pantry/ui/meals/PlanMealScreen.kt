@@ -34,9 +34,13 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Meal
@@ -51,6 +56,7 @@ import io.cosgriff.pantry.domain.MealDraft
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.expiryStatus
 import io.cosgriff.pantry.ui.components.AddField
+import io.cosgriff.pantry.ui.components.AmountDialog
 import io.cosgriff.pantry.ui.components.BackTopBar
 import io.cosgriff.pantry.ui.components.FieldLabel
 import io.cosgriff.pantry.ui.components.QuantityStepper
@@ -59,8 +65,10 @@ import io.cosgriff.pantry.ui.components.TextFieldBox
 import io.cosgriff.pantry.ui.components.expiryText
 import io.cosgriff.pantry.ui.components.groupedRow
 import io.cosgriff.pantry.ui.components.locationName
+import io.cosgriff.pantry.ui.components.quantityText
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
+import java.math.BigDecimal
 import java.time.LocalDate
 
 data class PlanMealActions(
@@ -70,6 +78,7 @@ data class PlanMealActions(
     val onToggle: (PantryItem) -> Unit = {},
     val onAddTyped: (String) -> Unit = {},
     val onRemove: (Int) -> Unit = {},
+    val onAmount: (Int, Amount?) -> Unit = { _, _ -> },
     val onCookAgain: (Meal) -> Unit = {},
     val onSave: () -> Unit = {},
 )
@@ -82,7 +91,10 @@ fun PlanMealScreen(day: LocalDate, mealId: Long?, onBack: () -> Unit, onDone: ()
     LaunchedEffect(state.done) { if (state.done) onDone() }
     PlanMealContent(
         state,
-        PlanMealActions(onBack, viewModel::onName, viewModel::onServings, viewModel::onToggle, viewModel::onAddTyped, viewModel::onRemove, viewModel::onCookAgain, viewModel::onSave),
+        PlanMealActions(
+            onBack, viewModel::onName, viewModel::onServings, viewModel::onToggle, viewModel::onAddTyped, viewModel::onRemove,
+            viewModel::onAmount, viewModel::onCookAgain, viewModel::onSave,
+        ),
     )
 }
 
@@ -95,6 +107,7 @@ fun PlanMealScreen(day: LocalDate, mealId: Long?, onBack: () -> Unit, onDone: ()
 fun PlanMealContent(state: PlanMealState, actions: PlanMealActions, modifier: Modifier = Modifier) {
     val colors = PantryTheme.colors
     val draft = state.draft
+    var editing by rememberSaveable { mutableStateOf<Int?>(null) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = colors.ground,
@@ -162,6 +175,8 @@ fun PlanMealContent(state: PlanMealState, actions: PlanMealActions, modifier: Mo
                     ingredient,
                     state.pantry.firstOrNull { it.id == ingredient.itemId },
                     onRemove = { actions.onRemove(index) },
+                    // A typed-in ingredient isn't checked against the pantry, so has no amount to set.
+                    onAmount = if (ingredient.fromPantry) ({ editing = index }) else null,
                     modifier = Modifier
                         .padding(horizontal = PantryDimens.space5)
                         .padding(top = if (index == 0) PantryDimens.space2 else PantryDimens.flat)
@@ -192,6 +207,23 @@ fun PlanMealContent(state: PlanMealState, actions: PlanMealActions, modifier: Mo
                         .groupedRow(index, state.pantry.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider),
                 )
             }
+        }
+    }
+    editing?.let { index ->
+        val ingredient = draft.ingredients.getOrNull(index)
+        val unit = ingredient?.unit
+        if (ingredient == null || unit == null) {
+            editing = null
+        } else {
+            AmountDialog(
+                title = stringResource(R.string.meal_amount_title, ingredient.name),
+                hint = pluralStringResource(R.plurals.meal_amount_hint, draft.servings, draft.servings),
+                current = ingredient.amount?.let(unit::of),
+                unit = unit,
+                system = state.measurements,
+                onDone = { actions.onAmount(index, it); editing = null },
+                onDismiss = { editing = null },
+            )
         }
     }
 }
@@ -226,12 +258,14 @@ private fun CookAgain(saved: List<Meal>, onPick: (Meal) -> Unit) {
 }
 
 @Composable
-private fun IngredientRow(ingredient: Ingredient, item: PantryItem?, onRemove: () -> Unit, modifier: Modifier = Modifier) {
+private fun IngredientRow(ingredient: Ingredient, item: PantryItem?, onRemove: () -> Unit, onAmount: (() -> Unit)?, modifier: Modifier = Modifier) {
     val colors = PantryTheme.colors
+    val label = stringResource(R.string.meal_set_amount, ingredient.name)
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = PantryDimens.buttonHeight)
+            .then(if (onAmount != null) Modifier.clickable(role = Role.Button, onClickLabel = label, onClick = onAmount) else Modifier)
             .padding(start = PantryDimens.spaceInset),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -246,6 +280,10 @@ private fun IngredientRow(ingredient: Ingredient, item: PantryItem?, onRemove: (
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.inkMuted,
             )
+        }
+        if (ingredient.fromPantry) {
+            val amount = ingredient.amount?.let { number -> ingredient.unit?.let { quantityText(it.of(number)) } }
+            Text(amount ?: stringResource(R.string.meal_some), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
         IconButton(onClick = onRemove) {
             Icon(painterResource(R.drawable.ic_clear), stringResource(R.string.plan_remove, ingredient.name), tint = colors.inkMuted)
@@ -287,7 +325,7 @@ private fun PantryPickRow(item: PantryItem, picked: Boolean, today: LocalDate, o
 internal val previewPlanMeal = PlanMealState(
     today = previewToday,
     loading = false,
-    draft = MealDraft("Sample egg bites", 12, listOf(Ingredient.of(previewEggs), Ingredient.of(previewSpinach), Ingredient.typed("Sample salt and pepper"))),
+    draft = MealDraft("Sample egg bites", 12, listOf(Ingredient.of(previewEggs).copy(amount = BigDecimal(12)), Ingredient.of(previewSpinach), Ingredient.typed("Sample salt and pepper"))),
     pantry = listOf(previewSpinach, previewEggs, previewChicken, previewYogurt),
     saved = listOf(previewEggBites.meal.copy(name = "Sample frittata", id = 5), Meal("Sample yogurt parfaits", 2, emptyList(), id = 6)),
 )

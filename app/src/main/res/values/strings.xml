@@ -106,6 +106,27 @@
     </plurals>
     <!-- A package with what one holds: "2 bags × 5 lb", or the unit "bag × 5 lb". %1$s is the packages, %2$s the contents of one. -->
     <string name="amount_per_package">%1$s × %2$s</string>
+    <!-- A figure converted through a density, so an estimate (#57): "≈ 9 oz". -->
+    <string name="amount_approximate">≈ %1$s</string>
+    <!-- An amount and what it comes to in the pantry item's terms: "2 cups (≈ 9 oz)". -->
+    <string name="amount_converted">%1$s (%2$s)</string>
+
+    <!-- The unit picker (#57), on Item details, the scan sheet, Review haul, the meal screens and recipe import. -->
+    <string name="units_title">Unit</string>
+    <!-- TalkBack for a unit field: "Unit: lb". -->
+    <string name="units_field">%1$s: %2$s</string>
+    <string name="units_group_count">Count</string>
+    <string name="units_group_volume">Volume</string>
+    <string name="units_group_weight">Weight</string>
+    <string name="units_group_package">Package</string>
+    <!-- What one package holds: "One bag holds". -->
+    <string name="units_contents">One %1$s holds</string>
+    <string name="units_contents_amount">Amount (optional)</string>
+    <!-- TalkBack for the contents' unit: "Unit of what one bag holds: lb". -->
+    <string name="units_contents_unit">Unit of what one %1$s holds: %2$s</string>
+    <string name="units_contents_hint">With what one holds, Pantry can compare it with recipes that use other units.</string>
+    <string name="units_amount">Amount</string>
+    <string name="units_done">Done</string>
 
     <!-- Expiry line under an item's name. -->
     <string name="expiry_today">Expires today</string>
@@ -216,6 +237,14 @@
     <string name="details_low_stock_off">Off</string>
     <string name="details_low_stock_hint">Warn when the quantity is at or under this amount.</string>
     <string name="details_low_stock_clear">Turn off</string>
+    <!-- An item's own density (#57), which converts between its weight and a recipe's volume. -->
+    <string name="details_density">Density</string>
+    <!-- "0.53 g/ml" -->
+    <string name="details_density_value">%1$s g/ml</string>
+    <string name="details_density_typical">Typical</string>
+    <string name="details_density_hint">Grams per millilitre. Pantry uses it to compare this item with recipes that measure it the other way, by volume or by weight. Leave it empty for a typical figure, which flour, sugar, milk and other common ingredients have.</string>
+    <string name="details_density_label">Grams per millilitre</string>
+    <string name="details_density_clear">Use typical</string>
     <string name="details_notes">Notes</string>
     <string name="details_notes_hint">e.g. use for Sunday egg bites</string>
     <string name="details_remove">Remove</string>
@@ -290,6 +319,10 @@
     <string name="settings_lookup_body">Names products the pantry doesn’t know from Open Food Facts, a free database run by volunteers. Pantry sends only the barcode, never store-packed meat and deli labels.</string>
     <string name="settings_default_location">Default location</string>
     <string name="settings_last_used">Last used</string>
+    <!-- Which system converted amounts are shown in, and whose units the pickers list first (#57). -->
+    <string name="settings_measurements">Measurements</string>
+    <string name="settings_measurements_us">US customary (lb, oz, cup)</string>
+    <string name="settings_measurements_metric">Metric (kg, g, L)</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
 
@@ -388,6 +421,8 @@
     <string name="review_group">%1$s · %2$d</string>
     <string name="review_needs_name">Needs a name</string>
     <string name="review_expires">Expires %1$s</string>
+    <!-- TalkBack for a haul item's quantity badge, which picks its unit (#57): "Unit of Sample eggs, now 1 ea". -->
+    <string name="review_unit">Unit of %1$s, now %2$s</string>
     <string name="review_rename">Name this item</string>
     <string name="review_remove">Remove from haul</string>
     <string name="review_scan_more">Scan more</string>
@@ -530,8 +565,8 @@
     <string name="meal_set_amount">Set amount for %1$s</string>
     <string name="meal_amount_title">How much %1$s?</string>
     <plurals name="meal_amount_hint">
-        <item quantity="one">For %1$d serving, in %2$s. Leave it empty for “some”: cooking won’t take any out.</item>
-        <item quantity="other">For %1$d servings, in %2$s. Leave it empty for “some”: cooking won’t take any out.</item>
+        <item quantity="one">For %1$d serving, in any unit. Leave it empty for “some”: cooking won’t take any out.</item>
+        <item quantity="other">For %1$d servings, in any unit. Leave it empty for “some”: cooking won’t take any out.</item>
     </plurals>
     <string name="meal_amount_clear">Clear</string>
     <!-- Banner for an ingredient past its date: "Spinach expired yesterday" -->
@@ -623,30 +658,6 @@
     <string name="import_match_none">No pantry match: pick one, or Not tracked</string>
     <string name="import_change">Change</string>
     <string name="import_save">Save meal</string>
-    <!-- Units in the import's unit picker. -->
-    <string name="import_unit_each">each</string>
-    <string name="import_unit_dozen">dozen</string>
-    <string name="import_unit_teaspoon">tsp</string>
-    <string name="import_unit_tablespoon">tbsp</string>
-    <string name="import_unit_fluid_ounce">fl oz</string>
-    <string name="import_unit_cup">cup</string>
-    <string name="import_unit_pint">pint</string>
-    <string name="import_unit_quart">quart</string>
-    <string name="import_unit_gallon">gallon</string>
-    <string name="import_unit_milliliter">ml</string>
-    <string name="import_unit_liter">l</string>
-    <string name="import_unit_ounce">oz</string>
-    <string name="import_unit_pound">lb</string>
-    <string name="import_unit_gram">g</string>
-    <string name="import_unit_kilogram">kg</string>
-    <string name="import_unit_bag">bag</string>
-    <string name="import_unit_pack">pack</string>
-    <string name="import_unit_tub">tub</string>
-    <string name="import_unit_box">box</string>
-    <string name="import_unit_can">can</string>
-    <string name="import_unit_jar">jar</string>
-    <string name="import_unit_bottle">bottle</string>
-    <string name="import_unit_carton">carton</string>
 
     <string name="nav_pantry">Pantry</string>
     <string name="nav_meal_prep">Meal prep</string>

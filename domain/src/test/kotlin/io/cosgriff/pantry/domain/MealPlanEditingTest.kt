@@ -93,6 +93,46 @@ class MealPlanEditingTest {
     }
 
     @Test
+    fun `an amount typed in another unit round-trips in that unit, with its rounding (#57)`() {
+        val eggs = item(21, "Test eggs", "18", each)
+        val plan = MealPlan(Meal("Test omelettes", 2, listOf(Ingredient.of(eggs))), today, servings = 3)
+        // 1.5 dozen typed for 3: kept on the meal as 1 dozen for 2, and read back as typed, in dozens.
+        val meal = plan.withAmount(0, BigDecimal("1.5"), dozen)
+        assertEquals(dozen, meal.ingredients.single().unit)
+        assertEquals(0, BigDecimal.ONE.compareTo(meal.ingredients.single().amount))
+        val check = checkPlan(plan.copy(meal = meal), listOf(eggs), today).single()
+        assertEquals(0, BigDecimal("1.5").compareTo(check.needed))
+        assertEquals(IngredientStatus.Have(eggs), check.status)
+        // Changed to something counted whole, a fraction rounds up as for any whole count.
+        val inPacks = plan.withAmount(0, BigDecimal("2.5"), pack)
+        assertEquals(BigDecimal("3"), plan.copy(meal = inPacks).needed(inPacks.ingredients.single()))
+        // Changed from whole each to a cup, a fraction stays a fraction.
+        val inCups = plan.withAmount(0, BigDecimal("2.5"), cup)
+        assertEquals(0, BigDecimal("2.5").compareTo(plan.copy(meal = inCups).needed(inCups.ingredients.single())))
+    }
+
+    @Test
+    fun `clearing an amount keeps the unit, and a typed-in ingredient takes an amount with a unit`() {
+        val plan = MealPlan(Meal("Test meal", 2, listOf(ingredient("Test flour", cup, "2"), Ingredient.typed("Test salt"))), today)
+        assertEquals(cup, plan.withAmount(0, null, AmountUnit.Measured(MeasureUnit.Gram)).ingredients[0].unit)
+        val salt = plan.withAmount(1, BigDecimal.ONE, AmountUnit.Measured(MeasureUnit.Teaspoon)).ingredients[1]
+        assertEquals(AmountUnit.Measured(MeasureUnit.Teaspoon), salt.unit)
+        assertEquals(0, BigDecimal.ONE.compareTo(salt.amount))
+    }
+
+    @Test
+    fun `a draft's amount can be in any unit, at the meal's own servings`() {
+        val eggs = item(22, "Test eggs", "18", each)
+        val draft = MealDraft("Test bites", 4, listOf(Ingredient.of(eggs))).withAmount(0, BigDecimal("0.5"), dozen)
+        assertEquals(dozen, draft.ingredients.single().unit)
+        assertEquals(0, BigDecimal("0.5").compareTo(draft.ingredients.single().amount))
+        val cleared = draft.withAmount(0, null)
+        assertNull(cleared.ingredients.single().amount)
+        assertEquals(dozen, cleared.ingredients.single().unit)
+        assertSame(draft, draft.withAmount(3, BigDecimal.ONE))
+    }
+
+    @Test
     fun `no amount, zero or none typed is "some", and an ingredient without a unit takes none`() {
         val plan = MealPlan(Meal("Test meal", 2, listOf(ingredient("Test eggs", each, "4"), Ingredient.typed("Test salt"))), today)
         assertNull(plan.withAmount(0, null).ingredients[0].amount)

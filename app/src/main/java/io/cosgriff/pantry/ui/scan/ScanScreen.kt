@@ -92,7 +92,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.data.parseWeight
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ItemDraft
+import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.NewProduct
 import io.cosgriff.pantry.domain.Location
@@ -101,7 +104,8 @@ import io.cosgriff.pantry.ui.components.FieldLabel
 import io.cosgriff.pantry.ui.components.LocationPicker
 import io.cosgriff.pantry.ui.components.QuantityStepper
 import io.cosgriff.pantry.ui.components.barcodeText
-import io.cosgriff.pantry.ui.components.quantityText
+import io.cosgriff.pantry.ui.components.UnitField
+import io.cosgriff.pantry.ui.components.amountFormat
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.time.LocalDate
@@ -182,6 +186,7 @@ fun ScanScreen(
             onName = viewModel::onName,
             onLocation = viewModel::onLocation,
             onStep = viewModel::onStep,
+            onUnit = viewModel::onUnit,
             onExpires = viewModel::onExpires,
             onAdd = viewModel::onAdd,
             onDismiss = viewModel::onDismiss,
@@ -190,6 +195,7 @@ fun ScanScreen(
             onScanMore = viewModel::onScanMore,
             onRename = viewModel::onRename,
             onRemoveFromHaul = viewModel::onRemoveFromHaul,
+            onHaulUnit = viewModel::onHaulUnit,
             onAddAll = viewModel::onAddAll,
             onMoreDetails = { draft -> viewModel.onDismiss(); onByHand(draft.name, draft.barcode.orEmpty()) },
             onLookupAnswer = viewModel::onLookupAnswer,
@@ -206,6 +212,7 @@ data class ScanActions(
     val onName: (String) -> Unit = {},
     val onLocation: (Location) -> Unit = {},
     val onStep: (Int) -> Unit = {},
+    val onUnit: (AmountUnit) -> Unit = {},
     val onExpires: (LocalDate?) -> Unit = {},
     val onAdd: () -> Unit = {},
     val onDismiss: () -> Unit = {},
@@ -214,6 +221,7 @@ data class ScanActions(
     val onScanMore: () -> Unit = {},
     val onRename: (Int, String) -> Unit = { _, _ -> },
     val onRemoveFromHaul: (Int) -> Unit = {},
+    val onHaulUnit: (Int, AmountUnit) -> Unit = { _, _ -> },
     val onAddAll: () -> Unit = {},
     val onMoreDetails: (ItemDraft) -> Unit = {},
     val onLookupAnswer: (Boolean) -> Unit = {},
@@ -420,13 +428,19 @@ private fun FoundSheet(found: ScanPhase.Found, state: ScanState, actions: ScanAc
         }
     }
     LocationPicker(draft.location, state.locations, actions.onLocation, label = stringResource(R.string.scan_store_in))
+    // Quantity and its unit side by side as on Item details (#57); the expiry date goes under them.
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
+        Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
-            QuantityStepper(quantityText(draft.quantity), actions.onStep)
+            QuantityStepper(amountFormat().format(draft.quantity.number), actions.onStep)
         }
-        ExpiresField(draft, onPick = { picking = true }, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
+            val label = stringResource(R.string.details_unit)
+            FieldLabel(label)
+            UnitField(draft.quantity.countedIn, state.measurements, actions.onUnit, label = label)
+        }
     }
+    ExpiresField(draft, onPick = { picking = true })
     // A known product can go on to Item details; an unknown one is skipped or named here, as on its board.
     AddRow(
         state = state,

@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -29,12 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,34 +48,42 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.Ingredient
+import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
+import io.cosgriff.pantry.domain.Packaged
+import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.IngredientCheck
 import io.cosgriff.pantry.domain.IngredientStatus
 import io.cosgriff.pantry.domain.MealPlan
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.checkPlan
+import io.cosgriff.pantry.domain.neededFigure
+import io.cosgriff.pantry.ui.components.AmountDialog
 import io.cosgriff.pantry.ui.components.PantryCard
 import io.cosgriff.pantry.ui.components.QuantityStepper
 import io.cosgriff.pantry.ui.components.SectionHeading
 import io.cosgriff.pantry.ui.components.locationName
 import io.cosgriff.pantry.ui.components.quantityText
-import io.cosgriff.pantry.ui.components.unitName
+import io.cosgriff.pantry.ui.components.shownText
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.math.BigDecimal
-import java.text.NumberFormat
-import java.text.ParsePosition
 
 data class MealDetailsActions(
     val onBack: () -> Unit = {},
     val onEdit: () -> Unit = {},
     val onUnplan: () -> Unit = {},
     val onServings: (Int) -> Unit = {},
-    val onAmount: (Int, BigDecimal?) -> Unit = { _, _ -> },
+    val onAmount: (Int, Amount?) -> Unit = { _, _ -> },
     val onAddMissing: () -> Unit = {},
     val onAddedShown: () -> Unit = {},
     val onCooked: () -> Unit = {},
@@ -154,7 +158,7 @@ fun MealDetailsContent(state: MealDetailsState, actions: MealDetailsActions, mod
                             state.checks.forEachIndexed { index, check ->
                                 if (index > 0) HorizontalDivider(color = colors.divider)
                                 // A typed-in ingredient has no unit to count an amount in.
-                                CheckRow(check, onClick = if (check.ingredient.fromPantry) ({ editing = index }) else null)
+                                CheckRow(check, state.measurements, onClick = if (check.ingredient.fromPantry) ({ editing = index }) else null)
                             }
                         }
                     }
@@ -182,10 +186,11 @@ fun MealDetailsContent(state: MealDetailsState, actions: MealDetailsActions, mod
             editing = null
         } else {
             AmountDialog(
-                name = check.ingredient.name,
-                current = check.needed,
+                title = stringResource(R.string.meal_amount_title, check.ingredient.name),
+                hint = pluralStringResource(R.plurals.meal_amount_hint, plan.servings, plan.servings),
+                current = check.neededAmount,
                 unit = unit,
-                servings = plan.servings,
+                system = state.measurements,
                 onDone = { amount ->
                     actions.onAmount(index, amount)
                     editing = null
@@ -220,7 +225,7 @@ private fun TopBar(date: String, actions: MealDetailsActions) {
 }
 
 @Composable
-private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
+private fun CheckRow(check: IngredientCheck, measurements: MeasureSystem, onClick: (() -> Unit)?) {
     val colors = PantryTheme.colors
     val status = check.status
     val (dot, statusColor, strong) = when (status) {
@@ -231,7 +236,9 @@ private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
         is IngredientStatus.CantCompare -> Triple(colors.border, colors.inkMuted, false)
         IngredientStatus.NotTracked -> Triple(Color.Transparent, colors.inkMuted, false)
     }
-    val needed = check.needed?.let { amount -> check.ingredient.unit?.let { quantityText(it.of(amount)) } }
+    // In another unit than the item's, the needed amount also shows in the item's terms; "≈" through a density (#57).
+    val amount = check.neededAmount?.let { quantityText(it) }
+    val needed = amount?.let { text -> check.neededFigure(measurements)?.let { stringResource(R.string.amount_converted, text, shownText(it)) } ?: text }
     val label = stringResource(R.string.meal_set_amount, check.ingredient.name)
     Row(
         Modifier
@@ -252,7 +259,7 @@ private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
                 color = statusColor,
             )
         }
-        Text(needed ?: stringResource(R.string.meal_some), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Text(amount ?: stringResource(R.string.meal_some), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -306,51 +313,23 @@ private fun Footer(cooked: Boolean, canAdd: Boolean, actions: MealDetailsActions
     }
 }
 
-/** How much of [name] the plan uses, in [unit]; empty for "some". */
-@Composable
-private fun AmountDialog(name: String, current: BigDecimal?, unit: AmountUnit, servings: Int, onDone: (BigDecimal?) -> Unit, onDismiss: () -> Unit) {
-    val format = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 } }
-    var text by rememberSaveable { mutableStateOf(current?.let(format::format).orEmpty()) }
-    val parsed = parsePositive(text, format)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.meal_amount_title, name)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
-                Text(pluralStringResource(R.plurals.meal_amount_hint, servings, servings, unitName(unit)), style = MaterialTheme.typography.bodyMedium)
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    singleLine = true,
-                    suffix = { Text(unitName(unit)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = text.isNotBlank() && parsed == null,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onDone(parsed) }, enabled = text.isBlank() || parsed != null) { Text(stringResource(R.string.details_ok)) }
-        },
-        dismissButton = { TextButton(onClick = { onDone(null) }) { Text(stringResource(R.string.meal_amount_clear)) } },
-    )
-}
-
-/** A positive amount typed in the user's locale ("1,5" in German), or `null` if it isn't one. */
-private fun parsePositive(text: String, format: NumberFormat): BigDecimal? {
-    val trimmed = text.trim()
-    if (trimmed.isEmpty()) return null
-    val position = ParsePosition(0)
-    val number = format.parse(trimmed, position) ?: return null
-    if (position.index != trimmed.length) return null
-    return BigDecimal(number.toString()).takeIf { it.signum() > 0 }
-}
-
 // Previews and the screenshot test use made-up items, marked as samples.
+// A cup of flour from a bag of known weight shows what it comes to, through a typical density (#57).
+private val previewFlour = PantryItem(
+    id = 5, name = "Sample flour", location = Location.Dry, purchased = previewToday,
+    quantity = Packaged(BigDecimal.ONE, Package.Bag, Measure(BigDecimal(5), MeasureUnit.Pound)),
+)
+private val previewMealPlan = previewEggBites.copy(
+    meal = previewEggBites.meal.copy(
+        ingredients = previewEggBites.meal.ingredients +
+            Ingredient.of(previewFlour).copy(unit = AmountUnit.Measured(MeasureUnit.Cup), amount = BigDecimal.ONE),
+    ),
+)
 internal val previewMealDetails = MealDetailsState(
     today = previewToday,
     loading = false,
-    plan = previewEggBites,
-    checks = checkPlan(previewEggBites, listOf(previewEggs, previewSpinach, previewYogurt), previewToday),
+    plan = previewMealPlan,
+    checks = checkPlan(previewMealPlan, listOf(previewEggs, previewSpinach, previewYogurt, previewFlour), previewToday),
 )
 
 @Preview

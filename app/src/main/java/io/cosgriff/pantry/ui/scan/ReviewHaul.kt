@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,15 +36,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.HaulEntry
+import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.haulGroups
 import io.cosgriff.pantry.domain.needingName
 import io.cosgriff.pantry.ui.components.LocationTile
+import io.cosgriff.pantry.ui.components.UnitDialog
 import io.cosgriff.pantry.ui.components.barcodeText
 import io.cosgriff.pantry.ui.components.groupedRow
 import io.cosgriff.pantry.ui.components.locationName
@@ -62,6 +70,7 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
     val groups = haulGroups(state.haul, state.locations)
     val missing = needingName(state.haul)
     var editing by rememberSaveable { mutableStateOf<Int?>(null) }
+    var unitFor by rememberSaveable { mutableStateOf<Int?>(null) }
     Column(
         modifier
             .fillMaxSize()
@@ -119,7 +128,11 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
                 }
                 entries.forEachIndexed { i, entry ->
                     item(key = "item-${entry.index}") {
-                        HaulRow(entry, Modifier.groupedRow(i, entries.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider)) { editing = entry.index }
+                        HaulRow(
+                            entry,
+                            Modifier.groupedRow(i, entries.size, MaterialTheme.shapes.large, colors.surface, colors.border, colors.divider),
+                            onUnit = { unitFor = entry.index },
+                        ) { editing = entry.index }
                     }
                 }
                 item(key = "gap-$location") { Row(Modifier.height(PantryDimens.space3)) {} }
@@ -151,6 +164,19 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
             ) { Text(pluralStringResource(R.plurals.review_add_all, state.haul.size, state.haul.size), style = MaterialTheme.typography.labelLarge) }
         }
     }
+    unitFor?.let { index ->
+        val draft = state.haul.getOrNull(index)
+        if (draft == null) {
+            unitFor = null
+        } else {
+            UnitDialog(
+                draft.quantity.countedIn,
+                state.measurements,
+                onPick = { actions.onHaulUnit(index, it); unitFor = null },
+                onDismiss = { unitFor = null },
+            )
+        }
+    }
     editing?.let { index ->
         val draft = state.haul.getOrNull(index)
         if (draft == null) {
@@ -167,7 +193,7 @@ internal fun ReviewHaulContent(state: ScanState, actions: ScanActions, modifier:
 }
 
 @Composable
-private fun HaulRow(entry: HaulEntry, modifier: Modifier, onClick: () -> Unit) {
+private fun HaulRow(entry: HaulEntry, modifier: Modifier, onUnit: () -> Unit, onClick: () -> Unit) {
     val colors = PantryTheme.colors
     val draft = entry.draft
     val unnamed = draft.name.isBlank()
@@ -198,14 +224,28 @@ private fun HaulRow(entry: HaulEntry, modifier: Modifier, onClick: () -> Unit) {
                 color = colors.inkMuted,
             )
         }
-        Text(
-            quantityText(draft.quantity),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                .background(colors.surfaceMuted, MaterialTheme.shapes.extraSmall)
-                .padding(horizontal = PantryDimens.spaceIcon, vertical = PantryDimens.space1),
-        )
+        // The quantity badge picks the item's unit (#57); the rest of the row names it.
+        val quantity = quantityText(draft.quantity)
+        val unitLabel = stringResource(R.string.review_unit, if (unnamed) stringResource(R.string.review_needs_name) else draft.name, quantity)
+        Box(
+            Modifier
+                .minimumInteractiveComponentSize()
+                .clickable(role = Role.Button, onClick = onUnit)
+                .clearAndSetSemantics {
+                    contentDescription = unitLabel
+                    role = Role.Button
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                quantity,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .background(colors.surfaceMuted, MaterialTheme.shapes.extraSmall)
+                    .padding(horizontal = PantryDimens.spaceIcon, vertical = PantryDimens.space1),
+            )
+        }
     }
 }
 

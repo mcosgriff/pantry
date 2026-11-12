@@ -12,8 +12,8 @@ import io.cosgriff.pantry.domain.DeletedLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LocationKey
 import io.cosgriff.pantry.domain.LookupChoice
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.PantrySettings
-import io.cosgriff.pantry.domain.UnitSystem
 import io.cosgriff.pantry.domain.withKey
 import java.time.LocalTime
 import javax.inject.Inject
@@ -45,8 +45,7 @@ class SettingsRepository @Inject constructor(
                 ?: defaults.dailyDigestAt,
             batchScanByDefault = prefs[BATCH_SCAN] ?: defaults.batchScanByDefault,
             defaultLocation = DeletedLocation.defaultLocation(all.withKey(prefs[DEFAULT_LOCATION]?.let(LocationKey::parse))),
-            unitSystem = prefs[UNIT_SYSTEM]?.let { name -> UnitSystem.entries.firstOrNull { it.name == name } }
-                ?: defaults.unitSystem,
+            measurements = prefs[UNIT_SYSTEM]?.let(::measureSystem) ?: defaults.measurements,
             productLookup = prefs[PRODUCT_LOOKUP]?.let { name -> LookupChoice.entries.firstOrNull { it.name == name } }
                 ?: defaults.productLookup,
             contributing = prefs[CONTRIBUTING]?.let { name -> ContributeChoice.entries.firstOrNull { it.name == name } }
@@ -110,9 +109,14 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    suspend fun setUnitSystem(system: UnitSystem) = store.edit { it[UNIT_SYSTEM] = system.name }
+    /** US customary or metric (#57): which system converted amounts are shown in, and whose units pickers list first. */
+    suspend fun setMeasurements(system: MeasureSystem) = store.edit { it[UNIT_SYSTEM] = system.name }
 
     private companion object {
+        /** A stored measurement system; "Us" is the name written before #57. */
+        fun measureSystem(name: String): MeasureSystem? =
+            if (name == "Us") MeasureSystem.UsCustomary else MeasureSystem.entries.firstOrNull { it.name == name }
+
         /** Read only: the single switch from before #27. */
         val NOTIFICATIONS = booleanPreferencesKey("notifications")
         val NOTIFY_EXPIRING_SOON = booleanPreferencesKey("notify_expiring_soon")

@@ -7,9 +7,12 @@ import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.ItemIntake
 import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.Density
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.QuickPick
 import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.RemoveReason
@@ -30,6 +33,8 @@ data class ItemDetailsState(
     val today: LocalDate,
     val draft: ItemDraft? = null,
     val locations: List<Location> = Location.defaults,
+    /** The measurement system whose units the unit picker lists first (#57). */
+    val measurements: MeasureSystem = MeasureSystem.UsCustomary,
     val done: Boolean = false,
 )
 
@@ -39,6 +44,7 @@ class ItemDetailsViewModel @Inject constructor(
     private val locations: LocationRepository,
     private val intake: ItemIntake,
     private val consumption: Consumption,
+    private val settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ItemDetailsState(today = LocalDate.now(clock)))
@@ -57,7 +63,8 @@ class ItemDetailsViewModel @Inject constructor(
             val today = LocalDate.now(clock)
             val all = locations.locations().first()
             val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: intake.byHand(name, barcode.ifEmpty { null })
-            _state.update { it.copy(today = today, draft = draft, locations = all) }
+            val measurements = settings.settings().first().measurements
+            _state.update { it.copy(today = today, draft = draft, locations = all, measurements = measurements) }
         }
     }
 
@@ -73,6 +80,9 @@ class ItemDetailsViewModel @Inject constructor(
     fun onPurchased(date: LocalDate) = edit { it.withPurchased(date) }
     fun onLowStock(amount: BigDecimal?) = edit { it.copy(lowStockAt = amount) }
     fun onNotes(notes: String) = edit { it.copy(notes = notes) }
+
+    /** The item's own density, or `null` for the typical one (#57). */
+    fun onDensity(density: Density?) = edit { it.copy(density = density) }
 
     /** Saves through `ItemIntake`, scan's save path (#49), which says how a new item and an edit differ. */
     fun onSave() {

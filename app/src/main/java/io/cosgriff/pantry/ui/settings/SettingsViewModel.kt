@@ -9,6 +9,7 @@ import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.PantrySettings
 import java.time.LocalTime
 import java.time.Period
@@ -74,4 +75,5 @@ class SettingsViewModel @Inject constructor(
     fun onContributing(choice: ContributeChoice) = viewModelScope.launch { settings.setContributing(choice) }
     fun onSignOut() = viewModelScope.launch { contributions.signOut() }
     fun onDefaultLocation(location: DefaultLocation) = viewModelScope.launch { settings.setDefaultLocation(location) }
+    fun onMeasurements(system: MeasureSystem) = viewModelScope.launch { settings.setMeasurements(system) }
 }

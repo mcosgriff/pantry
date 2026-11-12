@@ -18,19 +18,24 @@ week and next, each with one tap to throw it out, mark it used up, or freeze it 
 a new date), and Undo. Items are
 scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch scan collects a whole haul to review, name and add in one go,
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
-from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Removing an item asks what happened to it: used up puts it on the shopping list,
+from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert, its own density and notes.
+Quantities can be in any unit: each or dozen, teaspoons to gallons, millilitres and litres, ounces and pounds,
+grams and kilograms, or packages (bag, pack, tub, box, can, jar, bottle, carton) with what one holds ("2 bags ×
+5 lb"), picked on item details, the scan sheet and Review haul. Removing an item asks what happened to it: used up puts it on the shopping list,
 thrown out or added by mistake only takes it out. A barcode
 the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name; one it
 doesn't have either can be added there, under your own Open Food Facts account, once you've named it. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
-item counts as "use soon", and where new items start. Expiration alerts, each off until you turn it on,
+item counts as "use soon", where new items start, and the measurements (US customary or metric) that
+converted amounts are shown in and the unit pickers list first. Expiration alerts, each off until you turn it on,
 send one notification a day at the time you pick, counting what expires soon and what has already expired
 (either or both), which opens Use soon. The Shopping tab lists what is running low (at or under its
 low-stock alert), what this week's meals still need, what was used up, and what you add by hand, each name
 once; a shopping trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
-track), and each meal shows what it has, what has expired and what is missing. Amounts compare across units
-("2 cups" of flour against a 5 lb bag, through a typical density for the ingredient or the item's own); one
+track), and each meal shows what it has, what has expired and what is missing. An ingredient's amount can be
+in any unit, and amounts compare across units ("2 cups" of flour against a 5 lb bag, through a typical density
+for the ingredient or the item's own, shown as "≈ 9 oz" since it is an estimate); one
 that can't be converted (a tablespoon from a tub of unknown size) is shown as "can't compare", not as a match
 or a shortage. "Add missing to shopping list" and "Cooked it", which takes the amounts out of the pantry in
 each item's own unit (1 lb from 2 bags of 2 lb leaves 1.5 bags), finish the loop; a cooked meal is kept to plan
@@ -58,6 +63,7 @@ labels) on each build. The plan, in order:
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
 | Meal prep compares and subtracts amounts across units | [#55](https://github.com/mcosgriff/pantry/issues/55) |
 | Importing a recipe from a link | [#43](https://github.com/mcosgriff/pantry/issues/43) |
+| Unit pickers, package contents and a measurement setting | [#57](https://github.com/mcosgriff/pantry/issues/57) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |
 | Product lookup by barcode, and adding to Open Food Facts | [#9](https://github.com/mcosgriff/pantry/issues/9), [#42](https://github.com/mcosgriff/pantry/issues/42) |

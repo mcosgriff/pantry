@@ -184,6 +184,17 @@ class MealRepositoryTest {
     }
 
     @Test
+    fun `an amount set in another unit is kept in that unit and checked across units (#57)`() = runBlocking {
+        val eggs = stock("Test eggs", "18")
+        meals.save(MealDraft("Test omelettes", 2, listOf(Ingredient.of(eggs))), today)
+        meals.setAmount(meals.plans().first().single(), 0, BigDecimal.ONE, AmountUnit.Measured(MeasureUnit.Dozen))
+        val checked = meals.checkedPlans().first().single()
+        assertEquals(AmountUnit.Measured(MeasureUnit.Dozen), checked.checks.single().ingredient.unit)
+        assertEquals(0, BigDecimal.ONE.compareTo(checked.checks.single().needed))
+        assertEquals(IngredientStatus.Have(eggs), checked.checks.single().status)
+    }
+
+    @Test
     fun `servings step within the bounds`() = runBlocking {
         meals.save(MealDraft("Test toast", 1), today)
         meals.stepServings(meals.plans().first().single(), -1)

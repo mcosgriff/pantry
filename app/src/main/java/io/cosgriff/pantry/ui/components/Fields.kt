@@ -80,12 +80,20 @@ fun AddField(label: String, onAdd: (String) -> Unit, modifier: Modifier = Modifi
 
 /** A bordered one-line text field, named [label] for TalkBack, with [hint] while it's empty. */
 @Composable
-fun TextFieldBox(value: String, onChange: (String) -> Unit, label: String, hint: String, modifier: Modifier = Modifier) {
+fun TextFieldBox(
+    value: String,
+    onChange: (String) -> Unit,
+    label: String,
+    hint: String,
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+) {
     val colors = PantryTheme.colors
     BasicTextField(
         value = value,
         onValueChange = onChange,
         singleLine = true,
+        keyboardOptions = keyboardOptions,
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.ink),
         cursorBrush = SolidColor(colors.accent),
         modifier = modifier
