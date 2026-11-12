@@ -5,16 +5,13 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.MealRepository
-import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.IngredientCheck
 import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.MeasureSystem
-import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.number
-import io.cosgriff.pantry.domain.scaled
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -42,7 +39,6 @@ data class MealDetailsState(
 
 @HiltViewModel
 class MealDetailsViewModel @Inject constructor(
-    pantry: PantryRepository,
     private val meals: MealRepository,
     private val consumption: Consumption,
     settings: SettingsRepository,
@@ -53,14 +49,13 @@ class MealDetailsViewModel @Inject constructor(
 
     private data class Events(val added: Int? = null, val done: Boolean = false)
 
-    val state: StateFlow<MealDetailsState> = combine(planId, meals.plans(), pantry.items(), events, settings.settings()) { id, plans, items, e, prefs ->
-        val today = LocalDate.now(clock)
-        val plan = plans.firstOrNull { it.id == id }
+    val state: StateFlow<MealDetailsState> = combine(planId, meals.checkedPlans(), events, settings.settings()) { id, plans, e, prefs ->
+        val checked = plans.firstOrNull { it.plan.id == id }
         MealDetailsState(
-            today = today,
+            today = LocalDate.now(clock),
             loading = id == null,
-            plan = plan,
-            checks = plan?.let { checkPlan(it, items, today) }.orEmpty(),
+            plan = checked?.plan,
+            checks = checked?.checks.orEmpty(),
             addedToShopping = e.added,
             done = e.done,
             measurements = prefs.measurements,
@@ -75,30 +70,20 @@ class MealDetailsViewModel @Inject constructor(
 
     fun onServings(delta: Int) {
         val plan = current() ?: return
-        val servings = (plan.servings + delta).coerceIn(1, 99)
-        if (servings != plan.servings) viewModelScope.launch { meals.setServings(plan, servings) }
+        viewModelScope.launch { meals.stepServings(plan, delta) }
     }
 
-    /**
-     * Sets ingredient [index]'s amount for this plan's servings ([amount] `null`: "some"), in any unit (#57). The
-     * meal keeps it for its own servings, so planning it again scales from there.
-     */
+    /** Sets ingredient [index]'s amount for this plan's servings ([amount] `null`: "some"), in any unit (#57). */
     fun onAmount(index: Int, amount: Amount?) {
         val plan = current() ?: return
-        val meal = plan.meal
-        val forMeal = amount?.let { scaled(it.number, plan.servings, meal.servings) }?.takeIf { it.signum() > 0 }
-        val ingredients = meal.ingredients.mapIndexed { i, g ->
-            if (i == index) g.copy(unit = amount?.countedIn ?: g.unit, amount = forMeal) else g
-        }
-        viewModelScope.launch { meals.save(meal.copy(ingredients = ingredients)) }
+        viewModelScope.launch { meals.setAmount(plan, index, amount?.number, amount?.countedIn) }
     }
 
     fun onAddMissing() {
         val plan = current() ?: return
-        val count = state.value.checks.count { it.toBuy }
         viewModelScope.launch {
-            meals.addMissingToShopping(plan, LocalDate.now(clock))
-            events.update { it.copy(added = count) }
+            val added = meals.addMissingToShopping(plan)
+            events.update { it.copy(added = added) }
         }
     }
 
@@ -107,7 +92,7 @@ class MealDetailsViewModel @Inject constructor(
     fun onCooked() {
         val plan = current() ?: return
         viewModelScope.launch {
-            consumption.cooked(plan, LocalDate.now(clock))
+            consumption.cooked(plan)
             events.update { it.copy(done = true) }
         }
     }

@@ -19,6 +19,7 @@ import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.Package
 import java.io.File
 import java.math.BigDecimal
+import java.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -139,7 +140,7 @@ class MigrationTest {
             val pantry = PantryRepository(db.items(), LocationRepository(db.locations(), db.items()), db.knownProducts())
             val file = File(context.filesDir, "migration_units.preferences_pb").apply { delete() }
             val shopping = ShoppingRepository(db.shopping(), pantry, PreferenceDataStoreFactory.create(scope = scope) { file })
-            val meals = MealRepository(db.meals(), pantry, shopping)
+            val meals = MealRepository(db, pantry, shopping, Clock.systemUTC())
 
             val items = pantry.items().first().associateBy { it.name }
             val ingredients = meals.meals().first().single().ingredients.associateBy { it.name }

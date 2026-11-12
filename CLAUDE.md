@@ -45,8 +45,10 @@ there is no baseline: fix a warning, or suppress that one case in `app/lint.xml`
   with Robolectric, whose Android jar Gradle resolves (root `build.gradle.kts`). A schema change needs a new
   version, its committed JSON and a migration; `MigrationTest` opens every exported version (#4).
   Flows of several steps are deep modules here, each flow's writes in one `db.withWriteTransaction`: `Consumption`
-  (using up, throwing out, freezing, cooking, #48) and `ItemIntake` (scanned code or typed name to saved
-  items, the `docs/adr/0001` lookup rule included, #49).
+  (using up, throwing out, freezing, cooking, #48), `ItemIntake` (scanned code or typed name to saved
+  items, the `docs/adr/0001` lookup rule included, #49) and `MealRepository` (meal plan editing: a new meal
+  saved and planned in one write, servings, amounts, plans checked against the pantry, #50), whose rules
+  (servings bounds, the amount rounding policy, a draft becoming a meal) are in `:domain`'s `MealPlanEditing.kt`.
 - `:app` — Compose UI, ViewModels, theme. Hilt (`PantryApp`).
 
 Add `:baselineprofile` once the screens settle.
@@ -101,7 +103,7 @@ Values live in the design system and in `ui/theme/`; don't type a color, radius 
 - A screen is a `…Content` composable (plain state and callbacks) wrapped by a `…Screen` that reads the
   ViewModel, so it can be previewed and screenshot-tested. A `…Content` that needs today takes it as a
   parameter, never `LocalDate.now()`. Only ViewModels, the expiry digest (`notify/ExpiryDigest.kt`) and the
-  deep modules in `:data` (`Consumption`, `ItemIntake`) read the clock, through the injected `java.time.Clock`;
+  deep modules in `:data` (`Consumption`, `ItemIntake`, `MealRepository`) read the clock, through the injected `java.time.Clock`;
   `:domain` functions take `today` as a parameter, and a deep module's tests fix time through one `Clock` (#27,
   #52).
 - **Every screen gets a screenshot test** in `ScreensScreenshotTest` (`compose.shoot(...)`, or `shootScreen`

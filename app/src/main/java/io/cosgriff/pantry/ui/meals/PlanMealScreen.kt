@@ -52,6 +52,7 @@ import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Meal
+import io.cosgriff.pantry.domain.MealDraft
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.expiryStatus
 import io.cosgriff.pantry.ui.components.AddField

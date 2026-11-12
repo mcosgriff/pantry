@@ -53,10 +53,10 @@ class SourceRulesTest {
             Regex("""\bLocalContext\.current\.getString\b"""), app,
         ),
         Rule(
-            "Only a ViewModel, the expiry digest or a deep module (Consumption, ItemIntake) reads the clock, " +
+            "Only a ViewModel, the expiry digest or a deep module (Consumption, ItemIntake, MealRepository) reads the clock, " +
                 "through the injected Clock; …Content composables and :domain take today as a parameter (#52)",
             Regex("""\b(LocalDate|LocalDateTime|ZonedDateTime|Instant)\.now\("""), app + data + domain,
-            allowedIn = setOf("ViewModel.kt", "notify/ExpiryDigest.kt", "data/Consumption.kt", "data/ItemIntake.kt"),
+            allowedIn = setOf("ViewModel.kt", "notify/ExpiryDigest.kt", "data/Consumption.kt", "data/ItemIntake.kt", "data/MealRepository.kt"),
         ),
         Rule(
             "Barcodes are read with zxing-cpp, never ML Kit: it uploads usage logs to Google",
