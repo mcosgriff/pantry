@@ -17,6 +17,8 @@ data class PantrySettings(
     val unitSystem: UnitSystem = UnitSystem.Us,
     /** Whether a scanned barcode the pantry doesn't know is looked up in Open Food Facts (#9). */
     val productLookup: LookupChoice = LookupChoice.Ask,
+    /** What to do when a scanned product isn't in Open Food Facts and the user names it (#42). */
+    val contributing: ContributeChoice = ContributeChoice.Ask,
 ) {
     init {
         require(warningDays >= 0) { "Warning window must not be negative: $warningDays" }

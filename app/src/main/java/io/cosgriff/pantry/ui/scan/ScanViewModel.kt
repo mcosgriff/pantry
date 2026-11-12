@@ -7,6 +7,7 @@ import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.ProductLookup
 import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
@@ -14,6 +15,7 @@ import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.LookupResult
 import io.cosgriff.pantry.domain.Measure
 import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.NewProduct
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.ScannedCode
@@ -98,6 +100,11 @@ data class ScanState(
     val locations: List<Location> = Location.defaults,
     /** Set once items are in the pantry (one outside batch scan, the haul in it): the screen closes. */
     val finished: Boolean = false,
+    /**
+     * Set with [finished] when the item just added was named by the user and Open Food Facts doesn't have it:
+     * the screen offers to share it there instead of closing (#42, `docs/adr/0004`).
+     */
+    val share: NewProduct? = null,
 )
 
 @HiltViewModel
@@ -238,9 +245,13 @@ class ScanViewModel @Inject constructor(
             return
         }
         val item = draft.toItem() ?: return
+        // Looked up and not found, then named here: Open Food Facts could have it too, unless the user said never.
+        val notInOff = (phase as? ScanPhase.Found)?.takeIf { !it.known && it.lookup == Lookup.NotFound }
         viewModelScope.launch {
             save(item, storePacked = phase is ScanPhase.StorePacked)
-            _state.update { it.copy(phase = ScanPhase.Looking, finished = true) }
+            val share = item.barcode?.takeIf { notInOff != null }?.let { NewProduct(it, item.name) }
+                ?.takeIf { it.shareable && settings.settings().first().contributing != ContributeChoice.Never }
+            _state.update { it.copy(phase = ScanPhase.Looking, finished = true, share = share) }
         }
     }
 

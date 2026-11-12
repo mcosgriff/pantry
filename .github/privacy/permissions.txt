@@ -8,7 +8,8 @@
 android.permission.CAMERA
 # Product lookup in Open Food Facts (#9, docs/adr/0001): granted at install, so the scan sheet asks before
 # the first lookup and the README explains it. Also reading a recipe page the user shares or pastes, when they
-# tap Read recipe (#43, docs/adr/0003); the import screen says what is sent.
+# tap Read recipe (#43, docs/adr/0003); the import screen says what is sent. And adding a product to Open Food
+# Facts with the user's own account (#42, docs/adr/0004), only after the user signs in and taps Share.
 android.permission.INTERNET
 # The daily expiry digest (#27): asked for in Pantry settings when an expiration alert is turned on
 # (Android 13 and later), and explained under the alerts there.

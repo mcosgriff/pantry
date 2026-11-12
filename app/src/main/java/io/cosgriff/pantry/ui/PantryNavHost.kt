@@ -17,6 +17,7 @@ import io.cosgriff.pantry.ui.pantry.PantryListActions
 import io.cosgriff.pantry.ui.pantry.PantryListScreen
 import io.cosgriff.pantry.ui.scan.ScanScreen
 import io.cosgriff.pantry.ui.settings.SettingsScreen
+import io.cosgriff.pantry.ui.share.ShareProductScreen
 import io.cosgriff.pantry.ui.shopping.ShoppingScreen
 import io.cosgriff.pantry.ui.shopping.ShoppingTripScreen
 import io.cosgriff.pantry.ui.usesoon.UseSoonScreen
@@ -33,6 +34,9 @@ import kotlinx.serialization.Serializable
 @Serializable data class ItemDetailsRoute(val id: Long? = null, val name: String = "", val barcode: String = "") : NavKey
 
 @Serializable data object ScanRoute : NavKey
+
+/** Offers to add [barcode], named [name] by the user, to Open Food Facts (#42). */
+@Serializable data class ShareProductRoute(val barcode: String, val name: String) : NavKey
 
 @Serializable data object ShoppingRoute : NavKey
 
@@ -97,7 +101,15 @@ fun PantryNavHost(sharedLink: String? = null, openUseSoon: Boolean = false) {
                         backStack.removeAt(backStack.lastIndex)
                         backStack.add(ItemDetailsRoute(name = name, barcode = barcode))
                     },
+                    // The share offer replaces the scanner, so finishing it returns to the list.
+                    onShare = { product ->
+                        backStack.removeAt(backStack.lastIndex)
+                        backStack.add(ShareProductRoute(product.barcode, product.name))
+                    },
                 )
+            }
+            entry<ShareProductRoute> { route ->
+                ShareProductScreen(barcode = route.barcode, name = route.name, onDone = back)
             }
             entry<ShoppingRoute> {
                 ShoppingScreen(onStartTrip = { backStack.add(ShoppingTripRoute) }, onNavigate = navigate)

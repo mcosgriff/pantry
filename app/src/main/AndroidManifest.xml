@@ -5,8 +5,9 @@
     <!-- Reads barcodes on the Scan screen (#10), asked for when that screen first opens. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!--
-        Product lookup in Open Food Facts, only after the user says yes (#9, docs/adr/0001), and reading a recipe
-        page the user shares or pastes, only when they tap Read recipe (#43, docs/adr/0003).
+        Product lookup in Open Food Facts, only after the user says yes (#9, docs/adr/0001); reading a recipe
+        page the user shares or pastes, only when they tap Read recipe (#43, docs/adr/0003); and adding a product
+        to Open Food Facts with the user's own account, only when they sign in and share it (#42, docs/adr/0004).
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!--

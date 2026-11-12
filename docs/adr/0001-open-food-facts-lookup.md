@@ -24,7 +24,7 @@ products run by volunteers. Its read API needs no account; writes need one.
   a product named by hand (#12).
 - **At most 15 lookups a minute,** Open Food Facts' limit per IP; past it, the sheet asks for a name as if
   offline. A failed or slow lookup (5 s) never blocks naming by hand.
-- **No contributing yet.** Adding products to Open Food Facts needs the user's own account (an app-wide
+- **No contributing yet** (since decided in `docs/adr/0004`, #42). Adding products to Open Food Facts needs the user's own account (an app-wide
   account's password can't be kept secret in a public repo or a sideloaded APK), so it gets its own issue.
   Shared data would be ODbL and photos CC BY-SA.
 - **No HTTP library:** `HttpURLConnection` and the platform's `org.json`, so the network path adds no

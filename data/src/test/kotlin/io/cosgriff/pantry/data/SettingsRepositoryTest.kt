@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
@@ -63,6 +64,7 @@ class SettingsRepositoryTest {
         settings.setDefaultLocation(DefaultLocation.Fixed(Location.Fridge))
         settings.setUnitSystem(UnitSystem.Metric)
         settings.setProductLookup(true)
+        settings.setContributing(ContributeChoice.Always)
         assertEquals(
             PantrySettings(
                 notifyExpiringSoon = true,
@@ -73,6 +75,7 @@ class SettingsRepositoryTest {
                 defaultLocation = DefaultLocation.Fixed(Location.Fridge),
                 unitSystem = UnitSystem.Metric,
                 productLookup = LookupChoice.On,
+                contributing = ContributeChoice.Always,
             ),
             settings.settings().first(),
         )
