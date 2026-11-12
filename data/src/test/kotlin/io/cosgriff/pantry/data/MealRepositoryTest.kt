@@ -5,12 +5,14 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room3.Room
 import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.Meal
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.ShoppingReason
 import java.io.File
 import java.math.BigDecimal
@@ -47,8 +49,8 @@ class MealRepositoryTest {
         db.close()
     }
 
-    private suspend fun stock(name: String, amount: String, unit: QuantityUnit = QuantityUnit.Each): PantryItem {
-        val id = pantry.save(PantryItem(name = name, location = Location.Fridge, quantity = Quantity(BigDecimal(amount), unit), purchased = today))
+    private suspend fun stock(name: String, amount: String, unit: AmountUnit = AmountUnit.Measured(MeasureUnit.Each)): PantryItem {
+        val id = pantry.save(PantryItem(name = name, location = Location.Fridge, quantity = unit.of(BigDecimal(amount)), purchased = today))
         return checkNotNull(pantry.item(id))
     }
 
@@ -60,6 +62,22 @@ class MealRepositoryTest {
         assertEquals(meal.copy(id = id), meals.meals().first().single())
         meals.save(meal.copy(id = id, name = "Test frittata", ingredients = listOf(Ingredient.typed("Test pepper"))))
         assertEquals(listOf("Test pepper"), meals.meals().first().single().ingredients.map { it.name })
+    }
+
+    @Test
+    fun `ingredients round-trip every amount shape, and "some" keeps its unit`() = runBlocking {
+        val units = MeasureUnit.entries.map { AmountUnit.Measured(it) } +
+            Package.entries.map { AmountUnit.Packages(it) } +
+            Package.entries.map { AmountUnit.Packages(it, Measure(BigDecimal("5"), MeasureUnit.Pound)) }
+        val ingredients = units.flatMapIndexed { i, unit ->
+            listOf(
+                Ingredient("Test ingredient $i", fromPantry = true, itemId = i.toLong(), unit = unit, amount = BigDecimal("1.25")),
+                Ingredient("Test ingredient $i, some", fromPantry = true, itemId = i.toLong(), unit = unit),
+            )
+        }
+        val meal = Meal("Test everything", 4, ingredients)
+        val id = meals.save(meal)
+        assertEquals(meal.copy(id = id), meals.meals().first().single())
     }
 
     @Test
@@ -85,7 +103,7 @@ class MealRepositoryTest {
                 12,
                 listOf(
                     Ingredient.of(eggs).copy(amount = BigDecimal("12")),
-                    Ingredient("Test cottage cheese", fromPantry = true, itemId = 99, unit = QuantityUnit.Tub),
+                    Ingredient("Test cottage cheese", fromPantry = true, itemId = 99, unit = AmountUnit.Packages(Package.Tub)),
                     Ingredient.typed("Test salt"),
                 ),
             ),

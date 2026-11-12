@@ -13,16 +13,18 @@ import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
 import io.cosgriff.pantry.domain.LookupResult
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.NewProduct
-import io.cosgriff.pantry.domain.ProductInfo
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
-import io.cosgriff.pantry.domain.ScannedCode
 import io.cosgriff.pantry.domain.PantryItem
+import io.cosgriff.pantry.domain.ProductInfo
+import io.cosgriff.pantry.domain.ScannedCode
+import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.haulItems
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.readRetailCode
-import io.cosgriff.pantry.domain.storePackedPriceCents
 import io.cosgriff.pantry.domain.stepped
+import io.cosgriff.pantry.domain.storePackedPriceCents
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.text.ParsePosition
@@ -139,7 +141,7 @@ class ScanViewModel @Inject constructor(
                 is ScannedCode.VariableWeight -> {
                     val today = LocalDate.now(clock)
                     // Never looked up or remembered: the code changes with every package.
-                    val draft = ItemDraft.new(today, Location.Freezer).copy(quantity = Quantity(BigDecimal.ZERO, QuantityUnit.Pound))
+                    val draft = ItemDraft.new(today, Location.Freezer).copy(quantity = Measure(BigDecimal.ZERO, MeasureUnit.Pound))
                     val recent = settings.recentStorePacked().first()
                     _state.update {
                         it.copy(today = today, phase = ScanPhase.StorePacked(code.code, storePackedPriceCents(code), draft, recent = recent))
@@ -149,10 +151,10 @@ class ScanViewModel @Inject constructor(
                     val today = LocalDate.now(clock)
                     // A name the user gave this barcode (#12); before that table, the last item with it.
                     val known = pantry.knownProduct(code.code)
-                        ?: pantry.lastWithBarcode(code.code)?.let { KnownProduct(code.code, it.name, it.location, it.quantity.unit) }
+                        ?: pantry.lastWithBarcode(code.code)?.let { KnownProduct(code.code, it.name, it.location, it.quantity.countedIn) }
                     val location = known?.location ?: settings.newItemLocation()
                     val draft = ItemDraft.new(today, location, barcode = code.code).let { d ->
-                        if (known == null) d else d.copy(name = known.name, quantity = d.quantity.copy(unit = known.unit))
+                        if (known == null) d else d.copy(name = known.name, quantity = known.unit.of(d.quantity.number))
                     }
                     // Only a barcode the pantry doesn't know is looked up, and only once the user has said yes.
                     val lookup = if (known != null) {
@@ -234,7 +236,7 @@ class ScanViewModel @Inject constructor(
         val phase = _state.value.phase
         val draft = when (phase) {
             is ScanPhase.Found -> phase.draft
-            is ScanPhase.StorePacked -> parseWeight(phase.weight)?.let { pounds -> phase.draft.copy(quantity = Quantity(pounds, QuantityUnit.Pound)) }
+            is ScanPhase.StorePacked -> parseWeight(phase.weight)?.let { pounds -> phase.draft.copy(quantity = Measure(pounds, MeasureUnit.Pound)) }
             ScanPhase.Looking -> null
         } ?: return
         if (_state.value.batch) {
@@ -258,7 +260,7 @@ class ScanViewModel @Inject constructor(
         if (storePacked) {
             settings.rememberStorePacked(item.name)
         } else {
-            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.unit)) }
+            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.countedIn)) }
         }
         settings.setLastUsedLocation(item.location)
     }

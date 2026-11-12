@@ -11,7 +11,7 @@ class PantryListTest {
     private fun item(name: String, location: Location = Location.Fridge, expires: LocalDate? = null) = PantryItem(
         name = name,
         location = location,
-        quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+        quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
         purchased = today,
         expires = expires,
     )
@@ -81,7 +81,7 @@ class PantryListTest {
             id = id,
             name = name,
             location = Location.Dry,
-            quantity = Quantity(BigDecimal(amount), QuantityUnit.Each),
+            quantity = Measure(BigDecimal(amount), MeasureUnit.Each),
             purchased = bought,
             opened = opened,
             lowStockAt = lowAt?.let(::BigDecimal),

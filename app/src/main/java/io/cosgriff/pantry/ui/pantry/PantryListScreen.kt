@@ -61,13 +61,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.ExpirySummary
 import io.cosgriff.pantry.domain.ItemFilter
-import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.SortOrder
 import io.cosgriff.pantry.ui.components.LocationTile
 import io.cosgriff.pantry.ui.components.PantryBottomBar
@@ -497,8 +498,8 @@ private fun EmptyShelves() {
 // Previews and screenshot tests use made-up items, marked as samples.
 internal val previewToday: LocalDate = LocalDate.of(2026, 11, 10)
 
-private fun sample(id: Long, name: String, location: Location, expires: LocalDate?, amount: String, unit: QuantityUnit) =
-    PantryItem(id = id, name = name, location = location, quantity = Quantity(BigDecimal(amount), unit), purchased = previewToday, expires = expires)
+private fun sample(id: Long, name: String, location: Location, expires: LocalDate?, amount: String, unit: AmountUnit) =
+    PantryItem(id = id, name = name, location = location, quantity = unit.of(BigDecimal(amount)), purchased = previewToday, expires = expires)
 
 internal val previewState = PantryListState(
     today = previewToday,
@@ -510,12 +511,12 @@ internal val previewState = PantryListState(
         LocationCount(Location.Freezer, 2),
     ),
     rows = listOf(
-        sample(1, "Sample spinach", Location.Fridge, previewToday.minusDays(1), "1", QuantityUnit.Bag),
-        sample(2, "Sample eggs", Location.Fridge, previewToday.plusDays(2), "18", QuantityUnit.Each),
-        sample(3, "Sample yogurt", Location.Fridge, previewToday.plusDays(5), "2", QuantityUnit.Tub),
-        sample(4, "Sample chicken thighs", Location.Freezer, LocalDate.of(2027, 1, 14), "4", QuantityUnit.Pack),
-        sample(5, "Sample blueberries", Location.Freezer, LocalDate.of(2027, 3, 1), "2", QuantityUnit.Bag),
-        sample(6, "Sample rice", Location.Dry, null, "0.6", QuantityUnit.Bag),
+        sample(1, "Sample spinach", Location.Fridge, previewToday.minusDays(1), "1", AmountUnit.Packages(Package.Bag)),
+        sample(2, "Sample eggs", Location.Fridge, previewToday.plusDays(2), "18", AmountUnit.Measured(MeasureUnit.Each)),
+        sample(3, "Sample yogurt", Location.Fridge, previewToday.plusDays(5), "2", AmountUnit.Packages(Package.Tub)),
+        sample(4, "Sample chicken thighs", Location.Freezer, LocalDate.of(2027, 1, 14), "4", AmountUnit.Packages(Package.Pack)),
+        sample(5, "Sample blueberries", Location.Freezer, LocalDate.of(2027, 3, 1), "2", AmountUnit.Packages(Package.Bag)),
+        sample(6, "Sample rice", Location.Dry, null, "0.6", AmountUnit.Packages(Package.Bag)),
     ),
     summary = ExpirySummary(thisWeek = 3, expired = 1),
 )

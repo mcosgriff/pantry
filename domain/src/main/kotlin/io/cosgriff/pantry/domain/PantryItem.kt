@@ -7,19 +7,22 @@ import java.time.LocalDate
  * One thing in the pantry.
  *
  * @property id the stored item's id; 0 for one not saved yet.
+ * @property quantity how much is left: a measure or a packaged amount (docs/adr/0002).
  * @property lowStockAt warn when [quantity] is at or under this amount, counted in the quantity's unit
  *   ("at 6 each" on the Item details board). `null`: no alert.
+ * @property density the item's own density, which wins over the built-in table (#56). `null`: use the table.
  */
 data class PantryItem(
     val name: String,
     val location: Location,
-    val quantity: Quantity,
+    val quantity: Amount,
     val purchased: LocalDate,
     val expires: LocalDate? = null,
     val barcode: String? = null,
     val opened: Boolean = false,
     val lowStockAt: BigDecimal? = null,
     val notes: String = "",
+    val density: Density? = null,
     val id: Long = 0,
 ) {
     init {
@@ -28,7 +31,7 @@ data class PantryItem(
     }
 
     val isLowStock: Boolean
-        get() = lowStockAt != null && quantity.amount <= lowStockAt
+        get() = lowStockAt != null && quantity.number <= lowStockAt
 
     fun expiryStatus(today: LocalDate, warningDays: Int = DEFAULT_WARNING_DAYS): ExpiryStatus =
         expiryStatus(expires, today, warningDays)

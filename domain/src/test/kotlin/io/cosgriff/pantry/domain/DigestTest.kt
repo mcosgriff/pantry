@@ -16,7 +16,7 @@ class DigestTest {
     private fun item(name: String, days: Long?) = PantryItem(
         name = name,
         location = Location.Fridge,
-        quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+        quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
         purchased = today,
         expires = days?.let(today::plusDays),
     )

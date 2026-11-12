@@ -76,6 +76,10 @@ object PantryDimens {
     val shareIconBox = 48.dp // the globe's square on the Open Food Facts share prompt (#42)
     val shareIcon = 26.dp
 
+    // Importing a recipe (#43).
+    val amountFieldWidth = 76.dp // an ingredient line's amount ("2 1/2")
+    val unitButtonMinWidth = 64.dp
+
     // Material asks for 48dp targets; the design's 44px is its floor, so the larger wins.
     val tapMin = 48.dp
     val fieldHeight = 48.dp

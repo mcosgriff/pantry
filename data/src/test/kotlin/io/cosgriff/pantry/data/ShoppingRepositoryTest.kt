@@ -7,9 +7,9 @@ import androidx.test.core.app.ApplicationProvider
 import io.cosgriff.pantry.data.db.PantryDatabase
 import io.cosgriff.pantry.data.db.ShoppingEntryEntity
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -45,7 +45,7 @@ class ShoppingRepositoryTest {
 
     @Test
     fun `list joins running-low items and stored lines`() = runBlocking {
-        pantry.save(PantryItem(name = "Test eggs", location = Location.Fridge, quantity = Quantity(BigDecimal("6"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("6")))
+        pantry.save(PantryItem(name = "Test eggs", location = Location.Fridge, quantity = Measure(BigDecimal("6"), MeasureUnit.Each), purchased = today, lowStockAt = BigDecimal("6")))
         shopping.addByHand("Test scallions", today)
         shopping.addUsedUp("Test yogurt", today)
         assertEquals(listOf("Test eggs", "Test yogurt", "Test scallions"), shopping.lines().first().map { it.name })
@@ -65,7 +65,7 @@ class ShoppingRepositoryTest {
 
     @Test
     fun `a name already on the list isn't added again, whatever its reason`() = runBlocking {
-        pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
+        pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Measure(BigDecimal("1"), MeasureUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
         assertEquals(null, shopping.addUsedUp(" test MILK ", today))
         val first = shopping.addByHand("Test bread", today)
         assertEquals(null, shopping.addUsedUp("Test bread", today))
@@ -88,13 +88,13 @@ class ShoppingRepositoryTest {
 
     @Test
     fun `finishing a trip clears a used-up entry hidden behind a running-low line`() = runBlocking {
-        val id = pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Quantity(BigDecimal("1"), QuantityUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
+        val id = pantry.save(PantryItem(name = "Test milk", location = Location.Fridge, quantity = Measure(BigDecimal("1"), MeasureUnit.Each), purchased = today, lowStockAt = BigDecimal("1")))
         db.shopping().insert(ShoppingEntryEntity(name = "Test milk", reason = "USED_UP", addedOn = today.toEpochDay()))
         val milk = shopping.lines().first().single()
         shopping.setInCart(milk.key, true)
         shopping.finishTrip()
         // Restocked after the trip: the running-low line leaves, and the hidden entry mustn't take its place.
-        pantry.save(checkNotNull(pantry.item(id)).copy(quantity = Quantity(BigDecimal("4"), QuantityUnit.Each)))
+        pantry.save(checkNotNull(pantry.item(id)).copy(quantity = Measure(BigDecimal("4"), MeasureUnit.Each)))
         assertEquals(emptyList<String>(), shopping.lines().first().map { it.name })
     }
 }

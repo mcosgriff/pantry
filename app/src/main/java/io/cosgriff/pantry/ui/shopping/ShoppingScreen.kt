@@ -47,14 +47,16 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.Location
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
 import io.cosgriff.pantry.domain.ShoppingEntry
 import io.cosgriff.pantry.domain.ShoppingLine
 import io.cosgriff.pantry.domain.ShoppingReason
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.shoppingList
 import io.cosgriff.pantry.domain.tripProgress
+import io.cosgriff.pantry.domain.withNumber
 import io.cosgriff.pantry.ui.components.AddField
 import io.cosgriff.pantry.ui.components.BackTopBar
 import io.cosgriff.pantry.ui.components.PantryBottomBar
@@ -163,8 +165,8 @@ fun ShoppingContent(state: ShoppingState, actions: ShoppingActions, modifier: Mo
 private fun lineDetail(line: ShoppingLine): String {
     val date = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
     line.item?.let { item ->
-        val at = item.lowStockAt ?: item.quantity.amount
-        return stringResource(R.string.shopping_left, quantityText(item.quantity), quantityText(Quantity(at, item.quantity.unit)))
+        val at = item.lowStockAt ?: item.quantity.number
+        return stringResource(R.string.shopping_left, quantityText(item.quantity), quantityText(item.quantity.withNumber(at)))
     }
     val entry = line.entry ?: return ""
     val meal = entry.meal
@@ -282,7 +284,7 @@ fun ShoppingTripContent(state: ShoppingState, onBack: () -> Unit, onToggle: (Sho
 internal val previewToday = LocalDate.of(2026, 11, 10)
 internal val previewLines = shoppingList(
     listOf(
-        PantryItem(id = 1, name = "Sample eggs", location = Location.Fridge, quantity = Quantity(BigDecimal("6"), QuantityUnit.Each), purchased = previewToday, lowStockAt = BigDecimal("6")),
+        PantryItem(id = 1, name = "Sample eggs", location = Location.Fridge, quantity = Measure(BigDecimal("6"), MeasureUnit.Each), purchased = previewToday, lowStockAt = BigDecimal("6")),
     ),
     listOf(
         ShoppingEntry(4, "Sample cottage cheese", ShoppingReason.ForMeal, previewToday, meal = "Sample egg bites", mealDay = previewToday.plusDays(1)),

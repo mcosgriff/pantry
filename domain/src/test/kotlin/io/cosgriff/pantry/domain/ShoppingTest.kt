@@ -12,7 +12,7 @@ class ShoppingTest {
         id = id,
         name = name,
         location = Location.Dry,
-        quantity = Quantity(BigDecimal(amount), QuantityUnit.Each),
+        quantity = Measure(BigDecimal(amount), MeasureUnit.Each),
         purchased = today,
         lowStockAt = lowAt?.let(::BigDecimal),
     )
@@ -35,7 +35,7 @@ class ShoppingTest {
 
     @Test
     fun `a restocked item leaves the list`() {
-        val restocked = items.map { if (it.id == 1L) it.copy(quantity = it.quantity.copy(amount = BigDecimal("24"))) else it }
+        val restocked = items.map { if (it.id == 1L) it.copy(quantity = it.quantity.withNumber(BigDecimal("24"))) else it }
         assertEquals(listOf("Test coffee"), shoppingList(restocked, emptyList()).map { it.name })
     }
 

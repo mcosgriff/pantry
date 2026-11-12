@@ -4,6 +4,7 @@ import io.cosgriff.pantry.domain.LookupLimiter
 import io.cosgriff.pantry.domain.LookupResult
 import io.cosgriff.pantry.domain.ProductInfo
 import java.io.IOException
+import java.io.Reader
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -64,8 +65,15 @@ class OpenFoodFacts(
     }
 }
 
-/** [HttpGet] over the platform's `HttpURLConnection`: no HTTP library, so nothing new to check for trackers. */
-class UrlConnectionGet(private val timeoutMillis: Int = 5_000) : HttpGet {
+/**
+ * [HttpGet] over the platform's `HttpURLConnection`: no HTTP library, so nothing new to check for trackers. It
+ * asks for [accept] and reads at most [maxChars] of the answer.
+ */
+class UrlConnectionGet(
+    private val timeoutMillis: Int = 5_000,
+    private val accept: String = "application/json",
+    private val maxChars: Int = Int.MAX_VALUE,
+) : HttpGet {
     override fun get(url: String, userAgent: String): Pair<Int, String>? = try {
         val connection = URL(url).openConnection() as HttpURLConnection
         try {
@@ -73,14 +81,29 @@ class UrlConnectionGet(private val timeoutMillis: Int = 5_000) : HttpGet {
             connection.readTimeout = timeoutMillis
             connection.useCaches = false
             connection.setRequestProperty("User-Agent", userAgent)
-            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Accept", accept)
             val code = connection.responseCode
             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-            code to (stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+            code to (stream?.bufferedReader()?.use { it.readAtMost(maxChars) }.orEmpty())
         } finally {
             connection.disconnect()
         }
     } catch (_: IOException) {
         null
+    }
+
+    private fun Reader.readAtMost(max: Int): String {
+        val out = StringBuilder()
+        val buffer = CharArray(BUFFER)
+        while (out.length < max) {
+            val n = read(buffer, 0, minOf(BUFFER, max - out.length))
+            if (n < 0) break
+            out.appendRange(buffer, 0, n)
+        }
+        return out.toString()
+    }
+
+    private companion object {
+        const val BUFFER = 8_192
     }
 }

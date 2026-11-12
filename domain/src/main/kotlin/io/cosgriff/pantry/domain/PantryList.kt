@@ -59,7 +59,7 @@ private val SortOrder.comparator: Comparator<PantryItem>
         SortOrder.RecentlyAdded -> compareByDescending<PantryItem> { it.id }
         // Items at or under their alert first, then the smallest amounts.
         SortOrder.LowestStockFirst ->
-            compareByDescending<PantryItem> { it.isLowStock }.thenBy { it.quantity.amount }.then(byName)
+            compareByDescending<PantryItem> { it.isLowStock }.thenBy { it.quantity.number }.then(byName)
     }
 
 /** Number of items in each location; a location with none is left out. */
