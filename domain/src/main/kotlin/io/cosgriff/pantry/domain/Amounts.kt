@@ -177,3 +177,23 @@ val Amount.countedIn: AmountUnit
 
 /** This amount with [number] in place of its own, in the same unit or packages. */
 fun Amount.withNumber(number: BigDecimal): Amount = countedIn.of(number)
+
+/**
+ * Whether this amount holds at least [needed], compared in this amount's own unit; `null` when the two can't be
+ * converted (#55). Packages of the same kind compare by count when either one's contents aren't known, as
+ * [Amount.take] subtracts them.
+ */
+fun Amount.covers(needed: Amount, density: Density? = null): Boolean? {
+    if (this is Packaged && needed is Packaged && needed.pkg == pkg && (contents == null || needed.contents == null)) {
+        return count >= needed.count
+    }
+    val have = when (this) {
+        is Measure -> this
+        is Packaged -> total ?: return null
+    }
+    return when (val inHave = needed.to(have.unit, density)) {
+        Conversion.NotDefined -> null
+        is Conversion.Exact -> have.amount >= inHave.measure.amount
+        is Conversion.Approximate -> have.amount >= inHave.measure.amount
+    }
+}

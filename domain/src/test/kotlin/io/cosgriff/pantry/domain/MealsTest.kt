@@ -1,9 +1,11 @@
 package io.cosgriff.pantry.domain
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.DayOfWeek
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -113,6 +115,58 @@ class MealsTest {
         val plan = MealPlan(meal(Ingredient("Test eggs", true, 1, null, AmountUnit.Packages(Package.Pack), BigDecimal("1"))), today)
         val cooked = cook(checkPlan(plan, listOf(eggs), today))
         assertTrue(cooked.updated.isEmpty() && cooked.usedUp.isEmpty())
+    }
+
+    private fun uses(item: PantryItem, amount: String, unit: AmountUnit) =
+        MealPlan(meal(Ingredient.of(item).copy(unit = unit, amount = BigDecimal(amount)), servings = 1), today)
+
+    @Test
+    fun `2 cup flour against 5 lb flour is enough, and cooking leaves about 4_47 lb`() {
+        val flour = item(20, "Test flour", "5", AmountUnit.Measured(MeasureUnit.Pound))
+        val checks = checkPlan(uses(flour, "2", AmountUnit.Measured(MeasureUnit.Cup)), listOf(flour), today)
+        assertEquals(IngredientStatus.Have(flour), checks.single().status)
+        val cooked = cook(checks)
+        val left = cooked.updated.single().quantity as Measure
+        assertEquals(MeasureUnit.Pound, left.unit)
+        assertEquals(BigDecimal("4.47"), left.amount.setScale(2, RoundingMode.HALF_UP))
+        assertEquals(setOf(20L), cooked.approximate)
+    }
+
+    @Test
+    fun `1 lb rice against 2 bags of 2 lb leaves 1_5 bags`() {
+        val twoPounds = Measure(BigDecimal("2"), MeasureUnit.Pound)
+        val rice = item(21, "Test rice", "2", AmountUnit.Packages(Package.Bag, twoPounds))
+        val checks = checkPlan(uses(rice, "1", AmountUnit.Measured(MeasureUnit.Pound)), listOf(rice), today)
+        assertEquals(IngredientStatus.Have(rice), checks.single().status)
+        val cooked = cook(checks)
+        assertEquals(listOf(rice.copy(quantity = Packaged(BigDecimal("1.5"), Package.Bag, twoPounds))), cooked.updated)
+        assertTrue(cooked.approximate.isEmpty())
+    }
+
+    @Test
+    fun `1 tbsp salt against 1 tub with no contents is can't compare, not to buy, and left alone by cooking`() {
+        val salt = item(22, "Test salt", "1", AmountUnit.Packages(Package.Tub))
+        val checks = checkPlan(uses(salt, "1", AmountUnit.Measured(MeasureUnit.Tablespoon)), listOf(salt), today)
+        assertEquals(IngredientStatus.CantCompare(salt), checks.single().status)
+        assertFalse(checks.single().toBuy)
+        val cooked = cook(checks)
+        assertTrue(cooked.updated.isEmpty() && cooked.usedUp.isEmpty())
+    }
+
+    @Test
+    fun `an amount in another unit is short when it converts to more than the item has`() {
+        val milk = item(23, "Test milk", "1", AmountUnit.Measured(MeasureUnit.Cup))
+        val check = checkPlan(uses(milk, "500", AmountUnit.Measured(MeasureUnit.Milliliter)), listOf(milk), today).single()
+        assertEquals(IngredientStatus.Short(milk), check.status)
+        assertTrue(check.toBuy)
+    }
+
+    @Test
+    fun `an item's own density wins over the table`() {
+        // 2 cup at 2 g/ml is about 2.09 lb, more than the 1 lb there; at the table's 0.51 it would be enough.
+        val flour = item(24, "Test flour", "1", AmountUnit.Measured(MeasureUnit.Pound)).copy(density = Density(BigDecimal("2")))
+        val check = checkPlan(uses(flour, "2", AmountUnit.Measured(MeasureUnit.Cup)), listOf(flour), today).single()
+        assertEquals(IngredientStatus.Short(flour), check.status)
     }
 
     @Test

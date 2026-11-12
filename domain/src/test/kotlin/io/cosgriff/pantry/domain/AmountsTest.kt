@@ -252,4 +252,17 @@ class AmountsTest {
         assertEquals(AmountUnit.Measured(Cup), cups.countedIn)
         assertEquals(Measure(BigDecimal("3"), Cup), cups.withNumber(BigDecimal("3")))
     }
+
+    @Test
+    fun `covers compares in the holding amount's unit, and says when it can't`() {
+        val flour = Density(BigDecimal("0.51"))
+        assertEquals(true, m("5", Pound).covers(m("2", Cup), flour))
+        assertEquals(false, m("0.5", Pound).covers(m("2", Cup), flour))
+        assertNull(m("5", Pound).covers(m("2", Cup)))
+        assertEquals(true, Packaged(BigDecimal("2"), Package.Bag, m("2", Pound)).covers(m("4", Pound)))
+        assertEquals(false, Packaged(BigDecimal("2"), Package.Bag, m("2", Pound)).covers(m("65", Ounce)))
+        assertEquals(false, Packaged(BigDecimal.ONE, Package.Bag).covers(Packaged(BigDecimal("2"), Package.Bag)))
+        assertNull(Packaged(BigDecimal.ONE, Package.Tub).covers(m("1", Tablespoon), Density(BigDecimal("1.22"))))
+        assertNull(m("6", Each).covers(m("1", Cup), flour))
+    }
 }

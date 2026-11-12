@@ -81,8 +81,14 @@ sealed interface IngredientStatus {
 
     data class Expired(val item: PantryItem, val daysAgo: Long) : IngredientStatus
 
-    /** In the pantry, but less than the plan needs (same unit). */
+    /** In the pantry, but less than the plan needs, compared in the item's unit. */
     data class Short(val item: PantryItem) : IngredientStatus
+
+    /**
+     * In the pantry, but the plan's amount doesn't convert to the item's: "1 tbsp" against "1 tub" with no
+     * contents (docs/adr/0002, #55). Neither a match nor a shortage; cooking leaves the item alone.
+     */
+    data class CantCompare(val item: PantryItem) : IngredientStatus
 
     data class Have(val item: PantryItem) : IngredientStatus
 }
@@ -94,8 +100,12 @@ data class IngredientCheck(val ingredient: Ingredient, val needed: BigDecimal?, 
             is IngredientStatus.Have -> status.item
             is IngredientStatus.Short -> status.item
             is IngredientStatus.Expired -> status.item
+            is IngredientStatus.CantCompare -> status.item
             IngredientStatus.Missing, IngredientStatus.NotTracked -> null
         }
+
+    /** [needed] in the ingredient's unit, or `null` for "some". */
+    val neededAmount: Amount? get() = needed?.let { amount -> ingredient.unit?.of(amount) }
 
     /** Has to be bought: missing, or short of what the plan needs. */
     val toBuy: Boolean get() = status == IngredientStatus.Missing || status is IngredientStatus.Short
@@ -114,7 +124,10 @@ fun pantryMatch(ingredient: Ingredient, items: List<PantryItem>, today: LocalDat
     return candidates.sortedWith(compareBy<PantryItem> { it.expires?.isBefore(today) == true }.then(PantryItem.BySoonestExpiry)).firstOrNull()
 }
 
-/** [plan]'s ingredients checked against [items] on [today], in the meal's order. */
+/**
+ * [plan]'s ingredients checked against [items] on [today], in the meal's order. An amount is compared after
+ * converting it to the item's unit (#55); one that doesn't convert is [IngredientStatus.CantCompare].
+ */
 fun checkPlan(plan: MealPlan, items: List<PantryItem>, today: LocalDate): List<IngredientCheck> =
     plan.meal.ingredients.map { ingredient ->
         val needed = plan.needed(ingredient)
@@ -123,36 +136,58 @@ fun checkPlan(plan: MealPlan, items: List<PantryItem>, today: LocalDate): List<I
             !ingredient.fromPantry -> IngredientStatus.NotTracked
             item == null || item.quantity.number.signum() == 0 -> IngredientStatus.Missing
             item.expires?.isBefore(today) == true -> IngredientStatus.Expired(item, ChronoUnit.DAYS.between(item.expires, today))
-            needed != null && item.quantity.countedIn == ingredient.unit && item.quantity.number < needed -> IngredientStatus.Short(item)
-            else -> IngredientStatus.Have(item)
+            else -> {
+                val amount = needed?.let { ingredient.unit?.of(it) }
+                when (amount?.let { item.quantity.covers(it, densityFor(ingredient, item)) }) {
+                    null -> if (amount == null) IngredientStatus.Have(item) else IngredientStatus.CantCompare(item)
+                    false -> IngredientStatus.Short(item)
+                    true -> IngredientStatus.Have(item)
+                }
+            }
         }
         IngredientCheck(ingredient, needed, status)
     }
 
-/** What cooking a plan does to the pantry: items with less left, and items used up (to remove). */
-data class Cooked(val updated: List<PantryItem>, val usedUp: List<PantryItem>)
+/** The density that converts between [ingredient]'s volume and [item]'s mass: the item's own, else the table's. */
+private fun densityFor(ingredient: Ingredient, item: PantryItem): Density? =
+    densityOf(item.name, item.density) ?: densityOf(ingredient.name)
 
 /**
- * Takes each ingredient's needed amount out of its pantry item, when the units match. Ingredients with no
- * amount ("some"), typed-in ones and missing ones are left alone. Two ingredients from one item add up; an item
- * left with nothing is used up.
+ * What cooking a plan does to the pantry: items with less left, and items used up (to remove). [approximate]
+ * holds the ids of updated items whose amount left went through a density, so is an estimate (≈, #55).
+ */
+data class Cooked(val updated: List<PantryItem>, val usedUp: List<PantryItem>, val approximate: Set<Long> = emptySet())
+
+/**
+ * Takes each ingredient's needed amount out of its pantry item, in the item's own unit (#55): a packaged item
+ * loses contents, leaving fractional packages. Ingredients with no amount ("some"), typed-in ones, missing
+ * ones and ones whose amount doesn't convert are left alone. Two ingredients from one item add up; an item left
+ * with nothing is used up. What's left is kept to 3 decimals.
  */
 fun cook(checks: List<IngredientCheck>): Cooked {
-    val taken = linkedMapOf<Long, Pair<PantryItem, BigDecimal>>()
+    val left = linkedMapOf<Long, Pair<PantryItem, Taken.Left>>()
     checks.forEach { check ->
         val item = check.item ?: return@forEach
-        val needed = check.needed ?: return@forEach
-        if (item.quantity.countedIn != check.ingredient.unit) return@forEach
-        val before = taken[item.id]?.second ?: BigDecimal.ZERO
-        taken[item.id] = item to before + needed
+        val used = check.neededAmount ?: return@forEach
+        val before = left[item.id]?.second ?: Taken.Left(item.quantity, approximate = false)
+        when (val taken = before.amount.take(used, densityFor(check.ingredient, item))) {
+            Taken.NotComparable -> return@forEach
+            is Taken.Left -> left[item.id] = item to Taken.Left(taken.amount, before.approximate || taken.approximate)
+        }
     }
     val updated = mutableListOf<PantryItem>()
     val usedUp = mutableListOf<PantryItem>()
-    taken.values.forEach { (item, amount) ->
-        val left = item.quantity.number - amount
-        if (left.signum() <= 0) usedUp += item else updated += item.copy(quantity = item.quantity.withNumber(left))
+    val approximate = mutableSetOf<Long>()
+    left.values.forEach { (item, taken) ->
+        val number = taken.amount.number.let { if (it.scale() > 3) it.setScale(3, RoundingMode.HALF_UP) else it }
+        if (number.signum() <= 0) {
+            usedUp += item
+        } else {
+            updated += item.copy(quantity = taken.amount.withNumber(number))
+            if (taken.approximate) approximate += item.id
+        }
     }
-    return Cooked(updated, usedUp)
+    return Cooked(updated, usedUp, approximate)
 }
 
 /** The seven days of the week [day] falls in, starting on [firstDay] (the user's locale decides it). */

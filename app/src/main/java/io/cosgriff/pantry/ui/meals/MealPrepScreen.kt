@@ -243,8 +243,10 @@ private fun MealCard(meal: WeekMeal, selected: LocalDate, onClick: () -> Unit) {
     val plan = meal.plan
     val badge = when {
         plan.cooked -> stringResource(R.string.meals_cooked)
-        meal.toBuy == 0 -> stringResource(R.string.meals_all_in_pantry)
-        else -> pluralStringResource(R.plurals.meals_to_buy, meal.toBuy, meal.toBuy)
+        meal.toBuy > 0 -> pluralStringResource(R.plurals.meals_to_buy, meal.toBuy, meal.toBuy)
+        // Not "All in pantry" while some amounts can't be checked (#55).
+        meal.cantCompare > 0 -> pluralStringResource(R.plurals.meals_cant_compare, meal.cantCompare, meal.cantCompare)
+        else -> stringResource(R.string.meals_all_in_pantry)
     }
     val label = stringResource(R.string.meals_card_label, plan.meal.name, fullDay(plan.day), badge)
     val names = plan.meal.ingredients.joinToString { it.name }
@@ -309,6 +311,8 @@ internal val previewEggBites = MealPlan(
             Ingredient.of(previewEggs).copy(amount = BigDecimal("12")),
             Ingredient.of(previewSpinach),
             Ingredient("Sample cottage cheese", fromPantry = true, itemId = 9, unit = AmountUnit.Packages(Package.Tub), amount = BigDecimal.ONE),
+            // A cup of yogurt from tubs of unknown size: can't compare (#55).
+            Ingredient.of(previewYogurt).copy(unit = AmountUnit.Measured(MeasureUnit.Cup), amount = BigDecimal.ONE),
             Ingredient.typed("Sample salt and pepper"),
         ),
         id = 1,

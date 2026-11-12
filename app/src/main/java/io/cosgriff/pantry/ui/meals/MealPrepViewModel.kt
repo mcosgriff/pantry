@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.domain.IngredientCheck
+import io.cosgriff.pantry.domain.IngredientStatus
 import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.UseSoonGroup
@@ -24,8 +26,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-/** A meal planned this week, with how many of its ingredients are still to buy. */
-data class WeekMeal(val plan: MealPlan, val toBuy: Int)
+/** A meal planned this week, with how many of its ingredients are still to buy, and how many can't be compared (#55). */
+data class WeekMeal(val plan: MealPlan, val toBuy: Int, val cantCompare: Int = 0) {
+    companion object {
+        fun of(plan: MealPlan, checks: List<IngredientCheck>) =
+            WeekMeal(plan, checks.count { it.toBuy }, checks.count { it.status is IngredientStatus.CantCompare })
+    }
+}
 
 data class MealPrepState(
     val today: LocalDate,
@@ -63,7 +70,7 @@ class MealPrepViewModel @Inject constructor(
             planned = inWeek.map { it.day }.toSet(),
             soon = soonGroups[UseSoonGroup.Expired].orEmpty() + soonGroups[UseSoonGroup.ThisWeek].orEmpty(),
             soonCount = soonGroups.values.sumOf { it.size },
-            meals = inWeek.map { plan -> WeekMeal(plan, checkPlan(plan, items, now).count { it.toBuy }) },
+            meals = inWeek.map { plan -> WeekMeal.of(plan, checkPlan(plan, items, now)) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MealPrepState(today = today, week = weekOf(today, firstDay)))
 

@@ -471,6 +471,11 @@
         <item quantity="one">%1$d to buy</item>
         <item quantity="other">%1$d to buy</item>
     </plurals>
+    <!-- Nothing to buy, but some amounts can't be compared with the pantry's (#55): "1 can’t compare" -->
+    <plurals name="meals_cant_compare">
+        <item quantity="one">%1$d can’t compare</item>
+        <item quantity="other">%1$d can’t compare</item>
+    </plurals>
     <string name="meals_cooked">Cooked</string>
     <!-- A planned meal's line under its name: its ingredients, then servings. "Eggs, spinach, cheese · 12 servings" -->
     <plurals name="meals_uses">
@@ -516,6 +521,8 @@
     <string name="meal_have">%1$s in %2$s</string>
     <string name="meal_have_uses">%1$s in %2$s · uses %3$s</string>
     <string name="meal_short">%1$s in %2$s · needs %3$s</string>
+    <!-- The meal's amount doesn't convert to the item's unit, so it can't be checked: "1 tub in Dry · can’t compare with 1 tbsp" (#55) -->
+    <string name="meal_cant_compare">%1$s in %2$s · can’t compare with %3$s</string>
     <string name="meal_not_in_pantry">Not in pantry</string>
     <string name="meal_not_tracked">Not tracked</string>
     <!-- An ingredient with no amount set: the meal uses some of it. -->
