@@ -72,6 +72,7 @@ data class MealPrepActions(
     val onPlan: (LocalDate) -> Unit = {},
     val onMeal: (MealPlan) -> Unit = {},
     val onSeeAllSoon: () -> Unit = {},
+    val onImport: () -> Unit = {},
     val onNavigate: (TopLevel) -> Unit = {},
 )
 
@@ -80,11 +81,12 @@ fun MealPrepScreen(
     onPlan: (LocalDate) -> Unit,
     onMeal: (MealPlan) -> Unit,
     onSeeAllSoon: () -> Unit,
+    onImport: () -> Unit,
     onNavigate: (TopLevel) -> Unit,
     viewModel: MealPrepViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    MealPrepContent(state, MealPrepActions(viewModel::onSelectDay, viewModel::onWeek, onPlan, onMeal, onSeeAllSoon, onNavigate))
+    MealPrepContent(state, MealPrepActions(viewModel::onSelectDay, viewModel::onWeek, onPlan, onMeal, onSeeAllSoon, onImport, onNavigate))
 }
 
 /** `design/source/MealPrep.dc.html` (#19): the week's days, what to use soon, and the week's meals. */
@@ -155,6 +157,8 @@ private fun WeekHeader(state: MealPrepState, actions: MealPrepActions) {
                 )
                 Text(stringResource(R.string.meals_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             }
+            // Not on the board: a recipe from a link (#43).
+            IconButton(onClick = actions.onImport) { Icon(painterResource(R.drawable.ic_import), stringResource(R.string.import_open)) }
             // The board shows one week; these reach the next one to plan ahead, and back.
             IconButton(onClick = { actions.onWeek(-1) }) { Icon(painterResource(R.drawable.ic_back), stringResource(R.string.meals_previous_week)) }
             IconButton(onClick = { actions.onWeek(1) }) {

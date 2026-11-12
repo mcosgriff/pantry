@@ -30,7 +30,12 @@ once; a shopping trip checks things off and ends by opening the scanner to resto
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
 track), and each meal shows what it has, what has expired and what is missing. "Add missing to shopping list"
 and "Cooked it", which takes the amounts out of the pantry, finish the loop; a cooked meal is kept to plan
-again in one tap. A new install shows an empty pantry. Every
+again in one tap. A recipe can also come from a link: share a recipe page to Pantry from the browser, or paste
+its link under Meal prep's import button. Pantry reads the page's recipe data (name, servings, ingredients),
+splits each ingredient line into amount, unit and name, and suggests the pantry item it is; you check each
+line, and what you decide (that "cloves" counts each, that "caster sugar" is your Sugar, that salt isn't
+tracked) is remembered for the next recipe. A page without recipe data says so. A new install shows an empty
+pantry. Every
 screen is screenshot-tested in light and dark and checked for accessibility (touch targets, contrast,
 labels) on each build. The plan, in order:
 
@@ -47,6 +52,7 @@ labels) on each build. The plan, in order:
 | First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
 | Removing items with a reason | [#18](https://github.com/mcosgriff/pantry/issues/18) |
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
+| Importing a recipe from a link | [#43](https://github.com/mcosgriff/pantry/issues/43) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |
 | Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
@@ -60,13 +66,20 @@ barcodes from the picture on the phone and saves no pictures. It asks to send no
 later) only when you turn on an expiration alert. The daily digest is an alarm on the phone; to set it again
 after a restart, the app also has Android's "run at startup" permission, which Android grants without asking.
 
-The app makes one kind of network call, and only after you say yes: looking up a scanned barcode the pantry
-doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by
+The app makes two kinds of network call, each only when you ask for it. The first, only after you say yes, is
+looking up a scanned barcode the pantry doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by
 volunteers ([#9](https://github.com/mcosgriff/pantry/issues/9), [`docs/adr/0001`](docs/adr/0001-open-food-facts-lookup.md)).
 The first time a barcode isn't known, the scan sheet asks; Pantry settings turn it on or off. It sends only
 the barcode (and, as any request does, your IP address and the app's name and version), never store-packed
-meat and deli labels, and keeps only the product's name, brand and size. That needs Android's internet
-permission, which Android grants without asking.
+meat and deli labels, and keeps only the product's name, brand and size.
+
+The second is importing a recipe ([#43](https://github.com/mcosgriff/pantry/issues/43),
+[`docs/adr/0003`](docs/adr/0003-recipe-import-from-a-link.md)): when you tap Read recipe, Pantry fetches the one
+`https` page you shared or pasted, once, and reads only its recipe data. It sends nothing but the link (and your
+IP address and the app's name and version), downloads no images, and keeps only the meal you save; the site
+sees that page being read, as it would from your browser.
+
+Both need Android's internet permission, which Android grants without asking.
 
 ## Install
 

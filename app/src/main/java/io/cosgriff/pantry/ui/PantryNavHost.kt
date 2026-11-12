@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import io.cosgriff.pantry.ui.components.TopLevel
 import io.cosgriff.pantry.ui.item.ItemDetailsScreen
+import io.cosgriff.pantry.ui.meals.ImportRecipeScreen
 import io.cosgriff.pantry.ui.meals.MealDetailsScreen
 import io.cosgriff.pantry.ui.meals.MealPrepScreen
 import io.cosgriff.pantry.ui.meals.PlanMealScreen
@@ -44,14 +45,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class MealDetailsRoute(val planId: Long) : NavKey
 
+/** Imports a recipe from [link]: shared from the browser, or empty to paste one in (#43). */
+@Serializable data class ImportRecipeRoute(val link: String = "") : NavKey
+
 /**
  * The app's screens. Each entry gets its own ViewModels, cleared when it leaves the back stack. The bottom bar's
- * places each start a fresh back stack. [openUseSoon] starts on Use soon, as the daily digest's notification does
- * (#27), with the pantry list behind it.
+ * places each start a fresh back stack. A link shared to Pantry ([sharedLink]) opens Meal prep's import.
+ * [openUseSoon] starts on Use soon, as the daily digest's notification does (#27), with the pantry list behind it.
  */
 @Composable
-fun PantryNavHost(openUseSoon: Boolean = false) {
-    val backStack = if (openUseSoon) rememberNavBackStack(PantryListRoute, UseSoonRoute) else rememberNavBackStack(PantryListRoute)
+fun PantryNavHost(sharedLink: String? = null, openUseSoon: Boolean = false) {
+    val backStack = when {
+        sharedLink != null -> rememberNavBackStack(MealPrepRoute, ImportRecipeRoute(sharedLink))
+        openUseSoon -> rememberNavBackStack(PantryListRoute, UseSoonRoute)
+        else -> rememberNavBackStack(PantryListRoute)
+    }
     val back: () -> Unit = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
     val navigate: (TopLevel) -> Unit = { place ->
         val root = when (place) {
@@ -109,8 +117,12 @@ fun PantryNavHost(openUseSoon: Boolean = false) {
                     onPlan = { backStack.add(PlanMealRoute(it.toEpochDay())) },
                     onMeal = { backStack.add(MealDetailsRoute(it.id)) },
                     onSeeAllSoon = { backStack.add(UseSoonRoute) },
+                    onImport = { backStack.add(ImportRecipeRoute()) },
                     onNavigate = navigate,
                 )
+            }
+            entry<ImportRecipeRoute> { route ->
+                ImportRecipeScreen(link = route.link, onBack = back, onDone = back)
             }
             entry<PlanMealRoute> { route ->
                 PlanMealScreen(day = LocalDate.ofEpochDay(route.day), mealId = route.mealId, onBack = back, onDone = back)
