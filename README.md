@@ -28,8 +28,11 @@ send one notification a day at the time you pick, counting what expires soon and
 low-stock alert), what this week's meals still need, what was used up, and what you add by hand, each name
 once; a shopping trip checks things off and ends by opening the scanner to restock. The Meal prep tab plans the week's meals
 from what's in the pantry, use-soon first: pick the ingredients from the pantry (or type in ones it doesn't
-track), and each meal shows what it has, what has expired and what is missing. "Add missing to shopping list"
-and "Cooked it", which takes the amounts out of the pantry, finish the loop; a cooked meal is kept to plan
+track), and each meal shows what it has, what has expired and what is missing. Amounts compare across units
+("2 cups" of flour against a 5 lb bag, through a typical density for the ingredient or the item's own); one
+that can't be converted (a tablespoon from a tub of unknown size) is shown as "can't compare", not as a match
+or a shortage. "Add missing to shopping list" and "Cooked it", which takes the amounts out of the pantry in
+each item's own unit (1 lb from 2 bags of 2 lb leaves 1.5 bags), finish the loop; a cooked meal is kept to plan
 again in one tap. A recipe can also come from a link: share a recipe page to Pantry from the browser, or paste
 its link under Meal prep's import button. Pantry reads the page's recipe data (name, servings, ingredients),
 splits each ingredient line into amount, unit and name, and suggests the pantry item it is; you check each
@@ -52,6 +55,7 @@ labels) on each build. The plan, in order:
 | First run, Use soon, search, sort and filter | [#15](https://github.com/mcosgriff/pantry/issues/15), [#16](https://github.com/mcosgriff/pantry/issues/16), [#17](https://github.com/mcosgriff/pantry/issues/17) |
 | Removing items with a reason | [#18](https://github.com/mcosgriff/pantry/issues/18) |
 | Meal prep | [#19](https://github.com/mcosgriff/pantry/issues/19) |
+| Meal prep compares and subtracts amounts across units | [#55](https://github.com/mcosgriff/pantry/issues/55) |
 | Importing a recipe from a link | [#43](https://github.com/mcosgriff/pantry/issues/43) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |

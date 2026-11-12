@@ -227,6 +227,8 @@ private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
         is IngredientStatus.Have -> Triple(colors.accent, colors.inkMuted, false)
         is IngredientStatus.Expired -> Triple(colors.danger, colors.danger, true)
         is IngredientStatus.Short, IngredientStatus.Missing -> Triple(colors.borderStrong, colors.warning, true)
+        // Neither a match nor a shortage (#55): a plain dot, and the status line says why.
+        is IngredientStatus.CantCompare -> Triple(colors.border, colors.inkMuted, false)
         IngredientStatus.NotTracked -> Triple(Color.Transparent, colors.inkMuted, false)
     }
     val needed = check.needed?.let { amount -> check.ingredient.unit?.let { quantityText(it.of(amount)) } }
@@ -254,7 +256,7 @@ private fun CheckRow(check: IngredientCheck, onClick: (() -> Unit)?) {
     }
 }
 
-/** "18 ea in Fridge · uses 12 ea", "Expired yesterday", "Not in pantry", "Not tracked". */
+/** "18 ea in Fridge · uses 12 ea", "1 tub in Dry · can’t compare with 1 tbsp", "Expired yesterday", "Not in pantry", "Not tracked". */
 @Composable
 private fun statusText(check: IngredientCheck, needed: String?): String = when (val status = check.status) {
     is IngredientStatus.Have -> {
@@ -263,6 +265,8 @@ private fun statusText(check: IngredientCheck, needed: String?): String = when (
         if (needed == null) stringResource(R.string.meal_have, have, where) else stringResource(R.string.meal_have_uses, have, where, needed)
     }
     is IngredientStatus.Short -> stringResource(R.string.meal_short, quantityText(status.item.quantity), locationName(status.item.location), needed.orEmpty())
+    is IngredientStatus.CantCompare ->
+        stringResource(R.string.meal_cant_compare, quantityText(status.item.quantity), locationName(status.item.location), needed.orEmpty())
     is IngredientStatus.Expired -> pluralStringResource(R.plurals.expiry_days_ago, status.daysAgo.toInt(), status.daysAgo)
     IngredientStatus.Missing -> stringResource(R.string.meal_not_in_pantry)
     IngredientStatus.NotTracked -> stringResource(R.string.meal_not_tracked)
@@ -346,7 +350,7 @@ internal val previewMealDetails = MealDetailsState(
     today = previewToday,
     loading = false,
     plan = previewEggBites,
-    checks = checkPlan(previewEggBites, listOf(previewEggs, previewSpinach), previewToday),
+    checks = checkPlan(previewEggBites, listOf(previewEggs, previewSpinach, previewYogurt), previewToday),
 )
 
 @Preview

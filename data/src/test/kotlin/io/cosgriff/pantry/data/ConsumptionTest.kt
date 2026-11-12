@@ -12,6 +12,7 @@ import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.Measure
 import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.Package
+import io.cosgriff.pantry.domain.Packaged
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.QuickAction
 import io.cosgriff.pantry.domain.RemoveReason
@@ -133,6 +134,33 @@ class ConsumptionTest {
         consumption.cooked(meals.plans().first().single(), today)
         assertEquals(listOf("Test eggs" to "6"), pantry.items().first().map { it.name to it.quantity.number.toPlainString() })
         assertEquals(listOf("Test mozzarella" to ShoppingReason.UsedUp), list())
+        assertTrue(meals.plans().first().single().cooked)
+    }
+
+    @Test
+    fun `cooking subtracts across units in the item's own unit and stores it`() = runBlocking {
+        val flour = stock("Test flour", "5", AmountUnit.Measured(MeasureUnit.Pound), location = Location.Dry)
+        val rice = stock("Test rice", "2", AmountUnit.Packages(Package.Bag, Measure(BigDecimal("2"), MeasureUnit.Pound)), location = Location.Dry)
+        val salt = stock("Test salt", "1", AmountUnit.Packages(Package.Tub), location = Location.Dry)
+        val id = meals.save(
+            Meal(
+                "Test rice bake",
+                4,
+                listOf(
+                    Ingredient.of(flour).copy(unit = AmountUnit.Measured(MeasureUnit.Cup), amount = BigDecimal("2")),
+                    Ingredient.of(rice).copy(unit = AmountUnit.Measured(MeasureUnit.Pound), amount = BigDecimal("1")),
+                    Ingredient.of(salt).copy(unit = AmountUnit.Measured(MeasureUnit.Tablespoon), amount = BigDecimal("1")),
+                ),
+            ),
+        )
+        meals.plan(id, today, 4)
+        consumption.cooked(meals.plans().first().single(), today)
+
+        assertEquals(Measure(BigDecimal("4.468"), MeasureUnit.Pound), pantry.item(flour.id)?.quantity)
+        assertEquals(Packaged(BigDecimal("1.5"), Package.Bag, Measure(BigDecimal("2"), MeasureUnit.Pound)), pantry.item(rice.id)?.quantity)
+        // "1 tbsp" can't come out of a tub of unknown size: left as it was, not used up.
+        assertEquals(salt, pantry.item(salt.id))
+        assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
         assertTrue(meals.plans().first().single().cooked)
     }
 
