@@ -94,6 +94,7 @@ import io.cosgriff.pantry.data.parseWeight
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.ProductInfo
+import io.cosgriff.pantry.domain.NewProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.ui.components.DateDialog
 import io.cosgriff.pantry.ui.components.FieldLabel
@@ -112,10 +113,16 @@ import kotlinx.coroutines.awaitCancellation
 /**
  * The Scan screen (#10): the camera permission page until the camera may be used, then the camera with the scan
  * frame, and the sheet for each product read. [onByHand] opens Item details for a new item with that name and
- * barcode (empty when there is none).
+ * barcode (empty when there is none); [onShare] replaces closing when the product just added could be shared with
+ * Open Food Facts.
  */
 @Composable
-fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) -> Unit, viewModel: ScanViewModel = hiltViewModel()) {
+fun ScanScreen(
+    onClose: () -> Unit,
+    onByHand: (name: String, barcode: String) -> Unit,
+    onShare: (NewProduct) -> Unit = { onClose() },
+    viewModel: ScanViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     var granted by remember { mutableStateOf(context.hasCamera()) }
     // Set once Android's prompt was answered with no: asking again shows nothing, so Settings is offered instead.
@@ -146,7 +153,8 @@ fun ScanScreen(onClose: () -> Unit, onByHand: (name: String, barcode: String) ->
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(state.finished) { if (state.finished) onClose() }
+    // A product Open Food Facts doesn't have goes on to the offer to share it (#42) instead of closing.
+    LaunchedEffect(state.finished) { if (state.finished) state.share?.let(onShare) ?: onClose() }
     // Back from Review haul returns to the scanner; back from the scanner with a haul shows it for review.
     BackHandler(enabled = state.reviewing || state.haul.isNotEmpty()) {
         if (state.reviewing) viewModel.onScanMore() else viewModel.onReview()

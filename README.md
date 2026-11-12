@@ -20,7 +20,8 @@ scanned by barcode (UPC-A and EAN-13, read on the phone with zxing-cpp; batch sc
 and a barcode you have named once fills in its name, location and unit on the next scan; store-packed meat and deli labels show their price and are named and weighed instead) or added by hand, and edited on the item details screen: location, quantity and unit, expiry date (suggested
 from the location's shelf life, with quick picks), opened, purchase date, a low-stock alert and notes. Removing an item asks what happened to it: used up puts it on the shopping list,
 thrown out or added by mistake only takes it out. A barcode
-the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name. Pantry
+the pantry doesn't know can be looked up in Open Food Facts, if you say yes, to fill in its name; one it
+doesn't have either can be added there, under your own Open Food Facts account, once you've named it. Pantry
 settings add storage locations of your own (with a default shelf life), set how many days before expiry an
 item counts as "use soon", and where new items start. Expiration alerts, each off until you turn it on,
 send one notification a day at the time you pick, counting what expires soon and what has already expired
@@ -55,18 +56,18 @@ labels) on each build. The plan, in order:
 | Importing a recipe from a link | [#43](https://github.com/mcosgriff/pantry/issues/43) |
 | Shopping list and trips | [#20](https://github.com/mcosgriff/pantry/issues/20) |
 | Expiration alerts and a daily digest | [#27](https://github.com/mcosgriff/pantry/issues/27) |
-| Product lookup by barcode, and adding to Open Food Facts (to be decided) | [#9](https://github.com/mcosgriff/pantry/issues/9) |
+| Product lookup by barcode, and adding to Open Food Facts | [#9](https://github.com/mcosgriff/pantry/issues/9), [#42](https://github.com/mcosgriff/pantry/issues/42) |
 
 The screens are designed already: see [`design/`](design/README.md).
 
 ## Privacy
 
-No account, no server, no trackers, no ads. It asks for the camera only when you open Scan; it reads
+No Pantry account, no server, no trackers, no ads. It asks for the camera only when you open Scan; it reads
 barcodes from the picture on the phone and saves no pictures. It asks to send notifications (Android 13 and
 later) only when you turn on an expiration alert. The daily digest is an alarm on the phone; to set it again
 after a restart, the app also has Android's "run at startup" permission, which Android grants without asking.
 
-The app makes two kinds of network call, each only when you ask for it. The first, only after you say yes, is
+The app makes three kinds of network call, each only when you ask for it. The first, only after you say yes, is
 looking up a scanned barcode the pantry doesn't know in [Open Food Facts](https://world.openfoodfacts.org), a free database of food products run by
 volunteers ([#9](https://github.com/mcosgriff/pantry/issues/9), [`docs/adr/0001`](docs/adr/0001-open-food-facts-lookup.md)).
 The first time a barcode isn't known, the scan sheet asks; Pantry settings turn it on or off. It sends only
@@ -79,7 +80,16 @@ The second is importing a recipe ([#43](https://github.com/mcosgriff/pantry/issu
 IP address and the app's name and version), downloads no images, and keeps only the meal you save; the site
 sees that page being read, as it would from your browser.
 
-Both need Android's internet permission, which Android grants without asking.
+The third: when lookup finds nothing and you name the product, Pantry can offer to add it to Open Food Facts
+([#42](https://github.com/mcosgriff/pantry/issues/42), [`docs/adr/0004`](docs/adr/0004-contributing-to-open-food-facts.md)).
+Nothing is sent until you sign in with your own Open Food Facts account and tap Share. It sends the barcode,
+the name, and the brand and size only if you type them; Open Food Facts shows your user name as the one who
+added it. Never your pantry, quantities, dates, photos or where you are. Your password goes to Open Food
+Facts once, to sign in, and is not kept; the sign-in session stays on the phone, encrypted with a key in
+Android's Keystore, and is sent only to Open Food Facts. Shared data is public (ODbL, product data DbCL).
+Pantry settings choose Ask me, Always or Never, and sign out.
+
+All three need Android's internet permission, which Android grants without asking.
 
 ## Install
 

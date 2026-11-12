@@ -56,6 +56,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
@@ -92,6 +93,8 @@ data class SettingsActions(
     val onBatchScan: (Boolean) -> Unit = {},
     val onProductLookup: (Boolean) -> Unit = {},
     val onDefaultLocation: (DefaultLocation) -> Unit = {},
+    val onContributing: (ContributeChoice) -> Unit = {},
+    val onSignOut: () -> Unit = {},
 )
 
 @Composable
@@ -129,12 +132,15 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             onBatchScan = { viewModel.onBatchScan(it) },
             onProductLookup = { viewModel.onProductLookup(it) },
             onDefaultLocation = { viewModel.onDefaultLocation(it) },
+            onContributing = { viewModel.onContributing(it) },
+            onSignOut = { viewModel.onSignOut() },
         ),
     )
 }
 
 /**
- * `design/source/Settings.dc.html` (#8), with product lookup (#9; the board `OffSettings.dc.html`'s first switch).
+ * `design/source/Settings.dc.html` (#8), with product lookup (#9; the board `OffSettings.dc.html`'s first switch) and
+ * contributing to Open Food Facts (#42; that board's Contributing section).
  * The board's one Notifications switch is two here, expiring soon and already expired (#27). Units are not here
  * yet: they wait on something the app doesn't do yet.
  */
@@ -144,6 +150,7 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
     var editing by rememberSaveable { mutableStateOf<Long?>(null) } // a custom location's id, or NEW
     var choosingWarning by rememberSaveable { mutableStateOf(false) }
     var choosingDefault by rememberSaveable { mutableStateOf(false) }
+    var signingOut by rememberSaveable { mutableStateOf(false) }
     var choosingTime by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -238,6 +245,26 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
                     modifier = Modifier.padding(horizontal = PantryDimens.space1),
                 )
             }
+            Column(verticalArrangement = Arrangement.spacedBy(PantryDimens.space2)) {
+                Section(stringResource(R.string.settings_contributing)) {
+                    ContributingChoices(state.settings.contributing, actions.onContributing)
+                    HorizontalDivider(color = colors.divider)
+                    val account = state.offAccount
+                    if (account != null) {
+                        ValueRow(stringResource(R.string.settings_contributing_account), account, onClick = { signingOut = true })
+                    } else {
+                        InfoRow(stringResource(R.string.settings_contributing_account), stringResource(R.string.settings_contributing_signed_out))
+                    }
+                    HorizontalDivider(color = colors.divider)
+                    InfoRow(stringResource(R.string.settings_contributing_added), "${state.offShared}")
+                }
+                Text(
+                    stringResource(R.string.settings_contributing_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.inkMuted,
+                    modifier = Modifier.padding(horizontal = PantryDimens.space1),
+                )
+            }
         }
     }
 
@@ -281,6 +308,17 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
             onDismiss = { choosingDefault = false },
         )
     }
+    if (signingOut) {
+        AlertDialog(
+            onDismissRequest = { signingOut = false },
+            title = { Text(stringResource(R.string.settings_sign_out_title)) },
+            text = { Text(stringResource(R.string.settings_sign_out_body)) },
+            confirmButton = {
+                TextButton(onClick = { signingOut = false; actions.onSignOut() }) { Text(stringResource(R.string.settings_sign_out)) }
+            },
+            dismissButton = { TextButton(onClick = { signingOut = false }) { Text(stringResource(R.string.settings_cancel)) } },
+        )
+    }
     state.locationInUse?.let { location ->
         AlertDialog(
             onDismissRequest = actions.onDismissInUse,
@@ -291,6 +329,56 @@ fun SettingsContent(state: SettingsState, actions: SettingsActions, modifier: Mo
 }
 
 private const val NEW = -1L
+
+/** "When a product isn't found": Ask me, Always share or Never share, as on `OffSettings.dc.html`. */
+@Composable
+private fun ContributingChoices(selected: ContributeChoice, onChoose: (ContributeChoice) -> Unit) {
+    Column(
+        Modifier
+            .selectableGroup()
+            .padding(start = PantryDimens.spaceInset, end = PantryDimens.spaceInset, top = PantryDimens.spaceIcon, bottom = PantryDimens.space1),
+    ) {
+        Text(stringResource(R.string.settings_contributing_when), style = MaterialTheme.typography.bodyLarge)
+        ContributeChoice.entries.forEach { choice ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = PantryDimens.tapMin)
+                    .selectable(selected = choice == selected, role = Role.RadioButton) { onChoose(choice) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(
+                        when (choice) {
+                            ContributeChoice.Ask -> R.string.settings_contributing_ask
+                            ContributeChoice.Always -> R.string.settings_contributing_always
+                            ContributeChoice.Never -> R.string.settings_contributing_never
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PantryTheme.colors.inkMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                RadioButton(selected = choice == selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = PantryTheme.colors.accent))
+            }
+        }
+    }
+}
+
+/** A card row with a label and a value that can't be changed here. */
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = PantryDimens.buttonHeight)
+            .padding(horizontal = PantryDimens.spaceInset),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(value, style = MaterialTheme.typography.bodyLarge, color = PantryTheme.colors.inkMuted)
+    }
+}
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

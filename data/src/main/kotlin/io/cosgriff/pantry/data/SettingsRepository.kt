@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.DeletedLocation
 import io.cosgriff.pantry.domain.Location
@@ -48,6 +49,8 @@ class SettingsRepository @Inject constructor(
                 ?: defaults.unitSystem,
             productLookup = prefs[PRODUCT_LOOKUP]?.let { name -> LookupChoice.entries.firstOrNull { it.name == name } }
                 ?: defaults.productLookup,
+            contributing = prefs[CONTRIBUTING]?.let { name -> ContributeChoice.entries.firstOrNull { it.name == name } }
+                ?: defaults.contributing,
         )
     }
 
@@ -68,6 +71,9 @@ class SettingsRepository @Inject constructor(
 
     /** Product lookup on or off (#9). Once answered, the scan sheet doesn't ask again. */
     suspend fun setProductLookup(on: Boolean) = store.edit { it[PRODUCT_LOOKUP] = (if (on) LookupChoice.On else LookupChoice.Off).name }
+
+    /** Ask me, Always or Never, for sharing a product Open Food Facts doesn't have (#42, `docs/adr/0004`). */
+    suspend fun setContributing(choice: ContributeChoice) = store.edit { it[CONTRIBUTING] = choice.name }
 
     suspend fun setDefaultLocation(location: DefaultLocation) = store.edit {
         when (location) {
@@ -117,6 +123,7 @@ class SettingsRepository @Inject constructor(
         val DEFAULT_LOCATION = stringPreferencesKey("default_location")
         val UNIT_SYSTEM = stringPreferencesKey("unit_system")
         val PRODUCT_LOOKUP = stringPreferencesKey("product_lookup")
+        val CONTRIBUTING = stringPreferencesKey("contributing")
         val LAST_USED_LOCATION = stringPreferencesKey("last_used_location")
         val RECENT_STORE_PACKED = stringPreferencesKey("recent_store_packed")
         const val RECENT_STORE_PACKED_MAX = 6

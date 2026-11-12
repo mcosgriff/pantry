@@ -38,6 +38,12 @@ import io.cosgriff.pantry.ui.scan.previewStorePacked
 import io.cosgriff.pantry.ui.settings.SettingsActions
 import io.cosgriff.pantry.ui.settings.SettingsContent
 import io.cosgriff.pantry.ui.settings.SettingsState
+import io.cosgriff.pantry.ui.share.ShareActions
+import io.cosgriff.pantry.ui.share.ShareProblem
+import io.cosgriff.pantry.ui.share.ShareProductContent
+import io.cosgriff.pantry.ui.share.ShareState
+import io.cosgriff.pantry.ui.share.ShareStep
+import io.cosgriff.pantry.ui.share.previewShareProduct
 import io.cosgriff.pantry.ui.shopping.ShoppingActions
 import io.cosgriff.pantry.ui.shopping.ShoppingContent
 import io.cosgriff.pantry.ui.shopping.ShoppingState
@@ -86,6 +92,8 @@ class ScreensScreenshotTest(private val shade: Shade) {
             SettingsState(
                 settings = PantrySettings(batchScanByDefault = true, notifyExpiringSoon = true),
                 locations = Location.defaults + Location.Custom("Sample garage fridge", Period.ofDays(5), id = 4),
+                offAccount = "sample-user",
+                offShared = 3,
             ),
             SettingsActions(),
         )
@@ -99,6 +107,31 @@ class ScreensScreenshotTest(private val shade: Shade) {
             SettingsActions(),
         )
     }
+
+    @Test
+    fun shareAsk() = compose.shoot("share_ask", shade) { ShareProductContent(ShareState(product = previewShareProduct), ShareActions()) }
+
+    @Test
+    fun shareSignIn() = compose.shoot("share_sign_in", shade) {
+        ShareProductContent(
+            ShareState(
+                step = ShareStep.Details,
+                product = previewShareProduct.copy(size = "12 fl oz"),
+                user = "sample-user",
+                password = "sample",
+                problem = ShareProblem.WrongDetails,
+            ),
+            ShareActions(),
+        )
+    }
+
+    @Test
+    fun shareSignedIn() = compose.shoot("share_signed_in", shade) {
+        ShareProductContent(ShareState(step = ShareStep.Details, product = previewShareProduct, account = "sample-user"), ShareActions())
+    }
+
+    @Test
+    fun shareDone() = compose.shoot("share_done", shade) { ShareProductContent(ShareState(step = ShareStep.Done, product = previewShareProduct), ShareActions()) }
 
     @Test
     fun useSoon() = compose.shoot("use_soon", shade) { UseSoonContent(useSoonState, UseSoonActions()) }

@@ -8,9 +8,11 @@ import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.LookupPermission
 import io.cosgriff.pantry.data.Scanned
 import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupResult
+import io.cosgriff.pantry.domain.NewProduct
 import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.ScannedCode
 import io.cosgriff.pantry.domain.needingName
@@ -78,6 +80,11 @@ data class ScanState(
     val locations: List<Location> = Location.defaults,
     /** Set once items are in the pantry (one outside batch scan, the haul in it): the screen closes. */
     val finished: Boolean = false,
+    /**
+     * Set with [finished] when the item just added was named by the user and Open Food Facts doesn't have it:
+     * the screen offers to share it there instead of closing (#42, `docs/adr/0004`).
+     */
+    val share: NewProduct? = null,
 )
 
 /**
@@ -195,8 +202,13 @@ class ScanViewModel @Inject constructor(
             return
         }
         if (draft.name.isBlank()) return
+        // Looked up and not found, then named here: Open Food Facts could have it too, unless the user said never.
+        val notInOff = (phase as? ScanPhase.Found)?.takeIf { !it.known && it.lookup == Lookup.NotFound }
         viewModelScope.launch {
-            if (intake.save(draft)) _state.update { it.copy(phase = ScanPhase.Looking, finished = true) }
+            if (!intake.save(draft)) return@launch
+            val share = draft.barcode?.takeIf { notInOff != null }?.let { NewProduct(it, draft.name.trim()) }
+                ?.takeIf { it.shareable && settings.settings().first().contributing != ContributeChoice.Never }
+            _state.update { it.copy(phase = ScanPhase.Looking, finished = true, share = share) }
         }
     }
 
