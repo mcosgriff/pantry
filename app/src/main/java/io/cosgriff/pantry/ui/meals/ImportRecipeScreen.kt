@@ -48,9 +48,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.LineMatch
 import io.cosgriff.pantry.domain.LineUnit
 import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.MeasureUnit
 import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.PantryItem
@@ -59,7 +61,9 @@ import io.cosgriff.pantry.ui.components.FieldLabel
 import io.cosgriff.pantry.ui.components.QuantityStepper
 import io.cosgriff.pantry.ui.components.SectionHeading
 import io.cosgriff.pantry.ui.components.TextFieldBox
+import io.cosgriff.pantry.ui.components.UnitDialog
 import io.cosgriff.pantry.ui.components.locationName
+import io.cosgriff.pantry.ui.components.unitName
 import io.cosgriff.pantry.ui.theme.PantryDimens
 import io.cosgriff.pantry.ui.theme.PantryTheme
 import java.math.BigDecimal
@@ -214,13 +218,13 @@ private fun Review(state: ImportRecipeState, actions: ImportRecipeActions, paddi
             }
         }
         itemsIndexed(state.lines) { index, line ->
-            LineCard(index, line, state.pantry, actions, Modifier.padding(horizontal = PantryDimens.space5))
+            LineCard(index, line, state.pantry, state.measurements, actions, Modifier.padding(horizontal = PantryDimens.space5))
         }
     }
 }
 
 @Composable
-private fun LineCard(index: Int, line: ImportLine, pantry: List<PantryItem>, actions: ImportRecipeActions, modifier: Modifier) {
+private fun LineCard(index: Int, line: ImportLine, pantry: List<PantryItem>, measurements: MeasureSystem, actions: ImportRecipeActions, modifier: Modifier) {
     val colors = PantryTheme.colors
     val number = index + 1
     Column(
@@ -240,7 +244,7 @@ private fun LineCard(index: Int, line: ImportLine, pantry: List<PantryItem>, act
                 stringResource(R.string.meal_some),
                 Modifier.width(PantryDimens.amountFieldWidth),
             )
-            UnitButton(number, line) { actions.onUnit(index, it) }
+            UnitButton(number, line, measurements) { actions.onUnit(index, it) }
             TextFieldBox(
                 line.name,
                 { actions.onLineName(index, it) },
@@ -261,15 +265,18 @@ private fun LineCard(index: Int, line: ImportLine, pantry: List<PantryItem>, act
     }
 }
 
-/** The line's unit, or the unknown word with "?"; tapping it lists every unit. */
+/**
+ * The line's unit, or the unknown word with "?"; tapping it opens the shared unit picker (#57). What a package
+ * holds comes from the recipe's line, so it isn't asked here.
+ */
 @Composable
-private fun UnitButton(number: Int, line: ImportLine, onPick: (LineUnit) -> Unit) {
+private fun UnitButton(number: Int, line: ImportLine, measurements: MeasureSystem, onPick: (LineUnit) -> Unit) {
     val colors = PantryTheme.colors
     var open by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.small
     val unknown = line.unknownUnit
     val text = when {
-        line.unit != null -> lineUnitName(line.unit)
+        line.unit != null -> unitName(amountUnit(line.unit))
         line.unitWord != null -> stringResource(R.string.import_unit_unknown, line.unitWord)
         else -> stringResource(R.string.import_unit_none)
     }
@@ -291,15 +298,29 @@ private fun UnitButton(number: Int, line: ImportLine, onPick: (LineUnit) -> Unit
         ) {
             Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = if (unknown) FontWeight.SemiBold else FontWeight.Normal, color = if (unknown) colors.onWarningContainer else colors.ink)
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            LineUnit.all.forEach { unit ->
-                DropdownMenuItem(text = { Text(lineUnitName(unit)) }, onClick = {
-                    open = false
-                    onPick(unit)
-                })
-            }
-        }
     }
+    if (open) {
+        UnitDialog(
+            line.unit?.let(::amountUnit),
+            measurements,
+            onPick = { picked ->
+                open = false
+                onPick(
+                    when (picked) {
+                        is AmountUnit.Measured -> LineUnit.Of(picked.unit)
+                        is AmountUnit.Packages -> LineUnit.In(picked.pkg)
+                    },
+                )
+            },
+            onDismiss = { open = false },
+            contents = false,
+        )
+    }
+}
+
+private fun amountUnit(unit: LineUnit): AmountUnit = when (unit) {
+    is LineUnit.Of -> AmountUnit.Measured(unit.unit)
+    is LineUnit.In -> AmountUnit.Packages(unit.pkg)
 }
 
 /** The line's pantry match, "Not tracked", or a prompt to pick one; tapping it lists the pantry. */
@@ -353,40 +374,6 @@ private fun MatchButton(number: Int, line: ImportLine, pantry: List<PantryItem>,
         }
     }
 }
-
-/** A unit as the import's picker lists it: "cup", "tbsp", "can". */
-@Composable
-private fun lineUnitName(unit: LineUnit): String = stringResource(
-    when (unit) {
-        is LineUnit.Of -> when (unit.unit) {
-            MeasureUnit.Each -> R.string.import_unit_each
-            MeasureUnit.Dozen -> R.string.import_unit_dozen
-            MeasureUnit.Teaspoon -> R.string.import_unit_teaspoon
-            MeasureUnit.Tablespoon -> R.string.import_unit_tablespoon
-            MeasureUnit.FluidOunce -> R.string.import_unit_fluid_ounce
-            MeasureUnit.Cup -> R.string.import_unit_cup
-            MeasureUnit.Pint -> R.string.import_unit_pint
-            MeasureUnit.Quart -> R.string.import_unit_quart
-            MeasureUnit.Gallon -> R.string.import_unit_gallon
-            MeasureUnit.Milliliter -> R.string.import_unit_milliliter
-            MeasureUnit.Liter -> R.string.import_unit_liter
-            MeasureUnit.Ounce -> R.string.import_unit_ounce
-            MeasureUnit.Pound -> R.string.import_unit_pound
-            MeasureUnit.Gram -> R.string.import_unit_gram
-            MeasureUnit.Kilogram -> R.string.import_unit_kilogram
-        }
-        is LineUnit.In -> when (unit.pkg) {
-            Package.Bag -> R.string.import_unit_bag
-            Package.Pack -> R.string.import_unit_pack
-            Package.Tub -> R.string.import_unit_tub
-            Package.Box -> R.string.import_unit_box
-            Package.Can -> R.string.import_unit_can
-            Package.Jar -> R.string.import_unit_jar
-            Package.Bottle -> R.string.import_unit_bottle
-            Package.Carton -> R.string.import_unit_carton
-        }
-    },
-)
 
 // Previews and the screenshot test use a made-up recipe and link, marked as samples.
 internal val previewImportLink = ImportRecipeState(today = previewToday, link = "https://recipes.example/sample-black-bean-soup")

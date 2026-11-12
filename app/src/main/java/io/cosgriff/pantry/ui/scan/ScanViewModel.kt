@@ -8,14 +8,17 @@ import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.LookupPermission
 import io.cosgriff.pantry.data.Scanned
 import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupResult
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.NewProduct
 import io.cosgriff.pantry.domain.ProductInfo
 import io.cosgriff.pantry.domain.ScannedCode
 import io.cosgriff.pantry.domain.needingName
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.readRetailCode
 import io.cosgriff.pantry.domain.stepped
 import java.time.Clock
@@ -78,6 +81,8 @@ data class ScanState(
     /** The Review haul screen is showing. */
     val reviewing: Boolean = false,
     val locations: List<Location> = Location.defaults,
+    /** The measurement system whose units the unit picker lists first (#57). */
+    val measurements: MeasureSystem = MeasureSystem.UsCustomary,
     /** Set once items are in the pantry (one outside batch scan, the haul in it): the screen closes. */
     val finished: Boolean = false,
     /**
@@ -109,7 +114,7 @@ class ScanViewModel @Inject constructor(
         viewModelScope.launch {
             val prefs = settings.settings().first()
             val all = locations.locations().first()
-            _state.update { it.copy(batch = prefs.batchScanByDefault, locations = all) }
+            _state.update { it.copy(batch = prefs.batchScanByDefault, locations = all, measurements = prefs.measurements) }
         }
     }
 
@@ -177,6 +182,7 @@ class ScanViewModel @Inject constructor(
     fun onName(name: String) = edit { it.copy(name = name) }
     fun onLocation(location: Location) = edit { it.withLocation(location) }
     fun onStep(delta: Int) = edit { it.copy(quantity = it.quantity.stepped(delta)) }
+    fun onUnit(unit: AmountUnit) = edit { it.copy(quantity = unit.of(it.quantity.number)) }
     fun onExpires(date: LocalDate?) = edit { it.withExpires(date) }
 
     /** The store-packed sheet's weight, as typed. */
@@ -226,6 +232,11 @@ class ScanViewModel @Inject constructor(
 
     fun onRename(index: Int, name: String) = _state.update { s ->
         s.copy(haul = s.haul.mapIndexed { i, d -> if (i == index) d.copy(name = name) else d })
+    }
+
+    /** A haul item's unit, picked on Review haul (#57). */
+    fun onHaulUnit(index: Int, unit: AmountUnit) = _state.update { s ->
+        s.copy(haul = s.haul.mapIndexed { i, d -> if (i == index) d.copy(quantity = unit.of(d.quantity.number)) else d })
     }
 
     fun onRemoveFromHaul(index: Int) = _state.update { s -> s.copy(haul = s.haul.filterIndexed { i, _ -> i != index }) }

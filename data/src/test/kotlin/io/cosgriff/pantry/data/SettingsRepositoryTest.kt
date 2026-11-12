@@ -13,8 +13,8 @@ import io.cosgriff.pantry.domain.ContributeChoice
 import io.cosgriff.pantry.domain.DefaultLocation
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LookupChoice
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.PantrySettings
-import io.cosgriff.pantry.domain.UnitSystem
 import java.io.File
 import java.time.LocalTime
 import kotlinx.coroutines.CoroutineScope
@@ -62,7 +62,7 @@ class SettingsRepositoryTest {
         settings.setDailyDigestAt(LocalTime.of(18, 30))
         settings.setBatchScanByDefault(true)
         settings.setDefaultLocation(DefaultLocation.Fixed(Location.Fridge))
-        settings.setUnitSystem(UnitSystem.Metric)
+        settings.setMeasurements(MeasureSystem.Metric)
         settings.setProductLookup(true)
         settings.setContributing(ContributeChoice.Always)
         assertEquals(
@@ -73,7 +73,7 @@ class SettingsRepositoryTest {
                 dailyDigestAt = LocalTime.of(18, 30),
                 batchScanByDefault = true,
                 defaultLocation = DefaultLocation.Fixed(Location.Fridge),
-                unitSystem = UnitSystem.Metric,
+                measurements = MeasureSystem.Metric,
                 productLookup = LookupChoice.On,
                 contributing = ContributeChoice.Always,
             ),
@@ -91,6 +91,23 @@ class SettingsRepositoryTest {
         assertEquals(true to true, settings.settings().first().let { it.notifyExpiringSoon to it.notifyExpired })
         settings.setNotifyExpired(false)
         assertEquals(true to false, settings.settings().first().let { it.notifyExpiringSoon to it.notifyExpired })
+    }
+
+    @Test
+    fun `measurements are US customary until metric is chosen, and back (#57)`() = runBlocking {
+        assertEquals(MeasureSystem.UsCustomary, settings.settings().first().measurements)
+        settings.setMeasurements(MeasureSystem.Metric)
+        assertEquals(MeasureSystem.Metric, settings.settings().first().measurements)
+        settings.setMeasurements(MeasureSystem.UsCustomary)
+        assertEquals(MeasureSystem.UsCustomary, settings.settings().first().measurements)
+    }
+
+    @Test
+    fun `the unit system's name from before #57 still reads`() = runBlocking {
+        store.edit { it[stringPreferencesKey("unit_system")] = "Metric" }
+        assertEquals(MeasureSystem.Metric, settings.settings().first().measurements)
+        store.edit { it[stringPreferencesKey("unit_system")] = "Us" }
+        assertEquals(MeasureSystem.UsCustomary, settings.settings().first().measurements)
     }
 
     @Test

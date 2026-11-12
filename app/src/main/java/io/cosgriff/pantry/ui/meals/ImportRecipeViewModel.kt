@@ -7,11 +7,13 @@ import io.cosgriff.pantry.data.ImportRulesStore
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
 import io.cosgriff.pantry.data.RecipeReader
+import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.ImportRules
 import io.cosgriff.pantry.domain.LineMatch
 import io.cosgriff.pantry.domain.LineUnit
 import io.cosgriff.pantry.domain.Meal
 import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.NameRule
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.RecipeResult
@@ -71,6 +73,8 @@ data class ImportRecipeState(
     val pantry: List<PantryItem> = emptyList(),
     /** Set once the meal is saved: the screen closes. */
     val done: Boolean = false,
+    /** The measurement system whose units the unit picker lists first (#57). */
+    val measurements: MeasureSystem = MeasureSystem.UsCustomary,
 ) {
     val reviewing: Boolean get() = lines.isNotEmpty()
 
@@ -83,14 +87,15 @@ class ImportRecipeViewModel @Inject constructor(
     private val meals: MealRepository,
     private val reader: RecipeReader,
     private val rulesStore: ImportRulesStore,
+    settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val form = MutableStateFlow(ImportRecipeState(today = LocalDate.now(clock)))
     private var started = false
     private var rules = ImportRules()
 
-    val state: StateFlow<ImportRecipeState> = combine(form, pantry.items()) { f, items ->
-        f.copy(pantry = items.sortedWith(PantryItem.BySoonestExpiry))
+    val state: StateFlow<ImportRecipeState> = combine(form, pantry.items(), settings.settings()) { f, items, prefs ->
+        f.copy(pantry = items.sortedWith(PantryItem.BySoonestExpiry), measurements = prefs.measurements)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), form.value)
 
     /** Fills in a shared [link]. Only the first call counts (the screen calls it on entry); nothing is fetched yet. */

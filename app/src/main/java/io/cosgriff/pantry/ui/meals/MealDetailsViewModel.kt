@@ -6,11 +6,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.Consumption
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
+import io.cosgriff.pantry.data.SettingsRepository
+import io.cosgriff.pantry.domain.Amount
 import io.cosgriff.pantry.domain.IngredientCheck
 import io.cosgriff.pantry.domain.MealPlan
+import io.cosgriff.pantry.domain.MeasureSystem
 import io.cosgriff.pantry.domain.checkPlan
+import io.cosgriff.pantry.domain.countedIn
+import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.scaled
-import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -32,6 +36,8 @@ data class MealDetailsState(
     val addedToShopping: Int? = null,
     /** Set after "Cooked it": the screen closes. */
     val done: Boolean = false,
+    /** The system converted amounts are shown in, and whose units the unit picker lists first (#57). */
+    val measurements: MeasureSystem = MeasureSystem.UsCustomary,
 )
 
 @HiltViewModel
@@ -39,6 +45,7 @@ class MealDetailsViewModel @Inject constructor(
     pantry: PantryRepository,
     private val meals: MealRepository,
     private val consumption: Consumption,
+    settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val planId = MutableStateFlow<Long?>(null)
@@ -46,7 +53,7 @@ class MealDetailsViewModel @Inject constructor(
 
     private data class Events(val added: Int? = null, val done: Boolean = false)
 
-    val state: StateFlow<MealDetailsState> = combine(planId, meals.plans(), pantry.items(), events) { id, plans, items, e ->
+    val state: StateFlow<MealDetailsState> = combine(planId, meals.plans(), pantry.items(), events, settings.settings()) { id, plans, items, e, prefs ->
         val today = LocalDate.now(clock)
         val plan = plans.firstOrNull { it.id == id }
         MealDetailsState(
@@ -56,6 +63,7 @@ class MealDetailsViewModel @Inject constructor(
             checks = plan?.let { checkPlan(it, items, today) }.orEmpty(),
             addedToShopping = e.added,
             done = e.done,
+            measurements = prefs.measurements,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MealDetailsState(today = LocalDate.now(clock)))
 
@@ -72,14 +80,16 @@ class MealDetailsViewModel @Inject constructor(
     }
 
     /**
-     * Sets ingredient [index]'s amount for this plan's servings ([amount] `null`: "some"). The meal keeps it for its
-     * own servings, so planning it again scales from there.
+     * Sets ingredient [index]'s amount for this plan's servings ([amount] `null`: "some"), in any unit (#57). The
+     * meal keeps it for its own servings, so planning it again scales from there.
      */
-    fun onAmount(index: Int, amount: BigDecimal?) {
+    fun onAmount(index: Int, amount: Amount?) {
         val plan = current() ?: return
         val meal = plan.meal
-        val forMeal = amount?.let { scaled(it, plan.servings, meal.servings) }?.takeIf { it.signum() > 0 }
-        val ingredients = meal.ingredients.mapIndexed { i, g -> if (i == index) g.copy(amount = forMeal) else g }
+        val forMeal = amount?.let { scaled(it.number, plan.servings, meal.servings) }?.takeIf { it.signum() > 0 }
+        val ingredients = meal.ingredients.mapIndexed { i, g ->
+            if (i == index) g.copy(unit = amount?.countedIn ?: g.unit, amount = forMeal) else g
+        }
         viewModelScope.launch { meals.save(meal.copy(ingredients = ingredients)) }
     }
 
