@@ -119,56 +119,53 @@ fun suggestMatch(name: String, items: List<PantryItem>, rules: ImportRules, toda
 }
 
 /**
- * A reviewed line as a meal's ingredient (#19). A pantry match takes the item's unit, with the amount when it
- * converts exactly ("15 oz" of an item counted in lb); otherwise "some". A line not tracked keeps its amount
- * when a meal's unit can hold it, and otherwise is named as written ("2 cups flour"): meals don't yet store
- * cups (docs/adr/0002, 0003).
+ * A reviewed line as a meal's ingredient (#19). A pantry match takes the item's unit when the line's amount
+ * converts into it exactly ("16 oz" of an item counted in lb is 1 lb); otherwise it keeps the line's own amount
+ * and unit ("2 cups" of flour counted in lb), which meal prep compares across units (docs/adr/0002, #55). A line
+ * not tracked keeps its amount and unit; one with an amount but no known unit is named as written
+ * ("2 cloves garlic"), and one with no amount is "some".
  */
 fun importedIngredient(name: String, amountText: String?, unitWord: String?, unit: LineUnit?, contents: Measure?, match: LineMatch): Ingredient {
     val amount = amountText?.let(::parseAmount)
     val cleanName = name.trim()
+    val own = unit?.let { amountUnit(it, contents) }
     if (match is LineMatch.Item) {
         val item = match.item
-        return Ingredient.of(item).copy(amount = amount?.let { amountIn(it, unit, contents, item.quantity.unit) })
+        val target = item.quantity.countedIn
+        val exact = amount?.let { amountIn(it, unit, contents, target) }
+        return when {
+            exact != null -> Ingredient.of(item).copy(amount = exact)
+            amount != null && own != null -> Ingredient.of(item).copy(unit = own, amount = amount)
+            else -> Ingredient.of(item)
+        }
     }
-    val held = unit?.let(::quantityUnit)
     return when {
         amount == null -> Ingredient.typed(cleanName)
-        held != null && (unit !is LineUnit.In || contents == null) -> Ingredient(cleanName, unit = held, amount = amount)
+        own != null -> Ingredient(cleanName, unit = own, amount = amount)
         else -> Ingredient.typed(listOfNotNull(amountText.trim(), unitWord?.trim(), cleanName).joinToString(" "))
     }
 }
 
 /** [amount] of [unit] (with [contents] for a package) in [target], when that converts exactly; else `null`. */
-fun amountIn(amount: BigDecimal, unit: LineUnit?, contents: Measure?, target: QuantityUnit): BigDecimal? {
+fun amountIn(amount: BigDecimal, unit: LineUnit?, contents: Measure?, target: AmountUnit): BigDecimal? {
     if (unit == null) return null
     val value = when (target) {
-        QuantityUnit.Bag, QuantityUnit.Pack, QuantityUnit.Tub -> amount.takeIf { quantityUnit(unit) == target }
-        else -> {
-            val to = when (target) {
-                QuantityUnit.Each -> MeasureUnit.Each
-                QuantityUnit.Pound -> MeasureUnit.Pound
-                else -> MeasureUnit.Ounce
-            }
+        is AmountUnit.Packages -> amount.takeIf { unit is LineUnit.In && unit.pkg == target.pkg }
+        is AmountUnit.Measured -> {
             val from: Amount = when (unit) {
                 is LineUnit.Of -> Measure(amount, unit.unit)
                 is LineUnit.In -> Packaged(amount, unit.pkg, contents)
             }
-            (from.to(to) as? Conversion.Exact)?.measure?.amount
+            (from.to(target.unit) as? Conversion.Exact)?.measure?.amount
         }
     } ?: return null
     return value.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros().takeIf { it.signum() > 0 }
 }
 
-/** The meal unit (#19) a line's unit is, if a meal can hold it. */
-private fun quantityUnit(unit: LineUnit): QuantityUnit? = when (unit) {
-    LineUnit.Of(MeasureUnit.Each) -> QuantityUnit.Each
-    LineUnit.Of(MeasureUnit.Pound) -> QuantityUnit.Pound
-    LineUnit.Of(MeasureUnit.Ounce) -> QuantityUnit.Ounce
-    LineUnit.In(Package.Bag) -> QuantityUnit.Bag
-    LineUnit.In(Package.Pack) -> QuantityUnit.Pack
-    LineUnit.In(Package.Tub) -> QuantityUnit.Tub
-    else -> null
+/** What a line's unit counts, as an ingredient stores it (#56). */
+private fun amountUnit(unit: LineUnit, contents: Measure?): AmountUnit = when (unit) {
+    is LineUnit.Of -> AmountUnit.Measured(unit.unit)
+    is LineUnit.In -> AmountUnit.Packages(unit.pkg, contents)
 }
 
 /** Lower-case words of [s], each made singular. */
