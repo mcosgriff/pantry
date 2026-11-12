@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.MealRepository
 import io.cosgriff.pantry.data.PantryRepository
-import io.cosgriff.pantry.domain.Ingredient
 import io.cosgriff.pantry.domain.Meal
+import io.cosgriff.pantry.domain.MealDraft
 import io.cosgriff.pantry.domain.PantryItem
 import java.time.Clock
 import java.time.LocalDate
@@ -19,17 +19,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/** The meal being planned or edited. */
-data class MealDraft(
-    val name: String = "",
-    val servings: Int = DEFAULT_SERVINGS,
-    val ingredients: List<Ingredient> = emptyList(),
-    /** The saved meal being edited; 0 for a new one. */
-    val id: Long = 0,
-)
-
-const val DEFAULT_SERVINGS = 2
 
 data class PlanMealState(
     val today: LocalDate,
@@ -69,12 +58,7 @@ class PlanMealViewModel @Inject constructor(
         viewModelScope.launch {
             val meal = meals.meals().first().firstOrNull { it.id == mealId }
             form.update {
-                it.copy(
-                    day = day,
-                    editing = meal != null,
-                    loading = false,
-                    draft = meal?.let { m -> MealDraft(m.name, m.servings, m.ingredients, m.id) } ?: it.draft,
-                )
+                it.copy(day = day, editing = meal != null, loading = false, draft = meal?.let(MealDraft::of) ?: it.draft)
             }
         }
     }
@@ -83,20 +67,14 @@ class PlanMealViewModel @Inject constructor(
 
     fun onName(name: String) = edit { it.copy(name = name) }
 
-    fun onServings(delta: Int) = edit { it.copy(servings = (it.servings + delta).coerceIn(1, MAX_SERVINGS)) }
+    fun onServings(delta: Int) = edit { it.withServings(delta) }
 
     /** Picks [item] as an ingredient, or drops it if it's picked already. */
-    fun onToggle(item: PantryItem) = edit { d ->
-        val picked = d.ingredients.indexOfFirst { it.fromPantry && it.itemId == item.id }
-        d.copy(ingredients = if (picked >= 0) d.ingredients.filterIndexed { i, _ -> i != picked } else d.ingredients + Ingredient.of(item))
-    }
+    fun onToggle(item: PantryItem) = edit { it.toggled(item) }
 
-    fun onAddTyped(name: String) {
-        if (name.isBlank()) return
-        edit { it.copy(ingredients = it.ingredients + Ingredient.typed(name)) }
-    }
+    fun onAddTyped(name: String) = edit { it.withTyped(name) }
 
-    fun onRemove(index: Int) = edit { d -> d.copy(ingredients = d.ingredients.filterIndexed { i, _ -> i != index }) }
+    fun onRemove(index: Int) = edit { it.without(index) }
 
     /** Plans saved [meal] on the day as it is, and closes. */
     fun onCookAgain(meal: Meal) {
@@ -106,19 +84,12 @@ class PlanMealViewModel @Inject constructor(
         }
     }
 
-    /** Saves the meal; a new one is also planned on the day. */
+    /** Saves the meal (a new one is also planned on the day) and closes. */
     fun onSave() {
         val f = form.value
-        val d = f.draft
-        if (d.name.isBlank()) return
+        if (!f.draft.canSave) return
         viewModelScope.launch {
-            val id = meals.save(Meal(d.name.trim(), d.servings, d.ingredients, d.id))
-            if (!f.editing) meals.plan(id, f.day, d.servings)
-            form.update { it.copy(done = true) }
+            if (meals.save(f.draft, f.day) != null) form.update { it.copy(done = true) }
         }
-    }
-
-    private companion object {
-        const val MAX_SERVINGS = 99
     }
 }

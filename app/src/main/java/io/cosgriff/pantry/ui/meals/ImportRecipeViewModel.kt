@@ -10,11 +10,12 @@ import io.cosgriff.pantry.data.RecipeReader
 import io.cosgriff.pantry.domain.ImportRules
 import io.cosgriff.pantry.domain.LineMatch
 import io.cosgriff.pantry.domain.LineUnit
-import io.cosgriff.pantry.domain.Meal
+import io.cosgriff.pantry.domain.MealDraft
 import io.cosgriff.pantry.domain.Measure
 import io.cosgriff.pantry.domain.NameRule
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.RecipeResult
+import io.cosgriff.pantry.domain.Servings
 import io.cosgriff.pantry.domain.importedIngredient
 import io.cosgriff.pantry.domain.parseIngredientLine
 import io.cosgriff.pantry.domain.suggestMatch
@@ -64,7 +65,7 @@ data class ImportRecipeState(
     val reading: Boolean = false,
     val problem: ImportProblem? = null,
     val name: String = "",
-    val servings: Int = DEFAULT_SERVINGS,
+    val servings: Int = Servings.DEFAULT,
     /** The recipe's lines once read; empty while the link is being entered. */
     val lines: List<ImportLine> = emptyList(),
     /** The pantry, soonest expiry first, to match lines to. */
@@ -117,7 +118,7 @@ class ImportRecipeViewModel @Inject constructor(
                     is RecipeResult.Found -> s.copy(
                         reading = false,
                         name = result.recipe.name,
-                        servings = result.recipe.servings ?: DEFAULT_SERVINGS,
+                        servings = Servings.bounded(result.recipe.servings ?: Servings.DEFAULT),
                         lines = result.recipe.ingredients.map { line(it, items, today) },
                     )
                     RecipeResult.NoRecipe -> s.copy(reading = false, problem = ImportProblem.NoRecipe)
@@ -151,7 +152,7 @@ class ImportRecipeViewModel @Inject constructor(
 
     fun onName(name: String) = form.update { it.copy(name = name) }
 
-    fun onServings(delta: Int) = form.update { it.copy(servings = (it.servings + delta).coerceIn(1, MAX_SERVINGS)) }
+    fun onServings(delta: Int) = form.update { it.copy(servings = Servings.stepped(it.servings, delta)) }
 
     fun onAmount(index: Int, text: String) = edit(index) { it.copy(amountText = text) }
 
@@ -203,17 +204,14 @@ class ImportRecipeViewModel @Inject constructor(
     /** Saves the meal through the same path as Plan a meal; lines left unmatched are not tracked. */
     fun onSave() {
         val s = form.value
-        if (s.name.isBlank() || !s.reviewing) return
+        if (!s.reviewing) return
         val ingredients = s.lines.filter { it.name.isNotBlank() }.map { l ->
             importedIngredient(l.name, l.amountText.takeIf(String::isNotBlank), l.unitWord, l.unit, l.contents, l.match)
         }
+        val meal = MealDraft(s.name, s.servings, ingredients).toMeal() ?: return
         viewModelScope.launch {
-            meals.save(Meal(s.name.trim(), s.servings, ingredients))
+            meals.save(meal)
             form.update { it.copy(done = true) }
         }
-    }
-
-    private companion object {
-        const val MAX_SERVINGS = 99
     }
 }

@@ -44,32 +44,26 @@ data class Ingredient(
 data class Meal(val name: String, val servings: Int, val ingredients: List<Ingredient>, val id: Long = 0) {
     init {
         require(name.isNotBlank()) { "Meal name must not be blank" }
-        require(servings >= 1) { "A meal serves at least one: $servings" }
+        require(servings >= Servings.MIN) { "A meal serves at least one: $servings" }
     }
 }
 
 /** [meal] planned on [day] for [servings], which scales its ingredient amounts. */
 data class MealPlan(val meal: Meal, val day: LocalDate, val servings: Int = meal.servings, val cooked: Boolean = false, val id: Long = 0) {
     init {
-        require(servings >= 1) { "A plan serves at least one: $servings" }
+        require(servings >= Servings.MIN) { "A plan serves at least one: $servings" }
     }
 
     /**
-     * [ingredient]'s amount at this plan's servings, or `null` for "some". Things counted whole (each, pack) round
-     * up: 8 eggs for 3 are 6 for 2, not 5.333.
+     * [ingredient]'s amount at this plan's servings, or `null` for "some". [PlanAmounts] holds the rounding: kept to
+     * 3 decimals, and things counted whole (each, pack) round up: 8 eggs for 3 are 6 for 2, not 5.333.
      */
-    fun needed(ingredient: Ingredient): BigDecimal? = ingredient.amount?.let { amount ->
-        val scaled = scaled(amount, meal.servings, servings)
-        if (countedWhole(ingredient.unit)) scaled.setScale(0, RoundingMode.CEILING) else scaled
-    }
-
-    private fun countedWhole(unit: AmountUnit?): Boolean =
-        unit == AmountUnit.Measured(MeasureUnit.Each) || (unit is AmountUnit.Packages && unit.pkg == Package.Pack)
+    fun needed(ingredient: Ingredient): BigDecimal? =
+        ingredient.amount?.let { PlanAmounts.atPlan(it, ingredient.unit, meal.servings, servings) }
 }
 
-/** [amount] for [from] servings, made for [to]: 12 eggs for 12 are 6 for 6. Kept to 3 decimals. */
-fun scaled(amount: BigDecimal, from: Int, to: Int): BigDecimal =
-    if (from == to) amount else amount.multiply(BigDecimal(to)).divide(BigDecimal(from), 3, RoundingMode.HALF_UP).stripTrailingZeros()
+/** [plan] with its ingredients checked against the pantry ([checkPlan]). */
+data class CheckedPlan(val plan: MealPlan, val checks: List<IngredientCheck>)
 
 /** How an ingredient stands against the pantry, as Meal details shows it. */
 sealed interface IngredientStatus {

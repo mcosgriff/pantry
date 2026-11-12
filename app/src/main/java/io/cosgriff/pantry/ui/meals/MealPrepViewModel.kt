@@ -10,7 +10,6 @@ import io.cosgriff.pantry.domain.IngredientStatus
 import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.UseSoonGroup
-import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.plansIn
 import io.cosgriff.pantry.domain.useSoon
 import io.cosgriff.pantry.domain.weekOf
@@ -57,11 +56,12 @@ class MealPrepViewModel @Inject constructor(
     private val today = LocalDate.now(clock)
     private val selected = MutableStateFlow(today)
 
-    val state: StateFlow<MealPrepState> = combine(pantry.items(), meals.plans(), selected) { items, plans, day ->
+    val state: StateFlow<MealPrepState> = combine(pantry.items(), meals.checkedPlans(), selected) { items, checked, day ->
         val now = LocalDate.now(clock)
         val week = weekOf(day, firstDay)
         val soonGroups = useSoon(items, now)
-        val inWeek = plansIn(plans, week)
+        val checks = checked.associate { it.plan.id to it.checks }
+        val inWeek = plansIn(checked.map { it.plan }, week)
         MealPrepState(
             today = now,
             week = week,
@@ -70,7 +70,7 @@ class MealPrepViewModel @Inject constructor(
             planned = inWeek.map { it.day }.toSet(),
             soon = soonGroups[UseSoonGroup.Expired].orEmpty() + soonGroups[UseSoonGroup.ThisWeek].orEmpty(),
             soonCount = soonGroups.values.sumOf { it.size },
-            meals = inWeek.map { plan -> WeekMeal.of(plan, checkPlan(plan, items, now)) },
+            meals = inWeek.map { plan -> WeekMeal.of(plan, checks[plan.id].orEmpty()) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MealPrepState(today = today, week = weekOf(today, firstDay)))
 
