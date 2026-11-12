@@ -10,8 +10,9 @@ import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.LocationKey
 import io.cosgriff.pantry.domain.PantryItem
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
+import io.cosgriff.pantry.domain.AmountUnit
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -47,7 +48,7 @@ class LocationRepositoryTest {
     private fun item(name: String, location: Location) = PantryItem(
         name = name,
         location = location,
-        quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+        quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
         purchased = LocalDate.of(2026, 11, 10),
     )
 
@@ -129,7 +130,7 @@ class LocationRepositoryTest {
     @Test
     fun `a known product - forgets a deleted location, keeps its name`() = runBlocking {
         val garage = locations.addLocation("Garage", null)
-        pantry.rememberProduct(KnownProduct("123", "Test soda", garage, QuantityUnit.Each))
+        pantry.rememberProduct(KnownProduct("123", "Test soda", garage, AmountUnit.Measured(MeasureUnit.Each)))
         locations.deleteLocation(garage)
         assertNull(pantry.knownProduct("123")?.location)
         assertEquals("Test soda", pantry.knownProduct("123")?.name)

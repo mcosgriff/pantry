@@ -36,6 +36,76 @@
         <item quantity="one">%1$s tub</item>
         <item quantity="other">%1$s tubs</item>
     </plurals>
+    <plurals name="unit_dozen">
+        <item quantity="one">%1$s dozen</item>
+        <item quantity="other">%1$s dozen</item>
+    </plurals>
+    <plurals name="unit_teaspoon">
+        <item quantity="one">%1$s tsp</item>
+        <item quantity="other">%1$s tsp</item>
+    </plurals>
+    <plurals name="unit_tablespoon">
+        <item quantity="one">%1$s tbsp</item>
+        <item quantity="other">%1$s tbsp</item>
+    </plurals>
+    <plurals name="unit_fluid_ounce">
+        <item quantity="one">%1$s fl oz</item>
+        <item quantity="other">%1$s fl oz</item>
+    </plurals>
+    <plurals name="unit_cup">
+        <item quantity="one">%1$s cup</item>
+        <item quantity="other">%1$s cups</item>
+    </plurals>
+    <plurals name="unit_pint">
+        <item quantity="one">%1$s pt</item>
+        <item quantity="other">%1$s pt</item>
+    </plurals>
+    <plurals name="unit_quart">
+        <item quantity="one">%1$s qt</item>
+        <item quantity="other">%1$s qt</item>
+    </plurals>
+    <plurals name="unit_gallon">
+        <item quantity="one">%1$s gal</item>
+        <item quantity="other">%1$s gal</item>
+    </plurals>
+    <plurals name="unit_milliliter">
+        <item quantity="one">%1$s ml</item>
+        <item quantity="other">%1$s ml</item>
+    </plurals>
+    <plurals name="unit_liter">
+        <item quantity="one">%1$s L</item>
+        <item quantity="other">%1$s L</item>
+    </plurals>
+    <plurals name="unit_gram">
+        <item quantity="one">%1$s g</item>
+        <item quantity="other">%1$s g</item>
+    </plurals>
+    <plurals name="unit_kilogram">
+        <item quantity="one">%1$s kg</item>
+        <item quantity="other">%1$s kg</item>
+    </plurals>
+    <plurals name="unit_box">
+        <item quantity="one">%1$s box</item>
+        <item quantity="other">%1$s boxes</item>
+    </plurals>
+    <plurals name="unit_can">
+        <item quantity="one">%1$s can</item>
+        <item quantity="other">%1$s cans</item>
+    </plurals>
+    <plurals name="unit_jar">
+        <item quantity="one">%1$s jar</item>
+        <item quantity="other">%1$s jars</item>
+    </plurals>
+    <plurals name="unit_bottle">
+        <item quantity="one">%1$s bottle</item>
+        <item quantity="other">%1$s bottles</item>
+    </plurals>
+    <plurals name="unit_carton">
+        <item quantity="one">%1$s carton</item>
+        <item quantity="other">%1$s cartons</item>
+    </plurals>
+    <!-- A package with what one holds: "2 bags × 5 lb", or the unit "bag × 5 lb". %1$s is the packages, %2$s the contents of one. -->
+    <string name="amount_per_package">%1$s × %2$s</string>
 
     <!-- Expiry line under an item's name. -->
     <string name="expiry_today">Expires today</string>
@@ -354,6 +424,23 @@
     <string name="unit_name_bag">bag</string>
     <string name="unit_name_pack">pack</string>
     <string name="unit_name_tub">tub</string>
+    <string name="unit_name_dozen">dozen</string>
+    <string name="unit_name_teaspoon">tsp</string>
+    <string name="unit_name_tablespoon">tbsp</string>
+    <string name="unit_name_fluid_ounce">fl oz</string>
+    <string name="unit_name_cup">cup</string>
+    <string name="unit_name_pint">pt</string>
+    <string name="unit_name_quart">qt</string>
+    <string name="unit_name_gallon">gal</string>
+    <string name="unit_name_milliliter">ml</string>
+    <string name="unit_name_liter">L</string>
+    <string name="unit_name_gram">g</string>
+    <string name="unit_name_kilogram">kg</string>
+    <string name="unit_name_box">box</string>
+    <string name="unit_name_can">can</string>
+    <string name="unit_name_jar">jar</string>
+    <string name="unit_name_bottle">bottle</string>
+    <string name="unit_name_carton">carton</string>
 
     <!-- Bottom navigation. -->
     <!-- Meal prep (#19). -->

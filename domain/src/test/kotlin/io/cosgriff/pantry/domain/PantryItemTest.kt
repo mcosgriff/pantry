@@ -18,7 +18,7 @@ class PantryItemTest {
     ) = PantryItem(
         name = name,
         location = Location.Dry,
-        quantity = Quantity(BigDecimal(amount), QuantityUnit.Each),
+        quantity = Measure(BigDecimal(amount), MeasureUnit.Each),
         expires = expires,
         purchased = today,
         lowStockAt = lowStockAt?.let(::BigDecimal),
@@ -73,7 +73,7 @@ class PantryItemTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `negative quantity is rejected`() {
-        Quantity(BigDecimal("-1"), QuantityUnit.Pound)
+        Measure(BigDecimal("-1"), MeasureUnit.Pound)
     }
 
     @Test(expected = IllegalArgumentException::class)

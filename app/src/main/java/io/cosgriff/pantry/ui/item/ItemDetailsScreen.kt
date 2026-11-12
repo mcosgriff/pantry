@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +19,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -72,23 +72,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.cosgriff.pantry.R
+import io.cosgriff.pantry.domain.Amount
+import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ExpiryStatus
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.Location
-import io.cosgriff.pantry.domain.Quantity
-import io.cosgriff.pantry.domain.QuantityUnit
+import io.cosgriff.pantry.domain.Measure
+import io.cosgriff.pantry.domain.MeasureUnit
+import io.cosgriff.pantry.domain.Package
 import io.cosgriff.pantry.domain.QuickPick
+import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.expiryStatus
+import io.cosgriff.pantry.domain.number
+import io.cosgriff.pantry.domain.withNumber
 import io.cosgriff.pantry.ui.components.BackTopBar
+import io.cosgriff.pantry.ui.components.CheckRow
 import io.cosgriff.pantry.ui.components.DateDialog
 import io.cosgriff.pantry.ui.components.FieldLabel
 import io.cosgriff.pantry.ui.components.LocationPicker
-import io.cosgriff.pantry.ui.components.QuantityStepper
-import io.cosgriff.pantry.ui.components.barcodeText
-import io.cosgriff.pantry.ui.components.CheckRow
 import io.cosgriff.pantry.ui.components.PantryCard
+import io.cosgriff.pantry.ui.components.QuantityStepper
 import io.cosgriff.pantry.ui.components.ValueRow
+import io.cosgriff.pantry.ui.components.barcodeText
 import io.cosgriff.pantry.ui.components.locationColors
 import io.cosgriff.pantry.ui.components.locationName
 import io.cosgriff.pantry.ui.components.quantityText
@@ -110,7 +116,7 @@ data class ItemDetailsActions(
     val onName: (String) -> Unit = {},
     val onLocation: (Location) -> Unit = {},
     val onStep: (Int) -> Unit = {},
-    val onUnit: (QuantityUnit) -> Unit = {},
+    val onUnit: (AmountUnit) -> Unit = {},
     val onExpires: (LocalDate?) -> Unit = {},
     val onQuickPick: (QuickPick) -> Unit = {},
     val onOpened: (Boolean) -> Unit = {},
@@ -243,8 +249,18 @@ private fun NameCard(draft: ItemDraft, onName: (String) -> Unit) {
     }
 }
 
+/** The units the picker offers until it lists them all (#57): the ones Pantry has always had. */
+private val PICKER_UNITS = listOf(
+    AmountUnit.Measured(MeasureUnit.Each),
+    AmountUnit.Measured(MeasureUnit.Pound),
+    AmountUnit.Measured(MeasureUnit.Ounce),
+    AmountUnit.Packages(Package.Bag),
+    AmountUnit.Packages(Package.Pack),
+    AmountUnit.Packages(Package.Tub),
+)
+
 @Composable
-private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (QuantityUnit) -> Unit) {
+private fun QuantityRow(quantity: Amount, onStep: (Int) -> Unit, onUnit: (AmountUnit) -> Unit) {
     val colors = PantryTheme.colors
     val shape = MaterialTheme.shapes.small
     val field = Modifier
@@ -255,7 +271,7 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
     Row(horizontalArrangement = Arrangement.spacedBy(PantryDimens.space3)) {
         Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_quantity))
-            QuantityStepper(NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 }.format(quantity.amount), onStep)
+            QuantityStepper(NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 }.format(quantity.number), onStep)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PantryDimens.spaceChip)) {
             FieldLabel(stringResource(R.string.details_unit))
@@ -267,10 +283,10 @@ private fun QuantityRow(quantity: Quantity, onStep: (Int) -> Unit, onUnit: (Quan
                         .padding(horizontal = PantryDimens.space3),
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text(unitName(quantity.unit), style = MaterialTheme.typography.bodyLarge)
+                    Text(unitName(quantity.countedIn), style = MaterialTheme.typography.bodyLarge)
                 }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    QuantityUnit.entries.forEach { unit ->
+                    PICKER_UNITS.forEach { unit ->
                         DropdownMenuItem(text = { Text(unitName(unit)) }, onClick = { open = false; onUnit(unit) })
                     }
                 }
@@ -375,7 +391,7 @@ private fun MoreCard(draft: ItemDraft, actions: ItemDetailsActions) {
             HorizontalDivider(color = colors.divider)
             ValueRow(
                 stringResource(R.string.details_low_stock),
-                draft.lowStockAt?.let { stringResource(R.string.details_low_stock_at, quantityText(Quantity(it, draft.quantity.unit))) }
+                draft.lowStockAt?.let { stringResource(R.string.details_low_stock_at, quantityText(draft.quantity.withNumber(it))) }
                     ?: stringResource(R.string.details_low_stock_off),
                 onClick = { editingLowStock = true },
             )
@@ -575,7 +591,7 @@ internal val previewState = ItemDetailsState(
     draft = ItemDraft.new(previewToday, Location.Fridge, barcode = "096619321084").copy(
         id = 1,
         name = "Sample eggs",
-        quantity = Quantity(BigDecimal("18"), QuantityUnit.Each),
+        quantity = Measure(BigDecimal("18"), MeasureUnit.Each),
         expires = previewToday.plusDays(2),
         opened = true,
         lowStockAt = BigDecimal("6"),

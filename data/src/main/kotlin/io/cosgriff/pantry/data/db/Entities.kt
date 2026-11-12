@@ -26,6 +26,9 @@ data class LocationEntity(
 /**
  * An item. Amounts are stored as decimal text so a weight such as 1.24 lb stays exact; dates as epoch days.
  * A location with items in it can't be deleted (RESTRICT): the user moves them first.
+ *
+ * The amount is [amount] in [unit], a unit or package name (`Pound`, `Bag`). A package's contents, when known,
+ * are [contentsAmount] in [contentsUnit]; [density] is the item's own, in grams per millilitre (#56).
  */
 @Entity(
     tableName = "items",
@@ -51,11 +54,15 @@ data class ItemEntity(
     val opened: Boolean,
     val lowStockAt: String?,
     val notes: String,
+    val contentsAmount: String? = null,
+    val contentsUnit: String? = null,
+    val density: String? = null,
 )
 
 /**
  * A barcode the user has named (#12). Its location goes back to `null` when that location is deleted, and the
- * scan then starts the item in the default one.
+ * scan then starts the item in the default one. A package's contents size, when known, is [contentsAmount] in
+ * [contentsUnit] (#56).
  */
 @Entity(
     tableName = "known_products",
@@ -74,6 +81,8 @@ data class KnownProductEntity(
     val name: String,
     val locationId: Long?,
     val unit: String,
+    val contentsAmount: String? = null,
+    val contentsUnit: String? = null,
 )
 
 /**
@@ -102,7 +111,8 @@ data class MealEntity(
 /**
  * One ingredient of a meal, in the meal's order ([position]). [itemId] is the pantry item it was picked from, with
  * no foreign key: the item may be eaten or thrown out, and the ingredient then matches by [barcode] or name.
- * [amount] is decimal text in [unit], `null` for "some".
+ * [amount] is decimal text in [unit], `null` for "some"; a package's contents, when known, are [contentsAmount] in
+ * [contentsUnit] (#56).
  */
 @Entity(
     tableName = "meal_ingredients",
@@ -119,6 +129,8 @@ data class MealIngredientEntity(
     val barcode: String?,
     val unit: String?,
     val amount: String?,
+    val contentsAmount: String? = null,
+    val contentsUnit: String? = null,
 )
 
 /** A meal planned on a [day] (epoch day) for [servings]. Deleting the meal deletes its plans. */

@@ -11,7 +11,7 @@ class UseSoonTest {
     private fun item(name: String, days: Long?, location: Location = Location.Fridge, opened: Boolean = false) = PantryItem(
         name = name,
         location = location,
-        quantity = Quantity(BigDecimal.ONE, QuantityUnit.Each),
+        quantity = Measure(BigDecimal.ONE, MeasureUnit.Each),
         purchased = today,
         expires = days?.let(today::plusDays),
         opened = opened,

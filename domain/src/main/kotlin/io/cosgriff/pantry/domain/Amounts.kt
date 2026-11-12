@@ -142,3 +142,38 @@ sealed interface Taken {
 
 /** 16 significant digits for conversions that divide; exact factors multiply without rounding. */
 private val MATH = MathContext.DECIMAL64
+
+/**
+ * What an amount's number counts: a unit (`lb`), or a package with what one holds when known (`bag`,
+ * `bag × 5 lb`). Two amounts counted in the same one compare by their numbers alone. An ingredient keeps one
+ * even when its amount is "some", and a known product remembers one, contents size included (#56).
+ */
+sealed interface AmountUnit {
+    /** [number] of this: `2` of `bag × 5 lb` is `2 bag × 5 lb`. */
+    fun of(number: BigDecimal): Amount
+
+    data class Measured(val unit: MeasureUnit) : AmountUnit {
+        override fun of(number: BigDecimal): Amount = Measure(number, unit)
+    }
+
+    data class Packages(val pkg: Package, val contents: Measure? = null) : AmountUnit {
+        override fun of(number: BigDecimal): Amount = Packaged(number, pkg, contents)
+    }
+}
+
+/** The number this amount counts: a measure's amount, or how many packages. */
+val Amount.number: BigDecimal
+    get() = when (this) {
+        is Measure -> amount
+        is Packaged -> count
+    }
+
+/** What [number] counts. */
+val Amount.countedIn: AmountUnit
+    get() = when (this) {
+        is Measure -> AmountUnit.Measured(unit)
+        is Packaged -> AmountUnit.Packages(pkg, contents)
+    }
+
+/** This amount with [number] in place of its own, in the same unit or packages. */
+fun Amount.withNumber(number: BigDecimal): Amount = countedIn.of(number)

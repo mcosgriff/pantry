@@ -22,7 +22,7 @@ data class Ingredient(
     val fromPantry: Boolean = false,
     val itemId: Long? = null,
     val barcode: String? = null,
-    val unit: QuantityUnit? = null,
+    val unit: AmountUnit? = null,
     val amount: BigDecimal? = null,
 ) {
     init {
@@ -33,7 +33,7 @@ data class Ingredient(
 
     companion object {
         /** [item] as an ingredient, with no amount yet. */
-        fun of(item: PantryItem) = Ingredient(item.name, fromPantry = true, itemId = item.id, barcode = item.barcode, unit = item.quantity.unit)
+        fun of(item: PantryItem) = Ingredient(item.name, fromPantry = true, itemId = item.id, barcode = item.barcode, unit = item.quantity.countedIn)
 
         /** A typed-in ingredient the pantry doesn't track. */
         fun typed(name: String) = Ingredient(name.trim())
@@ -60,12 +60,11 @@ data class MealPlan(val meal: Meal, val day: LocalDate, val servings: Int = meal
      */
     fun needed(ingredient: Ingredient): BigDecimal? = ingredient.amount?.let { amount ->
         val scaled = scaled(amount, meal.servings, servings)
-        if (ingredient.unit in COUNTED_WHOLE) scaled.setScale(0, RoundingMode.CEILING) else scaled
+        if (countedWhole(ingredient.unit)) scaled.setScale(0, RoundingMode.CEILING) else scaled
     }
 
-    private companion object {
-        val COUNTED_WHOLE = setOf(QuantityUnit.Each, QuantityUnit.Pack)
-    }
+    private fun countedWhole(unit: AmountUnit?): Boolean =
+        unit == AmountUnit.Measured(MeasureUnit.Each) || (unit is AmountUnit.Packages && unit.pkg == Package.Pack)
 }
 
 /** [amount] for [from] servings, made for [to]: 12 eggs for 12 are 6 for 6. Kept to 3 decimals. */
@@ -122,9 +121,9 @@ fun checkPlan(plan: MealPlan, items: List<PantryItem>, today: LocalDate): List<I
         val item = pantryMatch(ingredient, items, today)
         val status = when {
             !ingredient.fromPantry -> IngredientStatus.NotTracked
-            item == null || item.quantity.amount.signum() == 0 -> IngredientStatus.Missing
+            item == null || item.quantity.number.signum() == 0 -> IngredientStatus.Missing
             item.expires?.isBefore(today) == true -> IngredientStatus.Expired(item, ChronoUnit.DAYS.between(item.expires, today))
-            needed != null && item.quantity.unit == ingredient.unit && item.quantity.amount < needed -> IngredientStatus.Short(item)
+            needed != null && item.quantity.countedIn == ingredient.unit && item.quantity.number < needed -> IngredientStatus.Short(item)
             else -> IngredientStatus.Have(item)
         }
         IngredientCheck(ingredient, needed, status)
@@ -143,15 +142,15 @@ fun cook(checks: List<IngredientCheck>): Cooked {
     checks.forEach { check ->
         val item = check.item ?: return@forEach
         val needed = check.needed ?: return@forEach
-        if (item.quantity.unit != check.ingredient.unit) return@forEach
+        if (item.quantity.countedIn != check.ingredient.unit) return@forEach
         val before = taken[item.id]?.second ?: BigDecimal.ZERO
         taken[item.id] = item to before + needed
     }
     val updated = mutableListOf<PantryItem>()
     val usedUp = mutableListOf<PantryItem>()
     taken.values.forEach { (item, amount) ->
-        val left = item.quantity.amount - amount
-        if (left.signum() <= 0) usedUp += item else updated += item.copy(quantity = item.quantity.copy(amount = left))
+        val left = item.quantity.number - amount
+        if (left.signum() <= 0) usedUp += item else updated += item.copy(quantity = item.quantity.withNumber(left))
     }
     return Cooked(updated, usedUp)
 }
