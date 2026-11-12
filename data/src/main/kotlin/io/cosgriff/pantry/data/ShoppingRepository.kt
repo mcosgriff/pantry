@@ -43,12 +43,17 @@ class ShoppingRepository @Inject constructor(
      */
     internal suspend fun addUsedUp(name: String, today: LocalDate): Long? = insertNew(name, ShoppingReason.UsedUp, today)
 
-    /** Puts [names] on the list for [meal], planned on [day] (#19). A name already on the list isn't added again. */
-    suspend fun addForMeal(names: List<String>, meal: String, day: LocalDate, today: LocalDate) {
+    /**
+     * Puts [names] on the list for [meal], planned on [day] (#19). A name already on the list isn't added again.
+     * Returns the names it added (#50).
+     */
+    suspend fun addForMeal(names: List<String>, meal: String, day: LocalDate, today: LocalDate): List<String> {
         val onList = namesOnList().toMutableSet()
-        names.map { it.trim() }.filter { it.isNotEmpty() && onList.add(shoppingKey(it)) }.forEach {
+        val added = names.map { it.trim() }.filter { it.isNotEmpty() && onList.add(shoppingKey(it)) }
+        added.forEach {
             dao.insert(ShoppingEntryEntity(name = it, reason = ShoppingReason.ForMeal.stored(), addedOn = today.toEpochDay(), meal = meal, mealDay = day.toEpochDay()))
         }
+        return added
     }
 
     /**

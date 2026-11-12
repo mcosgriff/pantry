@@ -23,6 +23,12 @@ Words the code, issues and screens use for one thing each. Decisions behind them
 - **Import rule:** a decision the user made on an import, kept for the next: what a unit word means, or which
   pantry item (or not tracked) an ingredient name is.
 - **Meal plan:** a meal on a day, for a number of servings, which scales the ingredients.
+- **Meal plan editing:** writing a meal and planning it: servings (1 to 99), an amount typed for the plan's
+  servings but kept at the meal's, and a meal draft becoming a meal. A new meal is saved and planned in one
+  write. `MealPlanEditing.kt` in :domain holds the rules and the rounding policy, `MealRepository` the writes
+  (#50).
+- **Meal draft:** a meal as typed so far on Plan a meal or Import a recipe, not yet valid; it becomes a meal once
+  it has a name.
 - **Consumption:** what using up, throwing out, freezing or cooking does to the pantry and the shopping list
   (#48).
 - **Remove reason:** what happened to an item removed from item details: used it up, threw it out, or added by

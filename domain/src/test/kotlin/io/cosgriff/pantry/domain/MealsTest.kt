@@ -33,7 +33,8 @@ class MealsTest {
     fun `amounts scale with the plan's servings`() {
         val plan = MealPlan(meal(Ingredient.of(eggs).copy(amount = BigDecimal("12"))), today, servings = 6)
         assertEquals(BigDecimal("6"), plan.needed(plan.meal.ingredients.single()))
-        assertEquals(0, BigDecimal("0.333").compareTo(scaled(BigDecimal.ONE, 3, 1)))
+        val third = MealPlan(meal(Ingredient.of(cheese).copy(amount = BigDecimal.ONE), servings = 3), today, servings = 1)
+        assertEquals(BigDecimal("0.333"), third.needed(third.meal.ingredients.single()))
         assertNull(plan.needed(Ingredient.of(cheese)))
     }
 

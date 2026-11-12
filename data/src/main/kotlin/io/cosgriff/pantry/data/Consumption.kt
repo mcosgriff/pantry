@@ -6,7 +6,6 @@ import io.cosgriff.pantry.domain.MealPlan
 import io.cosgriff.pantry.domain.PantryItem
 import io.cosgriff.pantry.domain.QuickAction
 import io.cosgriff.pantry.domain.RemoveReason
-import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.cook
 import io.cosgriff.pantry.domain.freeze
 import io.cosgriff.pantry.domain.quickAction
@@ -14,7 +13,6 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.first
 
 /**
  * A quick action taken on [before], the item as it was, so it can be undone; [shoppingId] is the "Used up" line it
@@ -75,8 +73,9 @@ class Consumption @Inject constructor(
     /**
      * "Cooked it": takes [plan]'s amounts out of the pantry, uses up what that empties, and marks the plan cooked.
      */
-    suspend fun cooked(plan: MealPlan, today: LocalDate) {
-        val cooked = cook(checkPlan(plan, pantry.items().first(), today))
+    suspend fun cooked(plan: MealPlan) {
+        val today = LocalDate.now(clock)
+        val cooked = cook(meals.check(plan))
         db.withWriteTransaction {
             cooked.updated.forEach { pantry.save(it) }
             cooked.usedUp.forEach { usedUp(it, today) }

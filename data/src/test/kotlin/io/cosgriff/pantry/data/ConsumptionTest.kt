@@ -47,9 +47,9 @@ class ConsumptionTest {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val file = File(context.filesDir, "consumption_test.preferences_pb").apply { delete() }
     private val shopping = ShoppingRepository(db.shopping(), pantry, PreferenceDataStoreFactory.create(scope = scope) { file })
-    private val meals = MealRepository(db.meals(), pantry, shopping)
     /** The one clock the module reads (#52): today is 2026-11-10. */
     private val clock = Clock.fixed(Instant.parse("2026-11-10T12:00:00Z"), ZoneOffset.UTC)
+    private val meals = MealRepository(db, pantry, shopping, clock)
     private val consumption = Consumption(db, pantry, shopping, meals, clock)
     private val today = LocalDate.now(clock)
 
@@ -136,7 +136,7 @@ class ConsumptionTest {
             ),
         )
         meals.plan(id, today, 12)
-        consumption.cooked(meals.plans().first().single(), today)
+        consumption.cooked(meals.plans().first().single())
         assertEquals(listOf("Test eggs" to "6"), pantry.items().first().map { it.name to it.quantity.number.toPlainString() })
         assertEquals(listOf("Test mozzarella" to ShoppingReason.UsedUp), list())
         assertTrue(meals.plans().first().single().cooked)
@@ -159,7 +159,7 @@ class ConsumptionTest {
             ),
         )
         meals.plan(id, today, 4)
-        consumption.cooked(meals.plans().first().single(), today)
+        consumption.cooked(meals.plans().first().single())
 
         assertEquals(Measure(BigDecimal("4.468"), MeasureUnit.Pound), pantry.item(flour.id)?.quantity)
         assertEquals(Packaged(BigDecimal("1.5"), Package.Bag, Measure(BigDecimal("2"), MeasureUnit.Pound)), pantry.item(rice.id)?.quantity)
@@ -175,7 +175,7 @@ class ConsumptionTest {
         shopping.addByHand("Test mozzarella", today)
         val id = meals.save(Meal("Test pizza", 2, listOf(Ingredient.of(cheese).copy(amount = BigDecimal("1")))))
         meals.plan(id, today, 2)
-        consumption.cooked(meals.plans().first().single(), today)
+        consumption.cooked(meals.plans().first().single())
         assertEquals(listOf("Test mozzarella" to ShoppingReason.ByHand), list())
     }
 
@@ -186,7 +186,7 @@ class ConsumptionTest {
         meals.plan(id, today, 1)
         pantry.delete(eggs.id)
         stock("Test eggs", "12")
-        consumption.cooked(meals.plans().first().single(), today)
+        consumption.cooked(meals.plans().first().single())
         assertEquals(listOf("9"), pantry.items().first().map { it.quantity.number.toPlainString() })
     }
 
@@ -204,7 +204,7 @@ class ConsumptionTest {
         val b = stock("Test milk")
         val id = meals.save(Meal("Test custard", 1, listOf(Ingredient.of(a).copy(amount = BigDecimal("1")), Ingredient.of(b).copy(amount = BigDecimal("1")))))
         meals.plan(id, today, 1)
-        consumption.cooked(meals.plans().first().single(), today)
+        consumption.cooked(meals.plans().first().single())
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("Test milk" to ShoppingReason.UsedUp), list())
         assertEquals(1, db.shopping().observeAll().first().size)
