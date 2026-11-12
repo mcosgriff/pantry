@@ -90,6 +90,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.cosgriff.pantry.data.parseWeight
 import io.cosgriff.pantry.R
 import io.cosgriff.pantry.domain.ItemDraft
 import io.cosgriff.pantry.domain.ProductInfo

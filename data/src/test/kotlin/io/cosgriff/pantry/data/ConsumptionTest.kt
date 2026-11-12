@@ -20,7 +20,10 @@ import io.cosgriff.pantry.domain.ShoppingReason
 import io.cosgriff.pantry.domain.number
 import java.io.File
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,8 +48,10 @@ class ConsumptionTest {
     private val file = File(context.filesDir, "consumption_test.preferences_pb").apply { delete() }
     private val shopping = ShoppingRepository(db.shopping(), pantry, PreferenceDataStoreFactory.create(scope = scope) { file })
     private val meals = MealRepository(db.meals(), pantry, shopping)
-    private val consumption = Consumption(db, pantry, shopping, meals)
-    private val today = LocalDate.of(2026, 11, 10)
+    /** The one clock the module reads (#52): today is 2026-11-10. */
+    private val clock = Clock.fixed(Instant.parse("2026-11-10T12:00:00Z"), ZoneOffset.UTC)
+    private val consumption = Consumption(db, pantry, shopping, meals, clock)
+    private val today = LocalDate.now(clock)
 
     @After
     fun close() {
@@ -73,7 +78,7 @@ class ConsumptionTest {
     @Test
     fun `used up takes the item out and puts it on the list, and undo puts both back`() = runBlocking {
         val milk = stock("Test milk", opened = true)
-        val done = consumption.takeQuickAction(milk, today)
+        val done = consumption.takeQuickAction(milk)
         assertEquals(QuickAction.UsedUp, done.action)
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("Test milk" to ShoppingReason.UsedUp), list())
@@ -87,7 +92,7 @@ class ConsumptionTest {
     fun `used up with the name already on the list adds nothing, and undo leaves that line alone`() = runBlocking {
         shopping.addByHand("test MILK", today)
         val milk = stock("Test milk", opened = true)
-        val done = consumption.takeQuickAction(milk, today)
+        val done = consumption.takeQuickAction(milk)
         assertEquals(listOf("test MILK" to ShoppingReason.ByHand), list())
 
         consumption.undo(done)
@@ -98,7 +103,7 @@ class ConsumptionTest {
     @Test
     fun `thrown out takes the item out without a list line, and undo puts it back`() = runBlocking {
         val yogurt = stock("Test yogurt", expires = today.minusDays(1))
-        val done = consumption.takeQuickAction(yogurt, today)
+        val done = consumption.takeQuickAction(yogurt)
         assertEquals(QuickAction.ThrowOut, done.action)
         assertEquals(emptyList<String>(), names())
         assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
@@ -110,7 +115,7 @@ class ConsumptionTest {
     @Test
     fun `frozen moves the item to the Freezer, and undo moves it back`() = runBlocking {
         val chicken = stock("Test chicken", expires = today.plusDays(2))
-        val done = consumption.takeQuickAction(chicken, today)
+        val done = consumption.takeQuickAction(chicken)
         assertEquals(QuickAction.Freeze, done.action)
         assertEquals(Location.Freezer, pantry.item(chicken.id)?.location)
         assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
@@ -189,7 +194,7 @@ class ConsumptionTest {
     fun `used up on an item that was running low puts it on the list as used up`() = runBlocking {
         val id = pantry.save(PantryItem(name = "Test butter", location = Location.Fridge, quantity = Measure(BigDecimal("1"), MeasureUnit.Each), purchased = today, opened = true, lowStockAt = BigDecimal("1")))
         assertEquals(listOf("Test butter" to ShoppingReason.RunningLow), list())
-        consumption.takeQuickAction(checkNotNull(pantry.item(id)), today)
+        consumption.takeQuickAction(checkNotNull(pantry.item(id)))
         assertEquals(listOf("Test butter" to ShoppingReason.UsedUp), list())
     }
 
@@ -208,16 +213,18 @@ class ConsumptionTest {
     @Test
     fun `removing as used up takes it out and puts it on the list`() = runBlocking {
         val eggs = stock("Test eggs", "18")
-        consumption.remove(eggs, RemoveReason.UsedUp, today)
+        consumption.remove(eggs, RemoveReason.UsedUp)
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("Test eggs" to ShoppingReason.UsedUp), list())
+        // Dated by the injected clock, not a date the caller passed in (#52).
+        assertEquals(listOf(today), shopping.lines().first().map { it.entry?.addedOn })
     }
 
     @Test
     fun `removing as used up with the name already on the list adds nothing`() = runBlocking {
         shopping.addByHand("test EGGS", today)
         val eggs = stock("Test eggs", "18")
-        consumption.remove(eggs, RemoveReason.UsedUp, today)
+        consumption.remove(eggs, RemoveReason.UsedUp)
         assertEquals(emptyList<String>(), names())
         assertEquals(listOf("test EGGS" to ShoppingReason.ByHand), list())
     }
@@ -227,8 +234,8 @@ class ConsumptionTest {
         val yogurt = stock("Test yogurt")
         val rice = stock("Test rice", location = Location.Dry)
         val kept = stock("Test butter")
-        consumption.remove(yogurt, RemoveReason.ThrewOut, today)
-        consumption.remove(rice, RemoveReason.AddedByMistake, today)
+        consumption.remove(yogurt, RemoveReason.ThrewOut)
+        consumption.remove(rice, RemoveReason.AddedByMistake)
         assertEquals(listOf(kept), pantry.items().first())
         assertEquals(emptyList<Pair<String, ShoppingReason>>(), list())
     }

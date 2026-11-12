@@ -84,6 +84,12 @@ object DeletedLocation {
      */
     fun newItem(default: Location?, lastUsed: Location?): Location = default ?: lastUsed ?: Location.Dry
 
+    /**
+     * Where a scanned product starts: its known product's location, else (none remembered, or it was deleted
+     * and reads as `null`) where a new item starts, [newItem].
+     */
+    fun scannedProduct(known: Location?, newItem: Location): Location = known ?: newItem
+
     /** The pantry list's chosen tab, as it is now among [locations]; `null` (All) once deleted. */
     fun chosenTab(chosen: Location?, locations: List<Location>): Location? = locations.withKey(chosen?.key)
 }

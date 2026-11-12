@@ -10,6 +10,9 @@ import java.time.LocalDate
  * While [expiresByHand] is false, the expiry date is the suggestion for the location and purchase date, and
  * follows them when they change. Setting a date (or clearing it) by hand stops that. A stored item's date
  * counts as set by hand, so moving it never changes its date.
+ *
+ * [storePacked] marks an item named from a store-packed label (#13): the one definition intake uses (#49) to
+ * remember its name among the recent store-packed names and never as a known product.
  */
 data class ItemDraft(
     val name: String,
@@ -23,6 +26,7 @@ data class ItemDraft(
     val lowStockAt: BigDecimal? = null,
     val notes: String = "",
     val density: Density? = null,
+    val storePacked: Boolean = false,
     val id: Long = 0,
 ) {
     val isNew: Boolean get() = id == 0L

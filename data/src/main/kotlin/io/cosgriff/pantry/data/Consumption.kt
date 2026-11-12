@@ -10,6 +10,7 @@ import io.cosgriff.pantry.domain.checkPlan
 import io.cosgriff.pantry.domain.cook
 import io.cosgriff.pantry.domain.freeze
 import io.cosgriff.pantry.domain.quickAction
+import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,7 +25,8 @@ data class Consumed(val action: QuickAction, val before: PantryItem, val shoppin
 /**
  * What using up, throwing out, freezing or cooking does to the pantry and the shopping list (#48). Each one is a
  * single transaction. Something used up leaves the pantry and goes on the list, unless its name is there already.
- * Removing an item from item details says what happened to it (#18), and goes through here too.
+ * Removing an item from item details says what happened to it (#18), and goes through here too. The day an
+ * action happens on comes from the injected [Clock] (#52).
  */
 @Singleton
 class Consumption @Inject constructor(
@@ -32,9 +34,11 @@ class Consumption @Inject constructor(
     private val pantry: PantryRepository,
     private val shopping: ShoppingRepository,
     private val meals: MealRepository,
+    private val clock: Clock,
 ) {
     /** Takes Use soon's quick action on [item] (`quickAction` decides which); returns what undoes it. */
-    suspend fun takeQuickAction(item: PantryItem, today: LocalDate): Consumed {
+    suspend fun takeQuickAction(item: PantryItem): Consumed {
+        val today = LocalDate.now(clock)
         val action = quickAction(item, today)
         return db.withWriteTransaction {
             val shoppingId = when (action) {
@@ -62,9 +66,9 @@ class Consumption @Inject constructor(
      * Removes [item] from item details for [reason] (#18). Used it up puts it on the list as the quick action does;
      * thrown out and added by mistake only take it out (nothing records waste yet). Can't be undone.
      */
-    suspend fun remove(item: PantryItem, reason: RemoveReason, today: LocalDate) {
+    suspend fun remove(item: PantryItem, reason: RemoveReason) {
         db.withWriteTransaction {
-            if (reason.addsToShoppingList) usedUp(item, today) else pantry.delete(item.id)
+            if (reason.addsToShoppingList) usedUp(item, LocalDate.now(clock)) else pantry.delete(item.id)
         }
     }
 

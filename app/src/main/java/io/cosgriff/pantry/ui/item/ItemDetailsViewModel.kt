@@ -4,15 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.cosgriff.pantry.data.Consumption
+import io.cosgriff.pantry.data.ItemIntake
 import io.cosgriff.pantry.data.LocationRepository
 import io.cosgriff.pantry.data.PantryRepository
-import io.cosgriff.pantry.data.SettingsRepository
 import io.cosgriff.pantry.domain.AmountUnit
 import io.cosgriff.pantry.domain.ItemDraft
-import io.cosgriff.pantry.domain.KnownProduct
 import io.cosgriff.pantry.domain.Location
 import io.cosgriff.pantry.domain.QuickPick
-import io.cosgriff.pantry.domain.countedIn
 import io.cosgriff.pantry.domain.number
 import io.cosgriff.pantry.domain.RemoveReason
 import io.cosgriff.pantry.domain.stepped
@@ -39,7 +37,7 @@ data class ItemDetailsState(
 class ItemDetailsViewModel @Inject constructor(
     private val pantry: PantryRepository,
     private val locations: LocationRepository,
-    private val settings: SettingsRepository,
+    private val intake: ItemIntake,
     private val consumption: Consumption,
     private val clock: Clock,
 ) : ViewModel() {
@@ -58,7 +56,7 @@ class ItemDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             val today = LocalDate.now(clock)
             val all = locations.locations().first()
-            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: ItemDraft.new(today, settings.newItemLocation(), barcode = barcode.ifEmpty { null }).copy(name = name)
+            val draft = id?.let { pantry.item(it) }?.let(ItemDraft::of) ?: intake.byHand(name, barcode.ifEmpty { null })
             _state.update { it.copy(today = today, draft = draft, locations = all) }
         }
     }
@@ -76,14 +74,11 @@ class ItemDetailsViewModel @Inject constructor(
     fun onLowStock(amount: BigDecimal?) = edit { it.copy(lowStockAt = amount) }
     fun onNotes(notes: String) = edit { it.copy(notes = notes) }
 
+    /** Saves through `ItemIntake`, scan's save path (#49), which says how a new item and an edit differ. */
     fun onSave() {
-        val item = _state.value.draft?.toItem() ?: return
+        val draft = _state.value.draft?.takeIf { it.name.isNotBlank() } ?: return
         viewModelScope.launch {
-            pantry.save(item)
-            // A named barcode fills in the next scan of it (#12).
-            item.barcode?.let { pantry.rememberProduct(KnownProduct(it, item.name, item.location, item.quantity.countedIn)) }
-            if (item.id == 0L) settings.setLastUsedLocation(item.location)
-            _state.update { it.copy(done = true) }
+            if (intake.save(draft)) _state.update { it.copy(done = true) }
         }
     }
 
@@ -94,7 +89,7 @@ class ItemDetailsViewModel @Inject constructor(
     fun onRemove(reason: RemoveReason) {
         val draft = _state.value.draft ?: return
         viewModelScope.launch {
-            if (!draft.isNew) pantry.item(draft.id)?.let { consumption.remove(it, reason, LocalDate.now(clock)) }
+            if (!draft.isNew) pantry.item(draft.id)?.let { consumption.remove(it, reason) }
             _state.update { it.copy(done = true) }
         }
     }
